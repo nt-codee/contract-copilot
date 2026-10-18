@@ -49,6 +49,13 @@ class LawEntry:
     supports: tuple[tuple[str, tuple[str, ...]], ...] = ()
     caveat: str = ""  # carried into the explanation of any finding that cites this entry
     applies_to: str = ""  # "employee": the statute protects employees only (contract of service)
+    # firm legal outcomes ("void", "unenforceable", "illegal") a finding citing this entry may state without
+    # hedging: clause type -> outcome families. None (no `asserts` frontmatter): any family the entry's
+    # text names, for every clause type in its scope. From `asserts: [non_compete=void]`.
+    asserts: tuple[tuple[str, tuple[str, ...]], ...] | None = None
+    # propositions this entry rejects, as pairs of word stems that together state the rejected rule
+    # ("unreasonabl~restrain": framing s 28 as a reasonableness test). From `contradicts` frontmatter.
+    contradicts: tuple[tuple[str, ...], ...] = ()
 
     def scope(self) -> dict[str, tuple[str, ...]]:
         return dict(self.supports) if self.supports else {c: () for c in self.clause_types}
@@ -59,6 +66,15 @@ class LawEntry:
         low = quote.lower()
         for key in (clause_type, "*"):  # "*": any clause type, provided the quote shows the stems
             if key in scope and (not scope[key] or any(s in low for s in scope[key])):
+                return True
+        return False
+
+    def asserts_outcome(self, clause_type: str, family: str, evidence: "re.Pattern[str]") -> bool:
+        """True if a finding of `clause_type` citing this entry may state outcome `family` firmly."""
+        if self.asserts is None:
+            return bool(evidence.search(self.text)) and (clause_type in self.scope() or "*" in self.scope())
+        for key, families in self.asserts:
+            if key in (clause_type, "*") and family in families:
                 return True
         return False
 
@@ -308,6 +324,17 @@ def parse_supports(items: list[str]) -> tuple[tuple[str, tuple[str, ...]], ...]:
     return tuple(out)
 
 
+def parse_contradicts(items) -> tuple[tuple[str, ...], ...]:
+    """`[unreasonabl~restrain, reasonabl~enforceab]` -> (("unreasonabl", "restrain"), ...)."""
+    items = items if isinstance(items, list) else [items]
+    out = []
+    for it in items:
+        stems = tuple(s.strip().lower() for s in str(it).split("~") if s.strip())
+        if len(stems) >= 2:
+            out.append(stems)
+    return tuple(out)
+
+
 def load_law(law_dir: Path) -> list[LawEntry]:
     entries: list[LawEntry] = []
     for path in sorted(law_dir.glob("*/*.md")) if law_dir.is_dir() else []:
@@ -328,7 +355,10 @@ def load_law(law_dir: Path) -> list[LawEntry]:
                 source_url=str(meta.get("source_url") or ""), text=text,
                 plain=_section(secs, "in plain words"), when=_section(secs, "when it matters"),
                 body=body.strip(), supports=parse_supports(sup if isinstance(sup, list) else [sup]),
-                caveat=str(meta.get("caveat") or ""), applies_to=str(meta.get("applies_to") or "")))
+                caveat=str(meta.get("caveat") or ""), applies_to=str(meta.get("applies_to") or ""),
+                asserts=parse_supports(meta["asserts"] if isinstance(meta["asserts"], list) else [meta["asserts"]])
+                if "asserts" in meta else None,
+                contradicts=parse_contradicts(meta.get("contradicts") or [])))
         except Exception:  # one bad file must not take the agent down
             log.exception("could not load law entry %s", path)
     return entries

@@ -5,6 +5,7 @@ kind: case
 title: "CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29"
 citation: "[2019] 2 MLJ 1 (Federal Court of Malaysia)"
 clause_types: [liability]
+asserts: []
 supports: [*=claim damages|not liable|no liability|not be liable|exclu|disclaim|in no event|under no circumstances|whatsoever|tidak bertanggungjawab|tidak akan bertanggungjawab|tidak memberikan apa-apa ganti rugi|tidak menanggung|sole remedy|sole and exclusive remedy|only remedy]
 caveat: "CIMB v Bourke struck down an exclusion that left no remedy at all for a proven breach; it did not decide that every cap or exclusion is void, so whether this clause goes that far depends on the rest of the contract."
 source_url: "https://globallitigationnews.bakermckenzie.com/2019/12/04/absolute-exclusion-of-liability-clauses-a-thing-of-the-past/"

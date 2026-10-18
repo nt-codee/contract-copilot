@@ -78,6 +78,9 @@ class KeyDate(BaseModel):
     rule: str | None = None
     page: int
     finding_id: str | None = None
+    # stated: the contract gives this date; calculated: computed in code from a stated date and an offset the
+    # contract states; inferred: not stated (the label says it is an estimate). None without a date.
+    basis: Literal["stated", "calculated", "inferred"] | None = None
 
 
 class KnowledgeEntry(BaseModel):
@@ -365,11 +368,19 @@ class LLMKeyDate(BaseModel):
     kind: KeyDateKind
     page: int = Field(description="The [PAGE n] the clause that sets this date is on")
     base_date: str = Field(
-        description="YYYY-MM-DD: the date the contract states (effective date, or a stated end date) that "
-                    "this date is counted from; empty string if the contract gives none")
-    months: int = Field(description="Whole months to add to base_date (0 if none)")
-    days: int = Field(description="Days to add to base_date after the months; negative for 'before'")
-    rule: str = Field(description="How the date is derived, in words, e.g. '90 days before the end of the "
+        description="YYYY-MM-DD: a date the contract states in full (effective date, commencement date or a "
+                    "stated end date) that this date is counted from; empty string if the contract gives none")
+    term_months: int = Field(description=(
+        "0 when the anchor is base_date itself. Otherwise the length in months of the term that starts on "
+        "base_date, when the date is counted from the END of that term (a 1-year term is 12)"))
+    offset: int = Field(description="How many units before or after the anchor, as the contract states it; 0 "
+                                    "for the anchor itself")
+    unit: Literal["days", "weeks", "months", "years"] = Field(description="The unit of offset")
+    direction: Literal["before", "after"] = Field(description="Whether the date is before or after the anchor")
+    source_quote: str = Field(description=(
+        "The contract's words that set this date (the offset and its unit), copied exactly from that page, "
+        "at most 30 words; empty string for a date stated outright"))
+    rule: str = Field(description="How the date is derived, in words, e.g. '60 days before the end of the "
                                   "12-month term'")
     finding_title: str = Field(description="Exact title of the finding about this date, or an empty string")
 

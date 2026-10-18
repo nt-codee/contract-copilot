@@ -81,9 +81,10 @@ def test_add_months_clamps_to_month_end():
     assert add_months(date(2026, 12, 1), 12) == date(2027, 12, 1)
 
 
-def _llm(kind, base, months, days, page=1, title=""):
-    return LLMKeyDate(label=f"{kind} date", kind=kind, page=page, base_date=base, months=months, days=days,
-                      rule="r", finding_title=title)
+def _llm(kind, base, term_months, offset, page=1, title=""):
+    return LLMKeyDate(label=f"{kind} date", kind=kind, page=page, base_date=base, term_months=term_months,
+                      offset=offset, unit="days", direction="before", source_quote="", rule="r",
+                      finding_title=title)
 
 
 def test_build_key_dates_orders_links_and_drops_bad_pages():
@@ -92,8 +93,8 @@ def test_build_key_dates_orders_links_and_drops_bad_pages():
     f = Finding(id="f2", clause_type="auto_renewal", title="Auto renewal", risk="medium", quote="q" * 20, page=2,
                 why_risky="w", standard="s", suggested_ask="a")
     out = build_key_dates([
-        _llm("end", "2026-01-01", 12, -1, 2), _llm("start", "", 0, 0, 1),
-        _llm("notice_deadline", "2026-01-01", 12, -91, 2, "auto RENEWAL"), _llm("other", "2026-01-01", 0, 0, 9),
+        _llm("end", "2026-01-01", 12, 0, 2), _llm("start", "", 0, 0, 1),
+        _llm("notice_deadline", "2026-01-01", 12, 90, 2, "auto RENEWAL"), _llm("other", "2026-01-01", 0, 0, 9),
     ], [f], page_count=3)
     assert [(k.kind, k.date) for k in out] == [
         ("notice_deadline", date(2026, 10, 2)), ("end", date(2026, 12, 31)), ("start", None)]

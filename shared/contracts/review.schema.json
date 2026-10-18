@@ -755,6 +755,15 @@
             "string",
             "null"
           ]
+        },
+        "basis": {
+          "enum": [
+            "stated",
+            "calculated",
+            "inferred",
+            null
+          ],
+          "description": "stated: the contract gives this exact date; calculated: computed in code from a stated date and an offset the contract states; inferred: the contract does not state it (the label says it is an estimate). null when there is no date, or on reviews made before this field existed"
         }
       }
     },

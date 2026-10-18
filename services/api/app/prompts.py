@@ -104,13 +104,20 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
 10. key_dates: every date the reader must act on or plan around: start, end, renewal, the NOTICE
     DEADLINE (the last day to cancel or object before it renews or locks in), payment due dates and
     price-change dates. For each give the [PAGE n] it comes from and the pieces of the date, NOT the
-    date: base_date = the date the contract states (an effective or commencement date, or a stated end
-    date) as YYYY-MM-DD, or "" if the contract gives none; months = whole months to add (the term
-    length); days = days to add after that, negative for "before". The last day of a 12-month term that
-    starts on D is base D, months 12, days -1; a notice deadline 90 days before that is base D, months
-    12, days -91. A stated fixed date is base_date with months 0, days 0. If the contract gives no
-    start date, leave base_date "" (do not guess) and explain in rule. If the term runs from an event
-    that must happen within a stated window after a stated date (for example installation "within 21
+    date (the date is calculated from them in code): base_date = a date the contract writes in full (an
+    effective or commencement date, or a stated end date) as YYYY-MM-DD, or "" if it gives none (do
+    not guess, and do not invent a day the contract does not state, such as "January 2028" -> 1 January);
+    term_months = 0 when the date is counted from base_date itself, else the length of the term that
+    starts on base_date when the date is counted from the END of that term (the code takes the term's
+    last day: a 12-month term from 1 Sep 2026 ends 31 Aug 2027); offset, unit and direction = the
+    contract's own words ("at least 60 days before the expiry" is offset 60, unit days, direction
+    before; "three months before the end" is 3, months, before); source_quote = the contract's words
+    that set the offset, copied exactly from that page. Examples: the term's last day is term_months
+    12, offset 0; a notice deadline 60 days before expiry is term_months 12, offset 60, days, before; a
+    stated fixed date is that date with term_months 0 and offset 0. A date the contract does not state
+    and that cannot be counted from its words (for example a first instalment "on the 3rd of each
+    month" with no first month given) is shown as an estimate; say so in rule. If the term runs from an
+    event that must happen within a stated window after a stated date (for example installation "within 21
     days of the Effective Date"), use the stated date as base_date: it gives the earliest possible
     deadline, the safe one to act on, and say in rule that the real date may be later (name the window). rule says in words how the date
     is derived. finding_title is the exact title of the finding about it, else "". Use [] if there are none.
@@ -168,6 +175,11 @@ REVIEW_RULES = """\
     Cubic Electronics text permits reasonable compensation without proving actual loss, do not say
     courts allow only compensation for actual loss or require the claimant to prove actual loss.
     Do not infer that ordinary damages or a different jurisdiction follow that same proof rule.
+18. LEGAL OUTCOMES. Say "may be void" or "may be hard to enforce" unless a cited source's own text gives
+    that outcome for this kind of clause. Never write that a clause takes away all legal recourse or
+    that the reader has "no legal right": say what this contract's words do ("the contract gives you
+    no express right to end it"). Do not state a legal test the cited source rejects. Unsupported legal
+    outcomes are rewritten in a hedged form or removed automatically.
 """
 
 CLAUSE_TYPES_HEADING = """

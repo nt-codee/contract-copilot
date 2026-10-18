@@ -21,6 +21,14 @@ and hire purchase under Malaysian or Singapore law.
 
 </div>
 
+## Why it matters
+
+A café owner signing a POS subscription, a freelancer signing a client's terms, a tenant signing a shoplot lease: most
+sign without a lawyer, because a review costs more than the contract seems worth. The clauses that hurt are ordinary
+ones they skim past: a renewal that only stops with notice by registered post 90 days ahead, a price that can rise without
+limit, a liability cap that protects only the other side. Contract Co-pilot puts those clauses in front of them, on the
+contract's own page, with what to ask for instead, before they sign.
+
 > Contract Co-pilot gives general information to help you prepare. It is not legal advice.
 
 ## See it work
@@ -140,6 +148,14 @@ that threshold, but they do not offset these failures or establish that individu
 quality is **not assessed (N/A): zero drafts were tested**. Zero false highs against a limited answer key does not
 establish that every finding or severity is correct. Both dated runs include a scanned contract taking longer than
 two minutes; no universal speed or near-zero-cost promise is made.
+
+After that assessment, general fixes went in (dates computed in code and marked stated or inferred; legal claims hedged
+unless a cited source supports them; summaries that contradict a finding removed). The same eight contracts were run
+again on backend `c05f822`: **[27 of 29 expected issues](eval/results/20261018T164053Z.md)**, no answer-key false highs,
+8 of 8 completed, median / slowest 26.9 s / 119.9 s, USD 0.02885 per review. One contract got better (`hp-02-used-car`,
+5 of 5) and one worse (`msa-09-bm-cleaning`, 3 of 5: a one-sided 7-day termination is now rated medium where the key says
+high, and the customer's breach-only exit was not flagged). That run has **not yet been independently assessed**, so the
+FAIL above still stands.
 
 [Earlier runs](eval/results) remain available. Running `scripts/eval.py` makes paid model calls; reproduce it only with
 configured access and an explicit budget.

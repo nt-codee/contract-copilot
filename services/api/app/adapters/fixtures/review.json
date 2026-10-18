@@ -121,30 +121,39 @@
       "kind": "notice_deadline",
       "page": 2,
       "base_date": "2026-01-01",
-      "months": 12,
-      "days": -91,
       "rule": "90 days before the end of the first 12-month term",
-      "finding_title": "Auto-renewal with a 90-day notice window"
+      "finding_title": "Auto-renewal with a 90-day notice window",
+      "term_months": 12,
+      "offset": 90,
+      "unit": "days",
+      "direction": "before",
+      "source_quote": ""
     },
     {
       "label": "Agreement starts",
       "kind": "start",
       "page": 1,
       "base_date": "",
-      "months": 0,
-      "days": 0,
       "rule": "The contract names no effective date",
-      "finding_title": ""
+      "finding_title": "",
+      "term_months": 0,
+      "offset": 0,
+      "unit": "days",
+      "direction": "after",
+      "source_quote": ""
     },
     {
       "label": "Impossible page",
       "kind": "other",
       "page": 99,
       "base_date": "2026-01-01",
-      "months": 0,
-      "days": 0,
       "rule": "x",
-      "finding_title": ""
+      "finding_title": "",
+      "term_months": 0,
+      "offset": 0,
+      "unit": "days",
+      "direction": "after",
+      "source_quote": ""
     }
   ]
 }

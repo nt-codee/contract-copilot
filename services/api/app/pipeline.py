@@ -17,7 +17,8 @@ from typing import Callable
 
 import pymupdf
 
-from app import calibration, grounding, prompts, provenance, quotes
+from app import calibration, dates, grounding, prompts, provenance, quotes, restraint
+from app.dates import add_months
 from app.agent import Toolbox, Trace, fill_cited, run_agent
 from app.audit import Audit
 from app.config import DEMO_OWNER, DISCLAIMER, Settings, estimate_cost
@@ -510,22 +511,8 @@ def locate_company_boxes(svc: Services, findings: list[Finding], owner: str) -> 
 # ---- 3a. key dates ---------------------------------------------------------------------------
 
 
-def add_months(d: date, months: int) -> date:
-    """d plus whole months; the day is clamped to the end of a shorter month (31 Jan + 1 month = 28/29 Feb)."""
-    idx = d.year * 12 + (d.month - 1) + months
-    year, month = divmod(idx, 12)
-    month += 1
-    last = (date(year + (month == 12), month % 12 + 1, 1) - timedelta(days=1)).day
-    return date(year, month, min(d.day, last))
-
-
 def compute_date(base_date: str, months: int, days: int) -> date | None:
-    """base_date + months + days, or None when the contract gave no usable base date.
-
-    The model supplies the pieces (date stated in the contract, term in months, day offset); the
-    arithmetic is done here, never by the model. The last day of a 12-month term starting 1 Jan is
-    1 Jan + 12 months - 1 day, and a notice deadline 90 days before that adds -90 more.
-    """
+    """base_date + months + days, or None when the contract gave no usable base date."""
     try:
         base = date.fromisoformat((base_date or "").strip())
         return add_months(base, int(months)) + timedelta(days=int(days))
@@ -533,16 +520,37 @@ def compute_date(base_date: str, months: int, days: int) -> date | None:
         return None
 
 
-def build_key_dates(raw: list[LLMKeyDate], findings: list[Finding], page_count: int) -> list[KeyDate]:
-    """Dated first (soonest first), then undated. Drops an entry whose page is outside the contract."""
+def build_key_dates(raw: list[LLMKeyDate], findings: list[Finding], page_count: int,
+                    pages: list[str] | None = None) -> list[KeyDate]:
+    """Dated first (soonest first), then undated. Drops an entry whose page is outside the contract.
+
+    The model supplies the pieces (a stated base date, a term length, an offset, its unit and direction,
+    and the words that set it); the arithmetic and the stated / calculated / inferred class are decided
+    here (app.dates). An inferred date is labelled an estimate."""
     by_title = {f.title.strip().lower(): f.id for f in findings}
+    pages = pages or []
+    text = "\n".join(pages)
+    contract_dates = dates.stated_dates(text)
+    numbers = grounding.numbers_in(text) | grounding._word_numbers(text)
+    repeated = page_furniture(pages) if pages else set()
     out: list[KeyDate] = []
     for k in raw:
         if not 1 <= k.page <= page_count or not k.label.strip():
             log.info("dropped key date on page %s (%s)", k.page, k.kind)
             continue
-        out.append(KeyDate(label=k.label.strip(), kind=k.kind, date=compute_date(k.base_date, k.months, k.days),
-                           rule=k.rule.strip() or None, page=k.page,
+        when = dates.resolve(k.base_date, k.term_months, k.offset, k.unit, k.direction)
+        quote_numbers = None
+        q = k.source_quote.strip()
+        if q and pages and verify_quote_detail(q, k.page, pages, repeated) is not None:
+            quote_numbers = grounding.numbers_in(q) | grounding._word_numbers(q)
+        basis = dates.classify(result=when, base_date=k.base_date, term_months=k.term_months, offset=k.offset,
+                               contract_dates=contract_dates, contract_numbers=numbers,
+                               quote_numbers=quote_numbers)
+        label, rule = k.label.strip(), k.rule.strip()
+        if basis == "inferred":
+            label = label if label.endswith(dates.ESTIMATE_LABEL) else label + dates.ESTIMATE_LABEL
+            rule = dates.ESTIMATE_RULE + rule
+        out.append(KeyDate(label=label, kind=k.kind, date=when, rule=rule or None, page=k.page, basis=basis,
                            finding_id=by_title.get(k.finding_title.strip().lower()) if k.finding_title else None))
     out.sort(key=lambda k: (k.date is None, k.date or date.max, k.page))
     return out
@@ -841,6 +849,9 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
     findings.sort(key=lambda f: (RISK_ORDER[f.risk], f.page))  # demoted findings move down
     for i, f in enumerate(findings, start=1):
         f.id = f"f{i}"
+    # legal outcomes no firmer than the cited sources, and no verdict line that contradicts a finding's source
+    kept_summary, headline = restraint.restrain_review(findings, missing, kept_summary, headline, overall,
+                                                       jurisdiction, list(svc.kb.law), svc.kb.law_by_id, removed)
     n_grounding = len(removed) - n_before
     if overall != out.verdict.overall_risk:
         trace.steps[0].detail = " | ".join(x for x in (trace.steps[0].detail, (
@@ -860,7 +871,7 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
               f"kept {len(findings)} findings and {n_cites} sources; dropped {dropped} unsupported findings "
               f"and {dropped_cites} unverified sources; removed {n_grounding} statements not found in the contract",
               (time.monotonic() - t_verify) * 1000, start=t_verify)
-    key_dates = build_key_dates(out.key_dates, findings, page_count)
+    key_dates = build_key_dates(out.key_dates, findings, page_count, pages)
     if len(headline) > 160:
         headline = headline[:157].rstrip() + "..."
     summary = kept_summary or [headline]

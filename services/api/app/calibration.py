@@ -48,6 +48,9 @@ _LEVEL_WORDS = re.compile(r"\b(high|medium|moderate|low)[- ]risk\b", re.I)
 _CERTIFY = re.compile(
     r"\b(?:compl(?:y|ies|ying|iant|iance)|in line|consistent|in accordance)\s+with\s+(?:the\s+)?(?:[A-Z][\w()]*\s+){0,6}"
     r"(?:Act|Acts|Order|Regulations?|law|laws|statute|statutory)\b|\bmeets? (?:all )?(?:the )?statutory\b|"
+    r"\b(?:follow(?:s|ing)?|mirror(?:s|ing)?|reflect(?:s|ing)?|track(?:s|ing)?|satisf(?:y|ies|ying)|meet(?:s|ing)?|"
+    r"conform(?:s|ing)? to|adher(?:e|es|ing) to|align(?:s|ed|ing)? with|match(?:es|ing)?)\s+(?:the\s+)?"
+    r"(?:(?:minimum\s+)?requirements of\s+(?:the\s+)?)?(?:[A-Z][\w()-]*\s+){1,5}?(?:Act|Acts|Order|Regulations?)\b|"
     r"\bfully (?:legal|lawful|compliant)\b", re.I)
 
 
