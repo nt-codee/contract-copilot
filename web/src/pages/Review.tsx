@@ -78,6 +78,17 @@ export default function Review() {
   const location = useLocation();
   const opening = location.state as { earlier?: string; sampleId?: string } | null;
   const navigate = useNavigate();
+  const refreshRequest = useRef(0);
+  const refreshActive = useRef(false);
+  const latestParams = useRef(params);
+  latestParams.current = params;
+  useEffect(() => {
+    refreshRequest.current += 1;
+    refreshActive.current = false;
+    setRefreshing(false);
+    setRefreshStage(undefined);
+    return () => { refreshRequest.current += 1; };
+  }, [id]);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshStage, setRefreshStage] = useState<ReviewStage | undefined>();
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -177,20 +188,26 @@ export default function Review() {
   }, [params, review]);
 
   async function refreshSample() {
-    if (!(review?.sample_id ?? opening?.sampleId) || !session.user || session.guest || session.loading || refreshing) return;
+    if (!(review?.sample_id ?? opening?.sampleId) || !session.user || session.guest || session.loading || refreshing || refreshActive.current) return;
+    refreshActive.current = true;
+    const ticket = ++refreshRequest.current;
     setRefreshStage(undefined);
     setRefreshing(true);
     setRefreshError(null);
     try {
-      const fresh = await reviewSample((review?.sample_id ?? opening?.sampleId)!, true, setRefreshStage);
-      const query = new URLSearchParams(params);
+      const fresh = await reviewSample((review?.sample_id ?? opening?.sampleId)!, true, (next) => { if (refreshRequest.current === ticket) setRefreshStage(next); });
+      if (refreshRequest.current !== ticket) return;
+      const query = new URLSearchParams(latestParams.current);
       // Finding IDs can change between runs; keep only a still-valid selection.
       if (!fresh.findings.some((f) => f.id === query.get("finding"))) query.delete("finding");
       navigate(`/reviews/${fresh.id}${query.size ? `?${query}` : ""}`);
       setReview(fresh);
     } catch (e) {
+      if (refreshRequest.current !== ticket) return;
       setRefreshError(e instanceof Error ? e.message : "The fresh review could not be completed.");
     } finally {
+      if (refreshRequest.current !== ticket) return;
+      refreshActive.current = false;
       setRefreshing(false);
       setRefreshStage(undefined);
     }
@@ -263,7 +280,7 @@ export default function Review() {
       </p>
     );
 
-  if (refreshing) return <Progress subject={reviewTitle(review)} stage={refreshStage} />;
+  if (refreshing) return <Progress subject={reviewTitle(review)} stage={refreshStage} source={{ url: pdfUrl(review.id), name: reviewTitle(review), kind: "pdf" }} />;
 
   const url = pdfUrl(review.id);
   const reader = (compact: boolean) => (

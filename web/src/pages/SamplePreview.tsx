@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { listSamples, reviewSample, samplePdfUrl } from "../api";
 import type { ReviewStage } from "../api";
@@ -25,6 +25,17 @@ export default function SamplePreview() {
   const [samples, setSamples] = useState<Sample[] | null>(null);
   const [pages, setPages] = useState<number | null>(null);
   const [readerState, setReaderState] = useState<ReaderState>("loading");
+  const request = useRef(0);
+  const activeRequest = useRef(false);
+  useEffect(() => {
+    request.current += 1;
+    activeRequest.current = false;
+    setBusy(false);
+    setStage(undefined);
+    setEarlier(null);
+    setError(null);
+    return () => { request.current += 1; };
+  }, [id]);
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<ReviewStage>();
   const [earlier, setEarlier] = useState<string | null>(null);
@@ -63,7 +74,9 @@ export default function SamplePreview() {
   }, [url]);
 
   async function review() {
-    if (!sample) return;
+    if (!sample || busy || activeRequest.current) return;
+    activeRequest.current = true;
+    const ticket = ++request.current;
     setError(null);
     setStage(undefined);
     setEarlier(null);
@@ -71,7 +84,8 @@ export default function SamplePreview() {
     window.scrollTo(0, 0);
     const start = Date.now();
     try {
-      const r = await reviewSample(sample.id, false, setStage);
+      const r = await reviewSample(sample.id, false, (next) => { if (request.current === ticket) setStage(next); });
+      if (request.current !== ticket) return;
       // Prefer the server’s execution source: copying a cached sample creates a new timestamp.
       const old = r.sample_opening
         ? r.sample_opening !== "fresh"
@@ -81,11 +95,15 @@ export default function SamplePreview() {
         setEarlier(earlierText(r.created_at));
         await new Promise((res) => setTimeout(res, 2400));
       }
+      if (request.current !== ticket) return;
       navigate(`/reviews/${r.id}`, { state: old ? { earlier: r.created_at, sampleId: sample.id } : undefined });
     } catch (e) {
+      if (request.current !== ticket) return;
       setBusy(false);
       setEarlier(null);
       setError(e instanceof Error ? e.message : "The review did not finish. Try again.");
+    } finally {
+      if (request.current === ticket) activeRequest.current = false;
     }
   }
 
@@ -94,7 +112,7 @@ export default function SamplePreview() {
     if (next) navigate(`/sample/${next.id}`);
   }
 
-  if (busy && sample) return <Progress subject={sample.title} earlier={earlier} stage={stage} />;
+  if (busy && sample) return <Progress subject={sample.title} earlier={earlier} stage={stage} source={{ url, name: sample.title, kind: "pdf" }} />;
 
   if (samples && !sample)
     return (

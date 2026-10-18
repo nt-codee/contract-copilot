@@ -3,6 +3,8 @@ import type { DragEvent } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, SIGN_IN_CODE, listCompanyDocs, uploadReview } from "../api";
 import type { ReviewOptions, ReviewStage } from "../api";
+import Progress from "../components/Progress";
+import { reducedMotion } from "../motion";
 import { SignInButton } from "../components/Account";
 import { RiskLabel } from "../components/Risk";
 import { breakable, contractTypeLabel } from "../format";
@@ -82,6 +84,11 @@ export default function Upload() {
   const hasRules = docs.length > 0;
   const [opts, setOpts] = useState<Opts>({ contract_type: "", jurisdiction: "", apply_company_rules: true, perspective: "" });
   const running = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const optsRef = useRef(opts);
   optsRef.current = opts;
 
@@ -104,9 +111,10 @@ export default function Upload() {
     if (!next) return;
     running.current = true;
     patch(next.key, { status: "reviewing", stage: undefined, error: undefined });
-    uploadReview(next.file, next.opts, (stage) => patch(next.key, { stage }))
-      .then((result) => patch(next.key, { status: "done", result }))
+    uploadReview(next.file, next.opts, (stage) => { if (mounted.current) patch(next.key, { stage }); })
+      .then((result) => { if (mounted.current) patch(next.key, { status: "done", result }); })
       .catch((e) => {
+        if (!mounted.current) return;
         if (e instanceof ApiError && (e.code === SIGN_IN_CODE || e.code === "guest_read_only")) {
           setNeedSignIn(e.code === SIGN_IN_CODE ? true : e.message);
           // Nothing else can upload while signed out: mark the rest too, each can be retried after sign-in.
@@ -115,6 +123,7 @@ export default function Upload() {
       })
       .finally(() => {
         running.current = false;
+        if (!mounted.current) return;
         setJobs((js) => [...js]); // wake the queue
       });
   }, [jobs]);
@@ -134,6 +143,9 @@ export default function Upload() {
     add(e.dataTransfer.files);
   }
 
+  const current = jobs.find((j) => j.status === "reviewing");
+  // The active panel disappears when a review finishes; keep the result in the same place so it does not just vanish.
+  const lastDone = [...jobs].reverse().find((j) => j.status === "done");
   const done = jobs.filter((j) => j.status === "done").length;
   const active = jobs.some((j) => j.status === "waiting" || j.status === "reviewing");
 
@@ -144,6 +156,9 @@ export default function Upload() {
       <p className="mt-3 max-w-2xl text-base text-desk-text">
         Add one contract or several. They are reviewed one after another, and each opens with its risky clauses boxed on its own pages.
       </p>
+
+      {current && <ActiveUpload key={current.key} job={current} />}
+      {!current && lastDone?.result && <JustFinished job={lastDone} />}
 
       <div
         onDragOver={(e) => {
@@ -282,6 +297,60 @@ export default function Upload() {
           </ol>
         </section>
       )}
+    </div>
+  );
+}
+
+/** Only the active job gets a local preview; queued/completed files keep no object URL. */
+function ActiveUpload({ job }: { job: Job }) {
+  const region = useRef<HTMLDivElement>(null);
+  const announced = useRef<string | null>(null);
+  const [url, setUrl] = useState<string>();
+  useEffect(() => {
+    const local = URL.createObjectURL(job.file);
+    setUrl(local);
+    return () => URL.revokeObjectURL(local);
+  }, [job.file]);
+  // Wait until the real source pane is mounted, then reveal it once for this active job.
+  useEffect(() => {
+    const el = region.current;
+    if (!url || !el || announced.current === job.key) return;
+    announced.current = job.key;
+    el.focus({ preventScroll: true });
+    el.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" });
+  }, [job.key, url]);
+  const image = /^image\/(jpeg|png)$/i.test(job.file.type) || /\.(jpe?g|png)$/i.test(job.file.name);
+  return <div ref={region} role="region" aria-label={`Reviewing ${job.file.name}`} tabIndex={-1} className="scroll-mt-4 rounded outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-bright">
+    <Progress embedded subject={job.file.name} stage={job.stage} source={url ? { url, name: job.file.name, kind: image ? "image" : "pdf" } : undefined} />
+  </div>;
+}
+
+/** Shown where the active panel was, once the newest review has finished, so the outcome stays in view. */
+function JustFinished({ job }: { job: Job }) {
+  const r = job.result!;
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    box.current?.focus({ preventScroll: true });
+    box.current?.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" });
+  }, [job.key]);
+  const counts = (["high", "medium", "low"] as const)
+    .map((k) => [k, r.findings.filter((f) => f.risk === k).length] as const)
+    .filter(([, n]) => n > 0)
+    .map(([k, n]) => `${n} ${k}`)
+    .join(", ");
+  return (
+    <div ref={box} role="status" tabIndex={-1} className="sheet mt-7 flex scroll-mt-4 flex-wrap items-center justify-between gap-4 px-6 py-5 outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-bright">
+      <div className="min-w-0">
+        <p className="text-sm text-ink-soft">Review ready</p>
+        <p className="mt-0.5 break-words text-lg font-semibold text-ink">{breakable(job.file.name)}</p>
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
+          <RiskLabel risk={r.verdict.overall_risk} />
+          <span>{counts || "No risky clauses found"}</span>
+        </p>
+      </div>
+      <Link to={`/reviews/${r.id}`} className="btn-go !min-h-[48px] px-5">
+        Open the review <span className="sr-only">of {job.file.name}</span>
+      </Link>
     </div>
   );
 }

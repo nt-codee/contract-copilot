@@ -1,0 +1,134 @@
+{
+  "capture": {
+    "commit": "b5b9335",
+    "revision": "contract-copilot-00029-tkh",
+    "captured_at": "2026-10-18T15:37:05.763Z",
+    "mode": "live",
+    "data_scope": "synthetic-public",
+    "recipe": "Explicit read-only demo entry; cached review GET; select finding; expand recorded trace; read rules/workspace. Optional guest cached-sample opening only, never refresh or draft.",
+    "base_url": "https://contract-copilot-ordg3tjh7a-as.a.run.app",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "timing": "Screens held for readability; interaction media is not a review-duration benchmark."
+  },
+  "assets": [
+    {
+      "file": "screens/reader.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 161904,
+      "sha256": "9bf175a88542868484964b2a25d7fcdd0c404e99f2b75a986a3e842a76f94ec6",
+      "source_frame": "reader.png",
+      "source_sha256": "cd282937d9621c00dd19c7ddfc43f220cdb76bccf4314df5841d8e3268dfa2bb",
+      "crop": null,
+      "palette_colors": 256,
+      "caption": "Live interface showing an earlier saved synthetic review and its actual PDF; not fresh model-quality evidence."
+    },
+    {
+      "file": "screens/trace.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 68489,
+      "sha256": "29b2b60bb84df3ee0479bcdf2dc7c8f78672038e373b82ba433309e69ecce886",
+      "source_frame": "trace.png",
+      "source_sha256": "4cb7f6941ed806adffafe4530f9eabc4ba86a5a4da4c10a39d28dd04f0d77243",
+      "crop": null,
+      "palette_colors": 256,
+      "caption": "Recorded lookups and verification from the saved synthetic review; historical missing timings remain unknown."
+    },
+    {
+      "file": "screens/rules.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 524875,
+      "sha256": "86259184100064426d7aa2fb35701edc2a680590a32663852cb11c604289bdff",
+      "source_frame": "rules.png",
+      "source_sha256": "8f415ee7fbb758b0ebdd519d5f5c72692caf400359a889a1a97866a36182cf9e",
+      "crop": null,
+      "palette_colors": 256,
+      "caption": "Read-only demo company rules and their recorded contract links, after loading completed."
+    },
+    {
+      "file": "screens/workspace.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 379300,
+      "sha256": "d4ca847d47351b12130a57a25add129c57e41b72524604851dde26cb0ec6c845",
+      "source_frame": "workspace.png",
+      "source_sha256": "aece61ede8bb2e059593014428e68787f374fbca1f85b776cf7a479b469d25ad",
+      "crop": null,
+      "palette_colors": 256,
+      "caption": "Read-only fictional demo workspace overview, opened without signing in."
+    },
+    {
+      "file": "screens/cached-opening.png",
+      "width": 1280,
+      "height": 800,
+      "bytes": 408219,
+      "sha256": "c74b05985f0dceaf85732c3805e4c98ac8949b75feca82925c838b7b59107508",
+      "source_frame": "cached-opening.png",
+      "source_sha256": "c6b98ab7d6a233e915cae83cf0308f11246d4006a6184c4b72be6ffb7dd8408b",
+      "crop": null,
+      "palette_colors": 256,
+      "caption": "Actual document preview while opening an earlier cached sample result; no new model review is running."
+    },
+    {
+      "file": "demo-review.gif",
+      "width": 1080,
+      "height": 675,
+      "frames": 3,
+      "duration_ms": 6000,
+      "bytes": 286904,
+      "sha256": "836109cfc11937a53da2716712dd88fd047d9de8e888b101f05b6f23f13da68f",
+      "palette_colors": 128,
+      "source_frames": [
+        {
+          "file": "reader.png",
+          "sha256": "cd282937d9621c00dd19c7ddfc43f220cdb76bccf4314df5841d8e3268dfa2bb",
+          "hold_ms": 2000
+        },
+        {
+          "file": "finding.png",
+          "sha256": "0ee22b9f6fd88cf39a88502572b933aa28591bc4c1041c0fd76bf21025f199d1",
+          "hold_ms": 2000
+        },
+        {
+          "file": "trace.png",
+          "sha256": "4cb7f6941ed806adffafe4530f9eabc4ba86a5a4da4c10a39d28dd04f0d77243",
+          "hold_ms": 2000
+        }
+      ],
+      "caption": "Saved synthetic review; actual page and recorded trace interactions, held for readability."
+    },
+    {
+      "file": "demo-cached-opening.gif",
+      "width": 1080,
+      "height": 675,
+      "frames": 3,
+      "duration_ms": 5400,
+      "bytes": 541260,
+      "sha256": "a349ce9d6c2632e0db56e34d610ca4621afeb3d0bbfd3b68aeffe7f62d63fbca",
+      "palette_colors": 128,
+      "source_frames": [
+        {
+          "file": "sample.png",
+          "sha256": "b261596e5d39a9d7bd7361bf3e21f51715e9d2aad28dc480baba67c6c31e2447",
+          "hold_ms": 1800
+        },
+        {
+          "file": "cached-opening.png",
+          "sha256": "c6b98ab7d6a233e915cae83cf0308f11246d4006a6184c4b72be6ffb7dd8408b",
+          "hold_ms": 1800
+        },
+        {
+          "file": "reader.png",
+          "sha256": "cd282937d9621c00dd19c7ddfc43f220cdb76bccf4314df5841d8e3268dfa2bb",
+          "hold_ms": 1800
+        }
+      ],
+      "caption": "Synthetic sample preview and opening an earlier result; no fresh review or replayed stages."
+    }
+  ]
+}

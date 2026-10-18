@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listReviews, listSamples, uploadReview } from "../api";
+import type { ReviewStage } from "../api";
+import type { ReviewPreviewSource } from "../components/ReviewPreview";
 import Dashboard from "../components/Dashboard";
 import { GuestButton, SignInButton } from "../components/Account";
 import { ApiError, SIGN_IN_CODE } from "../api";
@@ -9,7 +11,7 @@ import { useSession } from "../useSession";
 import HeroVisual from "../components/HeroVisual";
 import Progress from "../components/Progress";
 import { contractTypeLabel, languageLabel } from "../format";
-import type { ReviewResult, ReviewSummary, Sample } from "../types";
+import type { ReviewSummary, Sample } from "../types";
 import { pickCurated, randomSample } from "../samples";
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -23,6 +25,21 @@ export default function Home() {
   const errorRef = useRef<HTMLDivElement>(null);
   const [samples, setSamples] = useState<Sample[] | null>(null);
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
+  const [stage, setStage] = useState<ReviewStage>();
+  const [source, setSource] = useState<ReviewPreviewSource>();
+  const previewUrl = useRef<string | null>(null);
+  const request = useRef(0);
+  const running = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      request.current += 1;
+      if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+      previewUrl.current = null;
+    };
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
@@ -54,20 +71,43 @@ export default function Home() {
     if (error) errorRef.current?.focus();
   }, [error]);
 
-  async function run(label: string, job: () => Promise<ReviewResult>) {
+  async function run(file: File) {
+    if (!mounted.current || running.current) return;
+    running.current = true;
+    const ticket = ++request.current;
+    if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+    setStage(undefined);
     setError(null);
-    setBusyLabel(label);
+    setBusyLabel(file.name);
     window.scrollTo(0, 0);
     try {
-      const result = await job();
+      const local = URL.createObjectURL(file);
+      previewUrl.current = local;
+      const image = /^image\/(jpeg|png)$/i.test(file.type) || /\.(jpe?g|png)$/i.test(file.name);
+      setSource({ url: local, name: file.name, kind: image ? "image" : "pdf" });
+      const result = await uploadReview(file, {}, (next) => {
+        if (mounted.current && request.current === ticket) setStage(next);
+      });
+      if (!mounted.current || request.current !== ticket) return;
       navigate(`/reviews/${result.id}`);
     } catch (e) {
-      setBusyLabel(null);
+      if (!mounted.current || request.current !== ticket) return;
       if (e instanceof ApiError && e.code === SIGN_IN_CODE) {
         setNeedSignIn(true);
         return;
       }
       setError(e instanceof Error ? e.message : "The review did not finish. Try again.");
+    } finally {
+      if (request.current === ticket) {
+        if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+        previewUrl.current = null;
+        running.current = false;
+        if (mounted.current) {
+          setBusyLabel(null);
+          setSource(undefined);
+          setStage(undefined);
+        }
+      }
     }
   }
 
@@ -82,7 +122,7 @@ export default function Home() {
       setError("That file is larger than 10 MB. Try a smaller PDF, or only the pages that matter.");
       return;
     }
-    void run(file.name, () => uploadReview(file));
+    void run(file);
   }
 
   function onDrop(e: DragEvent) {
@@ -91,7 +131,7 @@ export default function Home() {
     handleFile(e.dataTransfer.files?.[0]);
   }
 
-  if (busyLabel) return <Progress subject={busyLabel} />;
+  if (busyLabel) return <Progress subject={busyLabel} stage={stage} source={source} />;
 
   // Five on show, one per contract type; the rest behind "See all samples".
   const curated = pickCurated(samples ?? []);

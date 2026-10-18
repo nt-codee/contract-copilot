@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import ReviewPreview from "./ReviewPreview";
+import type { ReviewPreviewSource } from "./ReviewPreview";
 import type { ReviewStage } from "../api";
 
 /** Only a caller with server-reported progress should supply a stage. */
@@ -12,7 +14,7 @@ const LABEL: Record<ReviewStage, string> = {
 };
 
 /** Stages come only from server events; the clock measures elapsed time, never phase completion. */
-export default function Progress({ subject, earlier, stage }: { subject: string; earlier?: string | null; stage?: ReviewStage }) {
+export default function Progress({ subject, earlier, stage, source, embedded = false }: { subject: string; earlier?: string | null; stage?: ReviewStage; source?: ReviewPreviewSource; embedded?: boolean }) {
   const [secs, setSecs] = useState(0);
   useEffect(() => {
     setSecs(0);
@@ -21,18 +23,19 @@ export default function Progress({ subject, earlier, stage }: { subject: string;
     const t = setInterval(() => setSecs(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => clearInterval(t);
   }, [subject, earlier]);
+  const Heading = embedded ? "h2" : "h1";
   const visual = earlier ? "ready" : stage ?? "waiting";
   const status = earlier ? `${earlier}. Opening it.` : stage ? LABEL[stage] : "Waiting for the completed review";
   return (
-    <div className="mx-auto grid max-w-5xl items-center gap-8 px-5 py-12 sm:px-8 md:grid-cols-[minmax(0,1fr)_280px] md:py-20">
+    <div className={`mx-auto grid min-w-0 items-start gap-8 ${embedded ? "py-6" : "max-w-7xl px-5 py-8 sm:px-8 md:py-12"} ${source ? "lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]" : "max-w-5xl md:grid-cols-[minmax(0,1fr)_280px]"}`}>
       <div className="min-w-0 text-white">
         <p className="page-eyebrow">{earlier ? "Earlier review" : "Reviewing"}</p>
-        <h1 className="display mt-2 break-words text-2xl">{subject}</h1>
+        <Heading className={`display mt-2 break-words ${embedded ? "text-xl" : "text-2xl"}`}>{subject}</Heading>
         <p role="status" className="mt-6 text-lg font-semibold">{status}</p>
         <p className="mt-3 text-sm text-desk-text">{earlier ? "This result is already available; a new review is not running." : "The review reads your contract, looks up sources and checks its quotes. The completed result includes the recorded steps."}</p>
         {!earlier && <p className="meta mt-4 text-desk-text">{secs} s elapsed.{!stage && " No live stage update received."}</p>}
       </div>
-      <svg aria-hidden="true" viewBox="0 0 280 240" className={`progress-paper mx-auto w-full max-w-[280px] ${earlier ? "progress-ready" : ""}`} data-stage={visual}>
+      {source ? <ReviewPreview key={source.url} source={source} running={!earlier} /> : <svg aria-hidden="true" viewBox="0 0 280 240" className={`progress-paper mx-auto w-full max-w-[280px] ${earlier ? "progress-ready" : ""}`} data-stage={visual}>
         <ellipse cx="140" cy="219" rx="108" ry="12" fill="#152B54" />
         <g transform="rotate(-7 140 120)"><rect x="57" y="23" width="151" height="190" rx="3" fill="#DCE2EC" /></g>
         <rect x="62" y="18" width="151" height="190" rx="3" fill="#FFFFFF" />
@@ -44,7 +47,7 @@ export default function Progress({ subject, earlier, stage }: { subject: string;
         {visual === "locating" && <g data-illustration="locating" stroke="#2450C0" strokeWidth="3" fill="none"><path d="M73 141v-18h18M185 123h18v18M203 155v18h-18M91 173H73v-18" /><path d="M133 148h10m-5-5v10" /></g>}
         {(["waiting", "researching", "verifying", "ready"] as string[]).includes(visual) && <g className="progress-glass" data-illustration={visual}><circle cx="166" cy="105" r="29" fill="#E3EBFB" fillOpacity=".65" stroke="#2450C0" strokeWidth="5" /><path d="m187 127 26 26" stroke="#2450C0" strokeWidth="10" strokeLinecap="round" />{(visual === "verifying" || visual === "ready") && <path d="m154 105 8 8 17-19" fill="none" stroke="#2450C0" strokeWidth="3" />}</g>}
         <path d="M207 128h19v28l-9-6-10 6z" fill="#9DB9F5" />
-      </svg>
+      </svg>}
     </div>
   );
 }

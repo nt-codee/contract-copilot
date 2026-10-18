@@ -297,3 +297,10 @@
 @media (prefers-reduced-motion: reduce) {
   .progress-paper .progress-glass { animation: none; transform: none; }
 }
+
+/* A decorative sweep over the real source; it never represents a page or completion percentage. */
+@keyframes source-sweep { from { top: 5%; opacity: .25; } to { top: 90%; opacity: .55; } }
+.review-source-scan { animation: source-sweep 5s ease-in-out infinite alternate; box-shadow: 0 0 14px #9db9f5; }
+@media (prefers-reduced-motion: reduce) {
+  .review-source-scan { animation: none; top: 5%; opacity: .35; }
+}

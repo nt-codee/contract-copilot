@@ -1,14 +1,13 @@
 <div align="center">
 
-<img src="docs/public/banner.png" alt="Contract Co-pilot: a contract page with the risky clauses boxed in red and amber, and the explanation beside it" width="100%">
-
 # Contract Co-pilot
 
 **Know what you're signing, before you sign it.**
 
 Contract Co-pilot reviews the vendor contracts that small businesses in Malaysia and Singapore sign without a lawyer.
-Upload a PDF and read the contract's own pages with every risky clause boxed on the exact words, what each one
-means in plain English, the law that applies, and a reply to the vendor that is ready to send.
+Read the contract’s own pages beside quoted findings, the sources used to check them, your company’s rules,
+and a reply you can edit before sending. Covers NDAs, service agreements, employment and freelance, tenancy,
+and hire purchase under Malaysian or Singapore law.
 
 [![Google Cloud](https://img.shields.io/badge/Google_Cloud-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com)
 [![Gemini](https://img.shields.io/badge/Gemini_3.8_Flash-8E75B2?logo=googlegemini&logoColor=white)](https://cloud.google.com/vertex-ai)
@@ -26,76 +25,56 @@ means in plain English, the law that applies, and a reply to the vendor that is 
 
 ## See it work
 
-Watch the 3-minute demo: [watch on Google Drive](https://drive.google.com/file/d/1KztL52YcRw1_XKTOd6A3fr5pkWpoL8yx/view).
+[Open the demo](https://contract-copilot-ordg3tjh7a-as.a.run.app) and choose a sample contract to read its PDF before opening its saved review.
+Or open **Workspace → View the read-only demo** to explore the fictional Kopi Kita company’s contracts, rules and people.
+No sign-in is needed for cached sample reviews, saved replies, keyword search or the law library.
 
-A software subscription agreement, reviewed. Each coloured box sits on the words in the vendor's PDF; the panel explains the clause,
-shows what a balanced term looks like, and quotes the company rule it breaks.
+[Watch the recorded product demo](https://drive.google.com/file/d/1KztL52YcRw1_XKTOd6A3fr5pkWpoL8yx/view).
+The recording shows an earlier interface; the current app may look different.
 
-<p align="center"><img src="docs/public/demo-review.gif" alt="Opening a review: pages on the left, boxed clauses on the contract, and the explanation of each finding on the right" width="100%"></p>
+<p align="center"><img src="docs/public/demo-review.gif" alt="A saved review of a synthetic POS software agreement: selecting a finding scrolls the contract to its boxed clause" width="100%"></p>
 
-One click turns the findings into a reply to the vendor, with one ask per issue, each tied to its clause and page.
+| | |
+|---|---|
+| <img src="docs/public/screens/reader.png" alt="The contract's own pages with risky clauses boxed and numbered, beside the verdict, a summary and the next deadline"> | <img src="docs/public/screens/trace.png" alt="The review X-ray: each recorded lookup in the law, usual-terms and company-rules lanes, with durations"> |
+| The contract beside its findings | The X-ray of the recorded lookups |
+| <img src="docs/public/screens/rules.png" alt="The fictional Kopi Kita company's rules beside the policy PDF"> | <img src="docs/public/screens/workspace.png" alt="The read-only demo workspace for the fictional Kopi Kita company"> |
+| Company rules beside the policy PDF | The read-only demo workspace |
 
-<p align="center"><img src="docs/public/demo-reply.gif" alt="The drafted reply to the vendor, with a numbered list of asks that match the flags on the contract" width="100%"></p>
+These were captured from the live service on synthetic contracts and an invented company; how each was made is in
+[`docs/public/media.md`](docs/public/media.md). Opening a saved sample does not run a new review.
 
 ## What you get
 
-| | |
-|---|---|
-| **A reader, not a report.** Boxes are drawn on the real PDF, on the exact words, so you can check every claim yourself. Each finding is a short title, a one-line summary and the contract's own clause number and page; the detail opens when you want it. | <img src="docs/public/screens/reader.png" alt="Contract page with highlighted clauses and the finding panel" width="520"> |
-| **Citations that are real.** Each finding links Malaysian or Singapore law, or a case, taken from a library where every entry keeps its source URL and the quoted text. | <img src="docs/public/screens/citation.png" alt="A Contracts Act 1950 entry with its text and a link to the official source" width="520"> |
-| **Your own rules, applied.** Upload your company's contracting policy once (owners and admins do this). Reviews flag the clauses that break it and quote the rule. | <img src="docs/public/screens/rules.png" alt="The company rules page: each rule with the contracts that break it" width="520"> |
-| **Dates that matter.** The last day to cancel before an auto-renewal, and other deadlines, collected across your contracts. | <img src="docs/public/screens/dates.png" alt="The summary of a reviewed contract: overall risk, the headline, and the key date, the end of the initial term" width="520"> |
-| **Search every contract your company has reviewed.** Describe the situation in your own words and get the clause and its page. Signed-in search blends meaning (vector) with exact words and phrases (keyword); visitors use keyword search. | <img src="docs/public/screens/library.png" alt="Library search results for the phrase cancel early" width="520"> |
-| **A reply ready to send.** One ask per issue, numbered to match the flags on the contract. Edit it, copy it, or open it in your email. | <img src="docs/public/screens/reply.png" alt="The drafted reply to the vendor" width="520"> |
+- **The contract beside the findings.** Read the actual PDF, select a finding and see its quoted words boxed on the page. Short summaries open into the explanation, suggested change and cited sources.
+- **Progress reported by the server.** Fresh reviews report reading, planning, research, drafting, verification and locating phases as they happen. Older servers show an honest waiting state; opening a cached result is labelled separately.
+- **Your company’s rules.** Owners and admins can upload policies and edit standard positions. Findings quote the relevant rule; the evidence view puts the contract and policy pages side by side.
+- **A reply you control.** Draft an editable response to the employer, landlord, lender, vendor or other party, with asks tied to the findings. New drafts need sign-in; visitors and guests can only open an already saved reply.
+- **A shared contract library.** Search clauses and their pages, track upcoming dates, and review activity and earlier runs. Signed-in search combines meaning and keywords; public search uses keywords.
 
-Also:
+PDFs and JPG/PNG scans are supported, in English or Bahasa Malaysia, up to 10 MB and 40 pages.
+The upload queue reviews files one at a time. Before adding them, choose the contract type, governing law,
+company policies and whether the review represents your business or you personally; automatic choices are available.
 
-- It reads scanned, image-only PDFs and contracts written in Bahasa Malaysia, and explains them in English.
-- **Review options.** Before a review you can set the contract type, the governing law (Malaysia or Singapore), which of your
-  company's policies to check, and whose side you are on (your business, or you personally). Each is automatic unless you choose.
-- **Several contracts at once.** Add or drop several PDFs; they are reviewed one after another, each with the options set when
-  it was added.
-- **Real PDFs.** Quote matching copes with what real PDFs do to text: ligatures, words hyphenated across lines, running headers
-  and footers, curly quotes, two-column layouts, and a quote that runs onto the next page.
+### Accounts and trust
 
-### Teams, accounts and trust
+Google sign-in creates a personal or company workspace, with owner, admin and member roles.
+Reviews, policies and search are scoped to that workspace. Owners and admins manage people, rules and standard positions;
+review history and an audit trail keep the recorded provenance. You can delete a review or the data you own.
 
-New AI work has a USD 1 allowance per signed-in account per UTC day. Calls reserve a bounded amount before each attempt, including retries, fallback models and embeddings. Known usage releases the unused amount; uncertain failed calls keep their reservation. Cached reads are free of new AI calls. This allowance uses conservative token prices rather than reproducing a provider invoice.
+The demo company contains synthetic contracts and invented people. Guests can browse its overview, people, rules and
+activity, but cannot upload, edit, delete or start new paid work. A saved reply must already exist; an uncached reply
+request requires sign-in. There is no guest bypass for a cold instance or a missing saved draft.
 
-The public demo needs no login: anyone can open cached sample reviews and saved replies, search by keyword, and browse the law library.
-New AI reviews and replies, semantic search, and policy processing require Google sign-in. Uploading a contract or policy, and deleting anything, also needs sign-in.
+New paid work requires sign-in and has a **USD 1 allowance per account per UTC day**, including model attempts,
+retries, fallback models, embeddings and policy processing. The service reserves a bounded amount before an attempt;
+known usage releases unused allowance, while uncertain failures keep the reservation. This is conservative token-price
+accounting, not an exact provider invoice. Cached reads do not start new AI calls.
 
-**View the demo company.** One button, no sign-in, opens a read-only view of a made-up company, Kopi Kita Sdn Bhd: its
-contracts, company rules, dashboard, activity and people. A guest can read all of it and can change nothing and cannot start
-a model call; the people shown are invented. The company is the showcase workspace: 30 synthetic contracts in
-[`samples/showcase`](samples/showcase) (8 service agreements, 6 NDAs, 6 employment and freelance, 5 tenancy and 5 hire purchase,
-7 of them in Bahasa Malaysia), loaded with [`scripts/seed_showcase.py`](scripts/seed_showcase.py).
-
-The screens below show a signed-in workspace, with sample data: a made-up company ("Kopi Kita Sdn Bhd"), invented people and invented contracts.
-
-<table>
-<tr>
-<td width="50%"><img src="docs/public/screens/team-overview.png" alt="The admin usage dashboard: reviews per day, overall risk, most flagged clauses, company rules broken most, and laws cited most, with counts and timings only" width="100%"><br><sub><b>Dashboards, aggregates only.</b> Usage, risk mix, flagged clauses and citations. Counts and timings, never contract text.</sub></td>
-<td width="50%"><img src="docs/public/screens/team-evidence.png" alt="Side-by-side evidence view: the contract page with a boxed renewal clause on the left, the company's contracting policy on the right" width="100%"><br><sub><b>Evidence, side by side.</b> The boxed clause in the contract next to the company rule it is checked against.</sub></td>
-</tr>
-<tr>
-<td width="50%"><img src="docs/public/screens/team-activity.png" alt="The Activity page: a dated list of who reviewed, uploaded, exported and deleted what, with the model and knowledge-base version on each review" width="100%"><br><sub><b>An audit trail.</b> Who did what and when, with the model and knowledge-base version on each review.</sub></td>
-<td width="50%" align="center"><img src="docs/public/screens/team-account.png" alt="The account menu in the sidebar: signed-in user, a switch between the company workspace and a personal one, delete my data, and sign out" width="260"><br><sub><b>Workspaces and your data.</b> Switch workspace, delete your data, sign out.</sub></td>
-</tr>
-</table>
-
-| | |
-|---|---|
-| **A read-only guest view.** Send `X-Guest: demo` with no token and you get the demo company as a viewer. Writes return 403; any other workspace is a 404. | `GET /api/guest` |
-| **Google sign-in.** Google Cloud Identity Platform; the API checks every ID token against the project. | `GET /api/me`, `GET /api/auth/config` |
-| **A workspace per company.** The first person from a Google Workspace domain creates the company workspace; later colleagues from that domain join it. A Gmail user gets a personal workspace. Reviews, policies and search never cross workspaces. | `/api/workspaces` |
-| **Roles and invites.** Owner, admin and member. Owners and admins invite (a code valid for 7 days), change roles, remove people and manage company policies and standard positions; members review, search, draft and upload contracts. | `/api/workspaces/{id}/invites`, `/api/invites/{code}/accept` |
-| **Your standard positions.** Edit what a balanced clause means for your company, per contract type and clause. The review checks against your version and says so. | `/api/playbook` |
-| **An audit trail.** Every upload, review, re-review, reply, view, export and delete is recorded (who, what, when, which model and knowledge-base version). It holds metadata, never contract text. Owners and admins see the whole workspace; a member sees their own. | `/api/activity` |
-| **Review provenance and history.** Each review records the model, the knowledge-base version, the prompt version and the app version, and a hash of the PDF. Reviewing the same document again links to the earlier run. | `/api/reviews/{id}/history` |
-| **Hardened by default.** Security headers on every response (`X-Content-Type-Options`, `X-Frame-Options: DENY`, referrer and permissions policies, a cross-origin-opener policy that keeps the sign-in popup working, and a Content-Security-Policy that is report-only until it is switched to enforce). The upload size is checked before the file is parsed, filenames are cleaned, and tokens and model output are kept out of the logs. | `app/security.py` |
-| **Your data, deletable.** Delete a review, or everything you own. | `DELETE /api/reviews/{id}`, `POST /api/me/delete` |
-| **Dashboards, aggregates only.** Owners and admins see their workspace's usage, risk mix, citations, cost and deadlines. Platform administrators see the same across all workspaces, plus the audit metadata, and never any contract text. | `/api/workspaces/{id}/overview`, `/api/admin/*` |
+**Limits to keep in mind.** Finding the quoted text and checking that a source exists do not prove the legal interpretation
+or risk rating is correct. The prototype can miss issues or make unsupported claims; verify the cited words and consult a
+lawyer when needed. Scans can take longer than text PDFs. A completed review is saved to the Library, but refreshing or
+closing an active review does not have a durable background-resume guarantee; a pending upload queue depends on its page.
 
 ## How it works
 
@@ -113,7 +92,7 @@ flowchart TD
   V -->|quote is on the stated page<br/>citation is in the library<br/>law is of the locked jurisdiction| K[Keep]
   V -->|cannot be verified| X[Remove it, and record why]
   K --> E[Locate the words on the PDF<br/>and draw the evidence boxes]
-  E --> M[Draft the reply to the vendor]
+  E --> M[Draft the reply to the other party]
 ```
 
 The loop is bounded: two model turns and at most 16 lookups per review. The first turn plans every lookup at once, so they run
@@ -122,8 +101,9 @@ side by side instead of one after another.
 **Three rules decide what you see.** A finding is shown only if its quote is found on the page it names. A citation is shown only
 if it comes from the knowledge library, with its text copied from the source and never written by the model. And the law cited
 is that of the contract's governing jurisdiction: it is fixed once, early in the review, and a citation from the other
-jurisdiction is removed. Anything that fails a check is removed from the result and recorded with the review as a "removed
-claim" with the reason, so you can see what the model said and why it was not shown.
+jurisdiction is removed. Unsupported claims are recorded with reasons when removed. A high-risk rating whose consequence cannot be verified
+may instead be reduced to medium while the finding is kept; the review distinguishes these adjustments from removals.
+These checks constrain the output, but do not establish that every retained interpretation is correct.
 
 Matching a quote is tolerant of how PDFs store text, not of what the contract says. Both sides are reduced to letters and digits,
 ligatures and curly quotes are folded, hyphenated line breaks are rejoined and page furniture (page numbers, running headers and
@@ -132,52 +112,33 @@ so a changed figure or a dropped "not" is removed.
 
 ## Measured results
 
-The newest evaluation run (`eval/results/20261018T075234Z`, model `gemini-3.8-flash`) reviewed **all 25 synthetic contracts** in
-the repository against a hand-written answer key: 6 NDAs, 10 service agreements, and 3 each of employment, tenancy and hire
-purchase. Four are in Bahasa Malaysia and one is a scan. The contracts are invented, so treat this as a regression check on a
-small set, not as a claim about real-world accuracy.
+The stored run **[18 October 2026, 12:42:53 UTC](eval/results/20261018T124253Z.md)** used `gemini-3.8-flash`
+on 25 synthetic contracts with hand-written answer keys. These are results for that artifact, not a guarantee for the
+current deployment or real contracts. [Raw results and outputs](eval/results/20261018T124253Z.json) are available for inspection.
 
-| Measure | Result |
+| Measure | That run |
 |---|---|
-| Expected issues found | **61 of 76 (80%)**: 44 of 54 high risk, 17 of 22 medium |
-| Issues the review reported | 105 findings in total |
-| False highs (a high flag on a clause the key says is not high) | **0** |
-| Contract type read correctly | 25 of 25 |
-| Overall risk label matches the key | 23 of 25 (one called high where the key says medium, one medium where it says high) |
-| Time per review, median / slowest | 23.3 s / 50.4 s |
-| LLM cost per review, mean | $0.0221 (embeddings excluded, about $0.001 more) |
-| Claims removed by verification | 3 of 248 claims made (1.2%); all 3 were findings, no citation was removed |
-| Reviews that errored | 0 of 25 |
+| Expected issues found | 70 of 76 (92%); 49/54 high, 21/22 medium |
+| False highs against the answer key’s excluded high-risk clause types | 0 |
+| Completed / errored reviews | 25 / 0 |
+| Median / slowest review | 36.0 s / 160.2 s |
+| Mean model cost per review | USD 0.02657, excluding embeddings |
 
-By contract type, expected issues found:
+A later **[fixed eight-case validation](eval/results/20261018T152353Z.md)** on backend `88801f2` found 28 of 29
+expected issues, with no answer-key false highs. Its median / slowest review was 37.4 s / 131.0 s; the mean successful
+model-call estimate was USD 0.02873, excluding embeddings. This is a smaller, separate scope, combined from two sequential
+runs; [the raw artifact](eval/results/20261018T152353Z.json) preserves the initial budget-blocked attempts and provenance.
+It does not replace the 25-case benchmark or establish real-world accuracy. The product’s USD 1 daily allowance is unchanged.
 
-| Contract type | Contracts | Found |
-|---|---|---|
-| NDA | 6 | 15 of 18 |
-| Service agreement | 10 | 22 of 31 |
-| Employment and freelance | 3 | 8 of 9 |
-| Tenancy | 3 | 7 of 9 |
-| Hire purchase | 3 | 9 of 9 |
-| **The three newer packs** | 9 | **24 of 27** |
-| **NDA and service agreement** | 16 | **37 of 49** |
+**Recall is not overall quality.** The completed assessment of these same eight fresh outputs is **FAIL**:
+citation support averaged **6.875/10** and restraint **6.375/10**, both below the required 7. Other scored averages met
+that threshold, but they do not offset these failures or establish that individual findings are correct. Email-draft
+quality is **not assessed (N/A): zero drafts were tested**. Zero false highs against a limited answer key does not
+establish that every finding or severity is correct. Both dated runs include a scanned contract taking longer than
+two minutes; no universal speed or near-zero-cost promise is made.
 
-The counts are small (three contracts per newer pack), so the gap between the two groups is not a finding. The weak spots are
-visible in the run's clause table: data protection (0 of 2) and governing law (0 of 2) were not found, and termination was found
-in 6 of 10.
-
-<p align="center"><img src="docs/public/eval-latency.svg" alt="Bar chart of review time for each of the 25 synthetic contracts, with the median at 23.3 seconds" width="100%"></p>
-
-**What changed since the first full run.** The same 25 contracts were run earlier the same day (`20261018T072735Z`): 23 reviews
-completed and 2 errored because the AI service did not respond, 53 of 67 expected issues found, 3 false highs, median 21.7 s,
-slowest 161.6 s, $0.0202 per review. On the 23 contracts that completed both times, the expected issues found went from 53 to
-52 of 67, so the fixes did not raise recall. What they changed: the 3 false highs are gone, two contract-type misreads
-(`emp-03-freelance-bm`, `hp-03-personal-loan`) are read correctly, and all 25 reviews now complete.
-
-**The earlier 8-contract check.** The first scored run (`20261018T045101Z`) covered only the 4 NDAs and 4 service agreements
-that existed then: 20 of 20 expected issues found, 3 false highs, median 17.9 s, slowest 62.6 s, $0.0176 per review. On those
-same 8 contracts the newest run finds 19 of 20 (it misses the governing-law issue in `nda-03-predatory`), with no false highs.
-Timing depends on how busy the model endpoint is. All runs are kept in [`eval/results`](eval/results).
-Reproduce a run with `scripts/eval.py` (see below).
+[Earlier runs](eval/results) remain available. Running `scripts/eval.py` makes paid model calls; reproduce it only with
+configured access and an explicit budget.
 
 ## Coverage
 
@@ -218,8 +179,9 @@ flowchart LR
   R --> S[(Cloud Storage: uploads,<br/>7-day lifecycle)]
 ```
 
-Cloud services sit behind adapters chosen by one environment variable, so the review logic imports no cloud SDK and the whole
-pipeline runs offline in tests.
+Cloud services sit behind adapters selected by configuration. The review logic imports no cloud SDK, and local adapters
+let tests run without model or cloud calls. Fresh review responses can stream reported phases over the existing request;
+this is not a durable background-job system.
 
 | Layer | Google Cloud |
 |---|---|
@@ -230,10 +192,10 @@ pipeline runs offline in tests.
 | Operations | Cloud Monitoring alerts (5xx rate, latency, uptime check), a Cloud Billing budget, labels on every resource |
 | Infrastructure as code | Pulumi (Python) in [`infrastructure/gcp`](infrastructure/gcp): bootstrap script, `foundation` stack, `app` stack |
 
-Limits on the public URL: PDFs up to 10 MB and 40 pages; 10 reviews per hour per address and 30 per signed-in user; and a daily
-cap on fresh model reviews across the whole service (300 by default, counted in Firestore, platform administrators exempt), so a
-public link cannot run up the bill. A guest, copies of a sample that was already reviewed, and reply drafts do not count towards
-the cap. If the counter cannot be reached, the review is refused rather than allowed.
+Alongside the per-account allowance, fresh reviews have per-address and per-user rate limits and a service-wide daily
+review-count cap. The count cap covers reviews; the account allowance also covers other paid work such as drafts and
+embeddings. Cached results and copies do not start a new model review. Accounting failures refuse new paid work rather
+than bypassing the allowance.
 
 ## Repository layout
 
@@ -253,17 +215,40 @@ docs/public/         images for this README, and the roadmap
 
 ## Run it locally
 
+Install Python 3.12+, [uv](https://docs.astral.sh/uv/) and Node.js with npm, then run the offline tests:
+
 ```bash
-cd services/api && uv sync
-CLOUD=local LLM=fake uv run pytest -q             # offline tests
-CLOUD=local LLM=vertex uv run python ../../scripts/review.py ../../samples/contracts/msa-02-autorenew.pdf
-CLOUD=local LLM=vertex uv run python ../../scripts/eval.py   # score the samples; writes eval/results
-cd ../../web && npm ci && npm run dev             # http://localhost:5173, proxies /api
+cd services/api
+uv sync
+CLOUD=local LLM=fake uv run pytest -q
 ```
 
-Real reviews need Google Cloud application-default credentials with access to Vertex AI. With `CLOUD=local` the API accepts
-test tokens (`Authorization: Bearer test:<uid>:<email>`, optionally `:hd=<domain>`) instead of Identity Platform ID tokens; they
-are rejected on a deployed service.
+Start the local API in that terminal:
+
+```bash
+CLOUD=local LLM=fake uv run uvicorn --factory app.main:create_app --reload --port 8000
+```
+
+In a second terminal, from the repository root:
+
+```bash
+cd web
+npm ci
+VITE_API_PROXY=http://localhost:8000 npm run dev   # http://localhost:5173
+```
+
+The fake model is for exercising the interface and tests, not evaluating review quality. Real reviews need Google Cloud
+application-default credentials with Vertex AI access and `LLM=vertex`. `CLOUD=local` accepts test tokens
+(`Authorization: Bearer test:<uid>:<email>`, optionally `:hd=<domain>`); deployed services reject them.
+The normal Google sign-in flow needs Identity Platform configured, so a fresh local browser is not signed in automatically.
+
+For a real, paid single-file review or evaluation:
+
+```bash
+cd services/api
+CLOUD=local LLM=vertex uv run python ../../scripts/review.py ../../samples/contracts/msa-02-autorenew.pdf
+CLOUD=local LLM=vertex uv run python ../../scripts/eval.py
+```
 
 ## Deploy
 
