@@ -105,7 +105,7 @@ contracts with hand-written answer keys.
   and the review says why.
 - **What we are still improving.** An independent review of eight outputs scored coverage 8.0/10 and usefulness 7.75/10.
   It found some citations broader than their source supports and some severities higher than needed; general fixes for
-  both are in, and a re-run of the same eight found 27 of 29 expected issues with no false highs.
+  both are in, and the latest re-run of the same eight found all 29 expected issues.
 - **These are synthetic contracts**, not a guarantee for real ones. Scans can take over two minutes.
 
 All figures, caveats and raw artifacts: [evaluation details](docs/public/details.md#evaluation).
