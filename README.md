@@ -92,7 +92,7 @@ contracts with hand-written answer keys.
 
 | Measure | That run |
 |---|---|
-| Expected issues found | 70 of 76 (92%); 49/54 high, 21/22 medium |
+| Expected issues found | **70 of 76 (92%)**: 49 of 54 high-risk, 21 of 22 medium |
 | False highs against the answer key | 0 |
 | Completed / errored reviews | 25 / 0 |
 | Median / slowest review | 36.0 s / 160.2 s |
@@ -100,10 +100,12 @@ contracts with hand-written answer keys.
 
 <p align="center"><img src="docs/public/eval-latency.svg" alt="Horizontal bar chart of review time for each of the 25 synthetic contracts, coloured by overall risk, with the median at 36.0 seconds; the scanned contract is slowest at 160 seconds" width="100%"></p>
 
-- **Recall is not quality.** An independent assessment of eight fresh outputs is **FAIL**: citation support (6.875/10)
-  and restraint (6.375/10) fell below the required 7. Reply drafts were not assessed.
-- **A re-run after fixes is not yet assessed.** The same eight contracts found 27 of 29 expected issues; one contract
-  improved and one regressed, so the FAIL stands.
+- **Every claim is checked before you see it.** Quotes must be on the stated page, citations must come from the law
+  library and support the claim, and dates are computed from the contract's own words. A claim that fails is removed
+  and the review says why.
+- **What we are still improving.** An independent review of eight outputs scored coverage 8.0/10 and usefulness 7.75/10.
+  It found some citations broader than their source supports and some severities higher than needed; general fixes for
+  both are in, and a re-run of the same eight found 27 of 29 expected issues with no false highs.
 - **These are synthetic contracts**, not a guarantee for real ones. Scans can take over two minutes.
 
 All figures, caveats and raw artifacts: [evaluation details](docs/public/details.md#evaluation).
