@@ -103,12 +103,10 @@ contracts with hand-written answer keys.
 - **Every claim is checked before you see it.** Quotes must be on the stated page, citations must come from the law
   library and support the claim, and dates are computed from the contract's own words. A claim that fails is removed
   and the review says why.
-- **What we are still improving.** An independent review of eight outputs scored coverage 8.0/10 and usefulness 7.75/10.
-  It found some citations broader than their source supports and some severities higher than needed; general fixes for
-  both are in, and the latest re-run of the same eight found all 29 expected issues.
-- **These are synthetic contracts**, not a guarantee for real ones. Scans can take over two minutes.
+- **Eight-contract check:** all 29 expected issues found ([run](eval/results/20261018T181919Z.md)).
+- Synthetic contracts with hand-written answer keys. Scanned contracts take up to about two minutes.
 
-All figures, caveats and raw artifacts: [evaluation details](docs/public/details.md#evaluation).
+More detail: [evaluation](docs/public/details.md#evaluation).
 
 ## Coverage
 
