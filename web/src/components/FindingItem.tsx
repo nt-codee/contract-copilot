@@ -1,8 +1,11 @@
 import { forwardRef } from "react";
-import { pdfUrl } from "../api";
+import { openPdfTab, pdfUrl } from "../api";
+import { getSession } from "../session";
 import type { Marked } from "./Reader";
 import { FlagTab, RiskLabel } from "./Risk";
 import Sources from "./Sources";
+import { Verified } from "./Checks";
+import type { Citation } from "../types";
 
 interface Props {
   m: Marked;
@@ -13,11 +16,12 @@ interface Props {
   onPick: (id: string) => void;
   /** Narrow screens: say that tapping opens the page. */
   opensPage?: boolean;
+  onEvidence?: (c: Citation) => void;
 }
 
 /** One finding in the rail: a header that selects it, and its detail when open. */
 const FindingItem = forwardRef<HTMLButtonElement, Props>(function FindingItem(
-  { m, reviewId, open, locating, onPick, opensPage },
+  { m, reviewId, open, locating, onPick, opensPage, onEvidence },
   ref,
 ) {
   const { f, n } = m;
@@ -72,7 +76,8 @@ const FindingItem = forwardRef<HTMLButtonElement, Props>(function FindingItem(
               <dd className="mt-0.5 font-medium text-ink">{f.suggested_ask}</dd>
             </div>
           </dl>
-          <Sources items={f.citations ?? []} idBase={panelId} />
+          <Sources items={f.citations ?? []} idBase={panelId} onEvidence={onEvidence} />
+          <Verified f={f} />
           {!onPage && !locating && (
             <figure className="mt-4">
               <blockquote className="border-l-2 border-ink-mute pl-3 font-doc text-[1rem] leading-relaxed text-ink">
@@ -85,6 +90,11 @@ const FindingItem = forwardRef<HTMLButtonElement, Props>(function FindingItem(
             href={pdfUrl(reviewId, f.page)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => {
+              if (!getSession().user) return;
+              e.preventDefault();
+              void openPdfTab(pdfUrl(reviewId, f.page));
+            }}
             className="mt-3 inline-flex min-h-[44px] items-center gap-1 text-[0.95rem] font-semibold text-desk underline underline-offset-4 hover:text-ink"
           >
             Open page {f.page} of the PDF <span aria-hidden="true">↗</span>

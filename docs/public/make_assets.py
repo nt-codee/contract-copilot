@@ -102,11 +102,10 @@ def newest_eval() -> tuple[Path, dict]:
 
 def chart() -> None:
     p, data = newest_eval()
-    rows = data["scores"]
+    order = {"nda": 0, "msa": 1, "emp": 2, "ten": 3, "hp": 4}
+    rows = sorted(data["scores"], key=lambda r: (order.get(r["id"].split("-")[0], 9), r["id"]))
     names = [r["id"] for r in rows]
     secs = [r["latency_ms"] / 1000 for r in rows]
-    cost = [r["cost_usd_est"] for r in rows]
-    n_find = [r["findings"] for r in rows]
     s_sorted = sorted(secs)
     mid = len(s_sorted) // 2
     p50 = (s_sorted[mid - 1] + s_sorted[mid]) / 2 if len(s_sorted) % 2 == 0 else s_sorted[mid]
@@ -114,37 +113,38 @@ def chart() -> None:
                for r in rows]
 
     plt.rcParams.update({"font.family": ["Helvetica Neue", "Helvetica", "DejaVu Sans"], "svg.fonttype": "none"})
-    fig, ax = plt.subplots(figsize=(9.2, 4.6), dpi=100)
+    fig, ax = plt.subplots(figsize=(11, 5.2), dpi=100)
     fig.patch.set_facecolor(PAPER)
     ax.set_facecolor(PAPER)
-    bars = ax.bar(range(len(rows)), secs, color=colours, width=0.62)
+    bars = ax.bar(range(len(rows)), secs, color=colours, width=0.68)
     ax.axhline(p50, color=INK, lw=1, ls=(0, (4, 3)))
-    ax.text(-0.45, p50 + 1.2, f"median {p50:.1f} s", ha="left", color=INK, fontsize=10, style="italic")
-    for b, s, c, f in zip(bars, secs, cost, n_find):
-        ax.text(b.get_x() + b.get_width() / 2, s + 1.2, f"{s:.0f} s", ha="center", color=INK, fontsize=10,
-                fontweight="bold", bbox={"facecolor": PAPER, "edgecolor": "none", "pad": 1.5})
-        ax.text(b.get_x() + b.get_width() / 2, 1.5, f"${c:.3f}\n{f} found", ha="center", va="bottom",
-                color="#FFFFFF", fontsize=8)
+    for b, s in zip(bars, secs):
+        ax.text(b.get_x() + b.get_width() / 2, s + 0.8, f"{s:.0f}", ha="center", color=INK, fontsize=8, fontweight="bold")
     ax.set_xticks(range(len(rows)))
-    ax.set_xticklabels([n.replace("-", "\n", 1) for n in names], fontsize=9, color=INK)
+    ax.set_xticklabels(names, fontsize=8, color=INK, rotation=60, ha="right")
     ax.set_ylabel("seconds to review", color=INK)
     ax.tick_params(colors=INK, length=0)
-    ax.set_ylim(0, max(secs) * 1.18)
+    ax.set_ylim(0, max(secs) * 1.15)
     for side in ("top", "right", "left"):
         ax.spines[side].set_visible(False)
     ax.spines["bottom"].set_color(INK)
     ax.yaxis.grid(True, color="#DDD6C6", lw=0.8)
     ax.set_axisbelow(True)
-    ax.set_title("Time and cost to review each synthetic contract", loc="left", color=INK, fontsize=13,
+    ax.set_title("Time to review each synthetic contract", loc="left", color=INK, fontsize=13,
                  fontweight="bold", pad=24)
     ax.text(0, 1.04, f"{len(rows)} contracts, run {p.stem}. Bar colour = overall risk the review gave: "
-            "high (red), medium (amber), low (ink).", transform=ax.transAxes, color=MUTED, fontsize=9)
+            "high (red), medium (amber), low (ink). "
+            f"Dashed line = median, {p50:.1f} s.", transform=ax.transAxes, color=MUTED, fontsize=9)
     fig.tight_layout()
     fig.savefig(OUT / "eval-latency.svg", format="svg", metadata={"Date": None, "Creator": "make_assets.py"})
 
 
 if __name__ == "__main__":
-    banner()
-    screens()
-    chart()
+    import sys
+    if "--chart-only" in sys.argv:
+        chart()
+    else:
+        banner()
+        screens()
+        chart()
     print("done")

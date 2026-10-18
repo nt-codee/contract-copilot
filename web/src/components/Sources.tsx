@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { isCompanyPosition, knowledgeId } from "./Evidence";
 import type { Citation, CitationKind } from "../types";
 
 const KIND: Record<CitationKind, string> = {
@@ -29,7 +30,7 @@ function label(c: Citation): string {
 }
 
 /** Compact source chips; one opens at a time to show its excerpt. */
-export default function Sources({ items, idBase }: { items: Citation[]; idBase: string }) {
+export default function Sources({ items, idBase, onEvidence }: { items: Citation[]; idBase: string; onEvidence?: (c: Citation) => void }) {
   const [open, setOpen] = useState<number | null>(null);
   if (items.length === 0) return null;
   const c = open == null ? null : items[open];
@@ -50,7 +51,7 @@ export default function Sources({ items, idBase }: { items: Citation[]; idBase: 
                 open === i ? "border-ink bg-ink text-white" : "border-paper-line bg-white text-ink hover:border-ink-mute"
               }`}
             >
-              <span className={`tab shrink-0 !text-[0.72rem] ${open === i ? "text-desk-text" : "text-ink-mute"}`}>{KIND[it.kind]}</span>
+              <span className={`tab shrink-0 !text-[0.72rem] ${open === i ? "text-desk-text" : "text-ink-mute"}`}>{isCompanyPosition(it) ? "Your company’s position" : KIND[it.kind]}</span>
               <span className="line-clamp-2">{label(it)}</span>
             </button>
           </li>
@@ -65,9 +66,19 @@ export default function Sources({ items, idBase }: { items: Citation[]; idBase: 
           </p>
           <blockquote className="mt-1 font-doc text-[0.98rem] leading-relaxed text-ink">“{plain(c.excerpt)}”</blockquote>
           <span className="mt-1 flex flex-wrap gap-x-5">
+          {onEvidence && (
+            <button
+              type="button"
+              onClick={() => onEvidence(c)}
+              className="inline-flex min-h-[44px] items-center gap-1.5 text-[0.92rem] font-semibold text-desk underline underline-offset-4 hover:text-ink"
+            >
+              <svg width="16" height="12" viewBox="0 0 16 12" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="1" y="1" width="6" height="10" rx="1" /><rect x="9" y="1" width="6" height="10" rx="1" /></svg>
+              See it side by side
+            </button>
+          )}
           {c.kind !== "company" && (
             <Link
-              to={`/knowledge/${encodeURIComponent(c.kind === "playbook" && !c.ref.startsWith("playbook:") ? `playbook:${c.ref}` : c.ref)}`}
+              to={`/knowledge/${encodeURIComponent(knowledgeId(c))}`}
               className="inline-flex min-h-[44px] items-center gap-1 text-[0.92rem] font-semibold text-desk underline underline-offset-4 hover:text-ink"
             >
               {c.kind === "playbook" ? "Why this is the usual term" : "Read it in full"} <span aria-hidden="true">→</span>
@@ -78,9 +89,9 @@ export default function Sources({ items, idBase }: { items: Citation[]; idBase: 
               See your rules <span aria-hidden="true">→</span>
             </Link>
           )}
-          {(c.kind === "law" || c.kind === "case") && c.url && (
+          {(c.kind === "law" || c.kind === "case") && (c.source_url || c.url) && !onEvidence && (
             <a
-              href={c.url}
+              href={(c.source_url || c.url)!}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-1 inline-flex min-h-[44px] items-center gap-1 text-[0.92rem] font-semibold text-desk underline underline-offset-4 hover:text-ink"

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 import os
+import random
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -32,6 +33,7 @@ TRANSCRIBE_TIMEOUT_MS = 120_000  # a whole scanned PDF in one call legitimately 
 EMBED_TIMEOUT_MS = 30_000
 RETRY_STATUSES = [429, 500, 503, 504]
 EMBED_WORKERS = 8
+QUOTA_BACKOFF_S = (6, 12, 24)  # extra waits after a 429 that survived the SDK retries (adds at most ~42 s)
 
 
 def _retry_options(attempts: int = LLM_ATTEMPTS, timeout_ms: int = GENERATE_TIMEOUT_MS):
@@ -80,11 +82,21 @@ class GeminiLLM:
     def _call(self, purpose: str, contents, config):
         self.calls += 1
         t0 = time.monotonic()
-        try:
-            resp = self._client.models.generate_content(model=self.model, contents=contents, config=config)
-        except Exception as e:
-            raise _upstream_failure(f"gemini {purpose} call", e,
-                                    "The AI service did not respond. Please try again in a minute.") from e
+        resp = None
+        for wait in (*QUOTA_BACKOFF_S, None):
+            try:
+                resp = self._client.models.generate_content(model=self.model, contents=contents, config=config)
+                break
+            except Exception as e:
+                # The SDK has already retried (3 tries, 2 s and 4 s apart), which is too short for a quota
+                # window. A 429 gets a few longer waits; every other failure ends here as before.
+                if getattr(e, "code", None) == 429 and wait is not None:
+                    pause = wait + random.uniform(0, 2)
+                    log.warning("gemini %s quota exhausted (429); waiting %.0fs before trying again", purpose, pause)
+                    time.sleep(pause)
+                    continue
+                raise _upstream_failure(f"gemini {purpose} call", e,
+                                        "The AI service did not respond. Please try again in a minute.") from e
         um = resp.usage_metadata
         log.info("gemini %s: %.1fs (in %s, out %s, thinking %s tokens)", purpose, time.monotonic() - t0,
                  um.prompt_token_count if um else "?", um.candidates_token_count if um else "?",

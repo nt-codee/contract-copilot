@@ -1,6 +1,18 @@
 import type {
+  AdminUserRow,
+  AuditEvent,
+  Invite,
+  Member,
+  Overview,
+  PlaybookItem,
+  PlaybookOverrideIn,
+  User,
+  Workspace,
+  WorkspaceRef,
   ApiErrorBody,
+  ClauseType,
   CompanyDoc,
+  Risk,
   KnowledgeEntry,
   NegotiationDraft,
   ReviewResult,
@@ -21,10 +33,17 @@ export class ApiError extends Error {
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+async function send(path: string, init?: RequestInit): Promise<Response> {
+  const { authHeaders } = await import("./session");
+  const headers = new Headers(init?.headers);
+  for (const [k, v] of Object.entries(await authHeaders())) headers.set(k, v);
+  return fetch(path, { ...init, headers });
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(path, init);
+    res = await send(path, init);
   } catch {
     throw new ApiError(
       "network",
@@ -43,11 +62,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(code, message);
   }
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
 
 export const pdfUrl = (id: string, page?: number) =>
-  `/api/reviews/${encodeURIComponent(id)}/pdf${page ? `#page=${page}` : ""}`;
+  (MOCK ? "/samples/msa-02-autorenew.pdf" : `/api/reviews/${encodeURIComponent(id)}/pdf`) + (page ? `#page=${page}` : "");
 
 export async function listSamples(): Promise<Sample[]> {
   if (MOCK) {
@@ -58,8 +78,16 @@ export async function listSamples(): Promise<Sample[]> {
   return request<Sample[]>("/api/samples");
 }
 
+async function mockSignedIn(): Promise<boolean> {
+  const { getSession } = await import("./session");
+  return !!getSession().user;
+}
+
+export const SIGN_IN_CODE = "sign_in_required";
+
 export async function uploadReview(file: File): Promise<ReviewResult> {
   if (MOCK) {
+    if (!(await mockSignedIn())) throw new ApiError(SIGN_IN_CODE, "Sign in with Google to review your own contract.");
     const m = await import("./mocks");
     await wait(6500);
     return { ...m.mockReview, filename: file.name };
@@ -85,6 +113,10 @@ export async function getReview(id: string): Promise<ReviewResult> {
   if (MOCK) {
     const m = await import("./mocks");
     await wait(150);
+    if (id === "rv_prev") {
+      const w = await mw();
+      return { ...m.mockReview, id, previous_review_id: null, findings: w.mockPreviousReview.findings.map((f) => ({ ...m.mockReview.findings[0], ...f, risk: f.risk as Risk, clause_type: f.clause_type as ClauseType })) };
+    }
     return m.mockReview;
   }
   return request<ReviewResult>(`/api/reviews/${encodeURIComponent(id)}`);
@@ -139,6 +171,7 @@ export async function listCompanyDocs(): Promise<CompanyDoc[]> {
 
 export async function uploadCompanyDoc(file: File): Promise<CompanyDoc> {
   if (MOCK) {
+    if (!(await mockSignedIn())) throw new ApiError(SIGN_IN_CODE, "Sign in with Google to add your own company rules.");
     const m = await import("./mocks");
     await wait(2500);
     const doc: CompanyDoc = {
@@ -170,12 +203,7 @@ export async function deleteCompanyDoc(id: string): Promise<void> {
     if (i >= 0) m.mockCompanyDocs.splice(i, 1);
     return;
   }
-  const res = await fetch(`/api/company/docs/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => null);
-  if (!res) throw new ApiError("network", "We could not reach the server. Check your connection and try again.");
-  if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as Partial<ApiErrorBody> | null;
-    throw new ApiError(body?.error?.code ?? "unknown", body?.error?.message ?? "The document was not removed. Try again.");
-  }
+  await request<void>(`/api/company/docs/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export interface KnowledgeQuery {
@@ -206,4 +234,139 @@ export async function getKnowledge(id: string): Promise<KnowledgeEntry> {
     return e;
   }
   return request<KnowledgeEntry>(`/api/knowledge/${encodeURIComponent(id)}`);
+}
+
+// ---- signed-in workspace (round 4) ----
+
+const mw = () => import("./mocks/workspace");
+
+export async function getMe(): Promise<User> {
+  if (MOCK) return (await mw()).mockMe();
+  return request<User>("/api/me");
+}
+
+export async function deleteMyData(): Promise<{ deleted: Record<string, number> }> {
+  if (MOCK) return (await mw()).mockDeleteMe();
+  return request("/api/me/delete", { method: "POST" });
+}
+
+export async function listActivity(limit = 100): Promise<AuditEvent[]> {
+  if (MOCK) return (await mw()).mockActivity();
+  return request<AuditEvent[]>(`/api/activity?limit=${limit}`);
+}
+
+export async function reviewHistory(id: string): Promise<ReviewSummary[]> {
+  if (MOCK) return (await mw()).mockHistory(id);
+  return request<ReviewSummary[]>(`/api/reviews/${encodeURIComponent(id)}/history`);
+}
+
+export async function getWorkspace(id: string): Promise<Workspace> {
+  if (MOCK) return (await mw()).mockWorkspace(id);
+  return request<Workspace>(`/api/workspaces/${encodeURIComponent(id)}`);
+}
+
+export async function renameWorkspace(id: string, name: string): Promise<Workspace> {
+  if (MOCK) return (await mw()).mockRename(id, name);
+  return request<Workspace>(`/api/workspaces/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function listMembers(id: string): Promise<Member[]> {
+  if (MOCK) return (await mw()).mockMembers();
+  return request<Member[]>(`/api/workspaces/${encodeURIComponent(id)}/members`);
+}
+
+export async function setMemberRole(id: string, uid: string, role: Member["role"]): Promise<Member> {
+  if (MOCK) return (await mw()).mockSetRole(uid, role);
+  return request<Member>(`/api/workspaces/${encodeURIComponent(id)}/members/${encodeURIComponent(uid)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
+}
+
+export async function removeMember(id: string, uid: string): Promise<void> {
+  if (MOCK) return (await mw()).mockRemoveMember(uid);
+  return request<void>(`/api/workspaces/${encodeURIComponent(id)}/members/${encodeURIComponent(uid)}`, { method: "DELETE" });
+}
+
+export async function createInvite(id: string, role: Invite["role"]): Promise<Invite> {
+  if (MOCK) return (await mw()).mockInvite(id, role);
+  return request<Invite>(`/api/workspaces/${encodeURIComponent(id)}/invites`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role }),
+  });
+}
+
+export async function acceptInvite(code: string): Promise<WorkspaceRef> {
+  if (MOCK) return (await mw()).mockAccept(code);
+  return request<WorkspaceRef>(`/api/invites/${encodeURIComponent(code)}/accept`, { method: "POST" });
+}
+
+export async function workspaceOverview(id: string, days = 30): Promise<Overview> {
+  if (MOCK) return (await mw()).mockOverview(days, false);
+  return request<Overview>(`/api/workspaces/${encodeURIComponent(id)}/overview?days=${days}`);
+}
+
+export async function adminOverview(days = 30): Promise<Overview> {
+  if (MOCK) return (await mw()).mockOverview(days, true);
+  return request<Overview>(`/api/admin/overview?days=${days}`);
+}
+
+export async function adminActivity(limit = 100): Promise<AuditEvent[]> {
+  if (MOCK) return (await mw()).mockActivity(true);
+  return request<AuditEvent[]>(`/api/admin/activity?limit=${limit}`);
+}
+
+export async function adminUsers(): Promise<AdminUserRow[]> {
+  if (MOCK) return (await mw()).mockAdminUsers();
+  return request<AdminUserRow[]>("/api/admin/users");
+}
+
+export async function listPlaybook(contractType?: string): Promise<PlaybookItem[]> {
+  if (MOCK) return (await mw()).mockPlaybook(contractType);
+  return request<PlaybookItem[]>(`/api/playbook${contractType ? `?contract_type=${encodeURIComponent(contractType)}` : ""}`);
+}
+
+export async function savePosition(type: string, clause: string, body: PlaybookOverrideIn): Promise<PlaybookItem> {
+  if (MOCK) return (await mw()).mockSavePosition(type, clause, body);
+  return request<PlaybookItem>(`/api/playbook/${encodeURIComponent(type)}/${encodeURIComponent(clause)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function revertPosition(type: string, clause: string): Promise<void> {
+  if (MOCK) return (await mw()).mockRevertPosition(type, clause);
+  return request<void>(`/api/playbook/${encodeURIComponent(type)}/${encodeURIComponent(clause)}`, { method: "DELETE" });
+}
+
+export const companyPdfUrl = (docId: string) =>
+  MOCK ? "/samples/kopi-kita-contracting-policy.pdf" : `/api/company/docs/${encodeURIComponent(docId)}/pdf`;
+
+/** Opens a stored PDF in a new tab, with sign-in headers (a plain link cannot send them). */
+export async function openPdfTab(url: string): Promise<void> {
+  const tab = window.open("", "_blank");
+  try {
+    const res = await send(url.split("#")[0]);
+    if (!res.ok) throw new Error();
+    const blob = URL.createObjectURL(await res.blob());
+    const hash = url.includes("#") ? url.slice(url.indexOf("#")) : "";
+    if (tab) tab.location.href = blob + hash;
+    else window.location.href = blob + hash;
+  } catch {
+    tab?.close();
+    window.open(url, "_blank", "noopener");
+  }
+}
+
+/** Headers pdf.js should send when it fetches a document. */
+export async function pdfHeaders(): Promise<Record<string, string>> {
+  const { authHeaders } = await import("./session");
+  return authHeaders();
 }

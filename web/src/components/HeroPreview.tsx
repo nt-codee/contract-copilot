@@ -27,6 +27,9 @@ export default function HeroPreview() {
         Example: clause 4.2 of a sample fleet tracking agreement, boxed as high risk, with a note on what to ask the vendor for.
       </figcaption>
       <div aria-hidden="true" className="hero-play relative">
+        {/* The rest of the contract, stacked behind the page being read. */}
+        <div className="sheet absolute inset-y-3 left-5 right-14 rotate-[2.2deg] opacity-90 sm:right-28" />
+        <div className="sheet absolute inset-y-1.5 left-2.5 right-12 -rotate-[1.2deg] sm:right-[6.5rem]" />
         <div className="sheet relative mr-10 px-5 pb-10 pt-6 font-doc text-[0.82rem] leading-[1.55] text-[#1d1d1d] sm:mr-24 sm:px-8 sm:pt-8 sm:text-[0.92rem]">
           <p className="text-center font-bold tracking-wide">FLEET TRACKING SUBSCRIPTION AGREEMENT</p>
           <p className="mt-4 font-bold">4. TERM AND RENEWAL</p>

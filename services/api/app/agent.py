@@ -16,12 +16,13 @@ import logging
 import re
 import time
 from collections import Counter
+from typing import get_args
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from app import prompts
-from app.knowledge import PLAYBOOK_EXCERPT, PLAIN_EXCERPT, TEXT_EXCERPT, TOP_K, Knowledge, clip
-from app.models import Citation, LLMReview, TraceStep
+from app.knowledge import PLAYBOOK_EXCERPT, PLAIN_EXCERPT, TEXT_EXCERPT, TOP_K, Knowledge, clip, playbook_view
+from app.models import Citation, ClauseType, ContractType, LLMReview, TraceStep
 from app.playbook_overrides import SUFFIX, PlaybookOverrideStore, override_excerpt, override_ref
 from app.ports import (LLM, ChatMessage, CompanyStore, Embedder, LLMUsage, ToolCall, ToolResult,
                        ToolSpec, UpstreamError)
@@ -35,11 +36,11 @@ MAX_PAGE_CHARS = 4000
 COMPANY_EXCERPT = 600
 CITATION_EXCERPT = 400
 
-CLAUSE_TYPES = [
-    "confidentiality", "term", "termination", "auto_renewal", "liability", "indemnity", "ip_ownership",
-    "payment", "governing_law", "dispute_resolution", "non_solicit", "non_compete", "data_protection",
-    "assignment", "warranty", "other",
-]
+# Taken from the models (which mirror shared/contracts), so a clause or contract type added there is
+# available to search_playbook without a second edit here. This list used to be hard-coded to the first
+# 16 clause types and two contract types, which hid the employment, tenancy and hire-purchase playbooks.
+CLAUSE_TYPES = list(get_args(ClauseType))
+PLAYBOOK_CONTRACT_TYPES = [t for t in get_args(ContractType) if t != "other"]
 
 JURISDICTION_NAME = {"my": "Malaysia", "sg": "Singapore"}
 
@@ -74,7 +75,7 @@ TOOLS = [
         "search_playbook",
         "Get the balanced, market-standard position for one clause type of one contract type.",
         {"type": "object", "properties": {
-            "contract_type": {"type": "string", "enum": ["nda", "service_agreement"]},
+            "contract_type": {"type": "string", "enum": PLAYBOOK_CONTRACT_TYPES},
             "clause_type": {"type": "string", "enum": CLAUSE_TYPES},
         }, "required": ["contract_type", "clause_type"]},
     ),
@@ -115,6 +116,11 @@ _TOPICS: list[tuple[str, str]] = [
     (r"\bterm\b|duration", "how long the contract runs"),
 ]
 _CLAUSE_PHRASE = {
+    "probation": "probation", "working_hours": "working hours", "leave": "leave", "notice_period": "notice periods",
+    "salary_deductions": "deductions from pay", "deposit": "deposits", "rent_review": "rent reviews",
+    "repairs": "repairs", "early_termination": "ending early", "interest_rate": "interest rates",
+    "repossession": "repossession", "guarantor": "guarantors", "insurance": "insurance",
+    "fees_charges": "fees and charges",
     "confidentiality": "confidentiality", "term": "how long the contract runs",
     "termination": "ending the contract", "auto_renewal": "automatic renewal", "liability": "liability caps",
     "indemnity": "indemnities", "ip_ownership": "ownership of work and IP", "payment": "payment terms",
@@ -124,7 +130,8 @@ _CLAUSE_PHRASE = {
     "warranty": "warranties", "other": "other terms",
 }
 _JURISDICTION_NAME = {"my": "Malaysian", "sg": "Singapore"}
-_CONTRACT_NAME = {"nda": "an NDA", "service_agreement": "a service agreement"}
+_CONTRACT_NAME = {"nda": "an NDA", "service_agreement": "a service agreement", "employment": "an employment or "
+                  "freelance contract", "tenancy": "a tenancy", "hire_purchase": "a hire purchase or loan agreement"}
 
 
 def topic_phrase(query: str, clause_type: str | None = None) -> str:
@@ -323,14 +330,14 @@ class Toolbox:
         if e is None:
             have = sorted(k.split("/", 1)[1] for k in self.kb.playbook if k.startswith(f"{ctype}/"))
             near = getattr(self.kb, "related_playbook", lambda *_: [])(ctype, clause)
-            items = [{"ref": n.ref, "title": n.title, "excerpt": clip(n.text, PLAYBOOK_EXCERPT)} for n in near]
+            items = [{"ref": n.ref, "title": n.title, "excerpt": playbook_view(n)} for n in near]
             srcs = [Citation(kind="playbook", ref=n.ref, title=n.title, excerpt=clip(n.balanced, CITATION_EXCERPT))
                     for n in near]
             payload = compact(items, {"note": f"no playbook entry for {ctype}/{clause}; closest entries shown",
                                       "available_clause_types": have})
             srcs = srcs[:len(json.loads(payload)["results"])]
             return ToolOutput(payload, srcs, "no exact entry", [_result(s, None) for s in srcs])
-        item = {"ref": e.ref, "title": e.title, "excerpt": clip(e.text, PLAYBOOK_EXCERPT)}
+        item = {"ref": e.ref, "title": e.title, "excerpt": playbook_view(e)}
         src = Citation(kind="playbook", ref=e.ref, title=e.title, excerpt=clip(e.balanced, CITATION_EXCERPT))
         return ToolOutput(compact([item]), [src], e.title, [_result(src, 1.0)])
 
@@ -426,6 +433,15 @@ def _fixed_line(tools: Toolbox) -> str | None:
     return line
 
 
+def clause_vocabulary(kb) -> dict[str, list[str]]:
+    """contract type -> the clause types its playbook covers, from the playbook files themselves."""
+    vocab: dict[str, list[str]] = {}
+    for ref in sorted(kb.playbook):
+        ctype, clause = ref.split("/", 1)
+        vocab.setdefault(ctype, []).append(clause)
+    return vocab
+
+
 def _timed(tools: Toolbox):
     def run(call: ToolCall) -> tuple[ToolOutput, float]:
         t0 = time.monotonic()
@@ -437,7 +453,7 @@ def _timed(tools: Toolbox):
 
 def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
               max_turns: int = MAX_TURNS, max_tool_calls: int = MAX_TOOL_CALLS) -> AgentOutcome:
-    system = prompts.agent_system(pages, max_tool_calls)
+    system = prompts.agent_system(pages, max_tool_calls, clause_vocabulary(tools.kb))
     usage = LLMUsage(model=llm.model)
     messages = [ChatMessage(role="user", text=prompts.AGENT_START)]
     known: dict[str, list[Citation]] = {}

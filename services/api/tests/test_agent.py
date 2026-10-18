@@ -93,7 +93,7 @@ def test_search_playbook_and_read_page(toolbox):
     body = json.loads(toolbox.run(call("search_playbook", contract_type="service_agreement",
                                        clause_type="liability")).payload)
     r = body["results"][0]
-    assert r["ref"] == "service_agreement/liability" and len(r["excerpt"]) <= 1200
+    assert r["ref"] == "service_agreement/liability" and len(r["excerpt"]) <= 1900  # PLAYBOOK_VIEW_CHARS: red flags first, so more room than the old 1,200
     missing = json.loads(toolbox.run(call("search_playbook", contract_type="nda", clause_type="payment")).payload)
     assert missing["results"] == [] and "payment" not in missing["available_clause_types"]
     page = json.loads(toolbox.run(call("read_page", n=2)).payload)

@@ -3,6 +3,10 @@ import type { DragEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { listReviews, listSamples, reviewSample, uploadReview } from "../api";
 import YourContracts from "../components/YourContracts";
+import Dashboard from "../components/Dashboard";
+import { SignInButton } from "../components/Account";
+import { ApiError, SIGN_IN_CODE } from "../api";
+import { useSession } from "../useSession";
 import HeroPreview from "../components/HeroPreview";
 import Progress from "../components/Progress";
 import { contractTypeLabel, languageLabel } from "../format";
@@ -20,12 +24,11 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [reviews, setReviews] = useState<ReviewSummary[]>([]);
+  const [needSignIn, setNeedSignIn] = useState(false);
+  const session = useSession();
 
   useEffect(() => {
     let live = true;
-    listReviews()
-      .then((r) => live && setReviews(r))
-      .catch(() => undefined);
     listSamples()
       .then((s) => live && setSamples(s))
       .catch(() => live && setSamples([]));
@@ -33,6 +36,17 @@ export default function Home() {
       live = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (session.loading) return;
+    let live = true;
+    listReviews()
+      .then((r) => live && setReviews(r))
+      .catch(() => live && setReviews([]));
+    return () => {
+      live = false;
+    };
+  }, [session.loading, session.workspace?.workspace.id]);
 
   useEffect(() => {
     if (error) errorRef.current?.focus();
@@ -47,6 +61,10 @@ export default function Home() {
       navigate(`/reviews/${result.id}`);
     } catch (e) {
       setBusyLabel(null);
+      if (e instanceof ApiError && e.code === SIGN_IN_CODE) {
+        setNeedSignIn(true);
+        return;
+      }
       setError(e instanceof Error ? e.message : "The review did not finish. Try again.");
     }
   }
@@ -57,6 +75,7 @@ export default function Home() {
       setError("That file is not a PDF. Save or export the contract as a PDF and try again.");
       return;
     }
+    setNeedSignIn(false);
     if (file.size > MAX_BYTES) {
       setError("That file is larger than 10 MB. Try a smaller PDF, or only the pages that matter.");
       return;
@@ -92,8 +111,36 @@ export default function Home() {
         </div>
       )}
 
-      <YourContracts reviews={reviews} />
-      <section aria-labelledby="promise" className="mx-auto grid max-w-[1240px] gap-x-16 px-5 pb-16 pt-8 [grid-template-areas:'head'_'copy'_'preview'] sm:px-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:content-center lg:pb-24 lg:pt-16 lg:[grid-template-areas:'head_preview'_'copy_preview']">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => {
+          handleFile(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
+      {session.user && (
+        <>
+          {error ? (
+            <div className="mx-auto max-w-[1240px] px-5 pt-6 sm:px-8">
+              <div ref={errorRef} tabIndex={-1} role="alert" className="rounded-[3px] bg-high-tint px-4 py-3 font-medium text-high">
+                {error}
+              </div>
+            </div>
+          ) : null}
+          <Dashboard
+            reviews={reviews}
+            onUpload={() => inputRef.current?.click()}
+            onSample={featured ? () => void run(featured.title, () => reviewSample(featured.id)) : null}
+          />
+        </>
+      )}
+      {!session.user && <YourContracts reviews={reviews} label="Sample workspace" />}
+      {!session.user && <section aria-labelledby="promise" className="mx-auto grid max-w-[1240px] gap-x-16 px-5 pb-16 pt-8 [grid-template-areas:'head'_'copy'_'preview'] sm:px-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:content-center lg:pb-24 lg:pt-16 lg:[grid-template-areas:'head_preview'_'copy_preview']">
         <div className="self-end text-white [grid-area:head]">
           <p className="tab text-desk-text">For founders who sign without a lawyer</p>
           <h1 id="promise" className="display mt-3 text-[2.25rem] sm:mt-4 sm:text-[3.5rem]">
@@ -105,7 +152,7 @@ export default function Home() {
         </div>
         <div className="text-white [grid-area:copy] lg:mt-0">
           <p className="mt-5 max-w-xl text-[1.1rem] text-desk-text sm:text-[1.2rem]">
-            Upload an NDA or service agreement. In about a minute you see its pages with every risky clause boxed, what it
+            Upload an NDA, a service agreement, an employment or freelance contract, a tenancy or a hire purchase agreement. In about a minute you see its pages with every risky clause boxed, what it
             means in plain words, what to ask for, and a reply ready to send.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -120,31 +167,28 @@ export default function Home() {
             <button type="button" className="btn-desk !min-h-[52px] !px-6 text-[1.05rem]" onClick={() => inputRef.current?.click()} aria-describedby="upload-help">
               Upload a PDF
             </button>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="application/pdf,.pdf"
-              className="sr-only"
-              tabIndex={-1}
-              aria-hidden="true"
-              onChange={(e) => {
-                handleFile(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
           </div>
           <p id="upload-help" className="mt-4 text-[0.95rem] text-desk-text">
             PDF up to 10 MB and 40 pages, in English or Bahasa Malaysia. Or drop it anywhere on this page.
           </p>
+          {needSignIn && (
+            <div ref={errorRef} tabIndex={-1} role="alert" className="mt-5 rounded-[3px] bg-white px-4 py-4 text-ink">
+              <p className="font-semibold">Sign in with Google to review your own contract.</p>
+              <p className="mt-1 text-[0.95rem] text-ink-soft">Your contracts stay in your own workspace. The samples work without signing in.</p>
+              <div className="mt-3">
+                <SignInButton />
+              </div>
+            </div>
+          )}
           {error && (
             <div ref={errorRef} tabIndex={-1} role="alert" className="mt-5 rounded-[3px] bg-high-tint px-4 py-3 font-medium text-high">
               {error}
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
-      <section aria-labelledby="samples-title" className="bg-desk-deep">
+      <section aria-labelledby="samples-title" className="border-t border-white/5 bg-desk-deep/75">
         <div className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8">
           <h2 id="samples-title" className="text-[1.35rem] font-bold text-white">
             Or open one of our sample contracts
@@ -163,7 +207,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => void run(s.title, () => reviewSample(s.id))}
-                    className="group relative flex h-full min-h-[132px] w-full flex-col items-start justify-between gap-3 rounded-[3px] bg-paper p-4 pr-5 text-left shadow-page transition-transform hover:-translate-y-0.5"
+                    className="group relative flex h-full min-h-[132px] w-full flex-col items-start justify-between gap-3 rounded-[3px] bg-paper p-4 pr-5 text-left shadow-page lift"
                   >
                     <span className="font-doc text-[1.02rem] font-bold leading-snug text-ink">{s.title}</span>
                     <span aria-hidden="true" className="block w-full space-y-1.5">

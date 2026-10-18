@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { getKnowledge, listKnowledge } from "../api";
+import { getKnowledge, getReview, listKnowledge, listReviews } from "../api";
 import { Markdown } from "../markdown";
 import type { KnowledgeEntry } from "../types";
 
 const KIND: Record<string, string> = { law: "Law", case: "Court case", playbook: "Usual terms" };
 const PLACE: Record<string, string> = { my: "Malaysia", sg: "Singapore" };
-const TYPE: Record<string, string> = { nda: "NDA", service_agreement: "Service agreement" };
+const TYPE: Record<string, string> = { nda: "NDA", service_agreement: "Service agreement", employment: "Employment", tenancy: "Tenancy", hire_purchase: "Hire purchase" };
 const CLAUSE = (c: string) => c.replace(/_/g, " ");
 
 /** Small margin tab naming where an entry comes from. */
@@ -54,7 +54,7 @@ function Browse() {
   const [params, setParams] = useSearchParams();
   const kind = (params.get("kind") ?? "") as "" | "law" | "case" | "playbook";
   const jurisdiction = (params.get("jurisdiction") ?? "") as "" | "my" | "sg";
-  const contractType = (params.get("contract_type") ?? "") as "" | "nda" | "service_agreement";
+  const contractType = (params.get("contract_type") ?? "") as "" | "nda" | "service_agreement" | "employment" | "tenancy" | "hire_purchase";
   const q = params.get("q") ?? "";
   const [draft, setDraft] = useState(q);
   const [entries, setEntries] = useState<KnowledgeEntry[] | null>(null);
@@ -137,10 +137,10 @@ function Browse() {
         </button>
       </form>
 
-      <div className="mt-6 grid gap-5 md:grid-cols-3">
+      <div className="mt-6 grid gap-5 md:grid-cols-[auto_auto_minmax(0,1fr)]">
         <Filter label="Where" value={jurisdiction} onChange={(v) => set("jurisdiction", v)} options={[["", "Both"], ["my", "Malaysia"], ["sg", "Singapore"]]} />
         <Filter label="Kind" value={kind} onChange={(v) => set("kind", v)} options={[["", "All"], ["law", "Law"], ["case", "Cases"], ["playbook", "Usual terms"]]} />
-        <Filter label="Contract" value={contractType} onChange={(v) => set("contract_type", v)} options={[["", "Any"], ["nda", "NDA"], ["service_agreement", "Service"]]} />
+        <Filter label="Contract" value={contractType} onChange={(v) => set("contract_type", v)} options={[["", "Any"], ["nda", "NDA"], ["service_agreement", "Service"], ["employment", "Employment"], ["tenancy", "Tenancy"], ["hire_purchase", "Hire purchase"]]} />
       </div>
 
       <div aria-live="polite" className="mt-8">
@@ -193,9 +193,45 @@ function Browse() {
   );
 }
 
+/** Reviews in this workspace whose findings cite the entry. */
+function useCitedIn(id: string) {
+  const [hits, setHits] = useState<{ id: string; filename: string; finding: string }[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    const bare = id.replace(/^playbook:/, "");
+    listReviews()
+      .then((list) => Promise.all(list.slice(0, 30).map((x) => getReview(x.id).catch(() => null))))
+      .then((rs) => {
+        if (!live) return;
+        const out: { id: string; filename: string; finding: string }[] = [];
+        const seen = new Set<string>();
+        for (const r of rs) {
+          if (!r || seen.has(r.id)) continue;
+          seen.add(r.id);
+          const f = r.findings.find((x) => (x.citations ?? []).some((c) => c.ref === id || c.ref === bare || c.ref.endsWith(`/${bare}`)));
+          if (f) out.push({ id: r.id, filename: r.filename, finding: f.id });
+        }
+        setHits(out);
+      })
+      .catch(() => live && setHits([]));
+    return () => {
+      live = false;
+    };
+  }, [id]);
+  return hits;
+}
+
+/** Splits an entry into its verbatim text (shown as an extract) and the commentary after it. */
+function splitText(md: string): { extract: string | null; rest: string } {
+  const m = md.match(/## (Text|Holding|What the court said|Extract)\n([\s\S]*?)(?=\n## |$)/);
+  if (!m) return { extract: null, rest: md };
+  return { extract: m[2].trim(), rest: md.replace(m[0], "").trim() };
+}
+
 function Entry({ id }: { id: string }) {
   const [e, setE] = useState<KnowledgeEntry | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const cited = useCitedIn(id);
 
   useEffect(() => {
     let live = true;
@@ -247,18 +283,52 @@ function Entry({ id }: { id: string }) {
             </p>
           )}
           <div className="mt-6 border-t border-paper-line pt-2">
-            <Markdown text={stripPlain(e.text ?? "")} />
+            {(() => {
+              const { extract, rest } = splitText(stripPlain(e.text ?? ""));
+              return (
+                <>
+                  {extract && (
+                    <figure className="mt-4">
+                      <figcaption className="tab text-ink-mute">{e.kind === "case" ? "From the judgment" : e.kind === "law" ? "The provision" : "The note"}</figcaption>
+                      <blockquote className="mt-2 border-y-2 border-ink bg-paper-soft px-5 py-4 font-doc text-[1.06rem] leading-[1.7] text-ink [&_p]:mt-2 [&_p:first-child]:mt-0">
+                        <Markdown text={extract.replace(/^"|"$/gm, "")} />
+                      </blockquote>
+                      {e.citation && <p className="mt-1.5 text-right font-doc text-[0.95rem] italic text-ink-soft">{e.citation}</p>}
+                    </figure>
+                  )}
+                  <Markdown text={rest} />
+                </>
+              );
+            })()}
           </div>
-          {e.url && (
+          {(e.source_url || e.url) && (
             <a
-              href={e.url}
+              href={(e.source_url || e.url)!}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-8 inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-desk underline underline-offset-4 hover:text-ink"
+              className="btn-ink mt-8"
             >
-              Read the official source <span aria-hidden="true">↗</span>
+              Open the official source <span aria-hidden="true">↗</span>
               <span className="sr-only">(opens in a new tab)</span>
             </a>
+          )}
+          {cited && (
+            <div className="mt-6 border-t border-paper-line pt-4">
+              <p className="tab text-ink-mute">
+                {cited.length === 0 ? "Not cited in any review in this workspace yet" : `Cited in ${cited.length} ${cited.length === 1 ? "review" : "reviews"} in this workspace`}
+              </p>
+              {cited.length > 0 && (
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {cited.slice(0, 12).map((c) => (
+                    <li key={c.id}>
+                      <Link to={`/reviews/${c.id}?finding=${encodeURIComponent(c.finding)}`} className="inline-flex min-h-[44px] items-center rounded-[3px] border border-paper-line px-3 text-[0.9rem] text-ink hover:border-ink">
+                        {c.filename}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
           {(e.clause_types ?? []).filter((c) => c !== "other").length > 0 && (
             <p className="mt-6 text-[0.92rem] text-ink-mute">

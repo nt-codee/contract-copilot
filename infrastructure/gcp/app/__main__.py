@@ -209,6 +209,10 @@ for _name, _fields in (
 # before the service exists; that lets the service's env carry the browser key without a dependency cycle.
 _proj = gcp.organizations.get_project_output(project_id=project, opts=pulumi.InvokeOutputOptions(provider=provider))
 run_host = _proj.number.apply(lambda n: f"{SERVICE_NAME}-{n}.{REGION}.run.app")
+# Cloud Run also serves the service on a hashed host (https://<service>-<hash>-<region code>.a.run.app), the one users
+# see in the console and links. It is not derivable here, so it comes from config; both hosts are allowed for sign-in.
+public_host = cfg.get("publicHost")
+web_hosts = [run_host] + ([public_host] if public_host else [])
 
 # Google Cloud Identity Platform (the identitytoolkit API is enabled by the foundation stack). The Config resource
 # initialises Identity Platform on the project through its own API. Sign-in is Google only: email/password is off.
@@ -217,7 +221,7 @@ run_host = _proj.number.apply(lambda n: f"{SERVICE_NAME}-{n}.{REGION}.run.app")
 identity = gcp.identityplatform.Config(
     "identity",
     project=project,
-    authorized_domains=[run_host, "localhost", f"{project}.firebaseapp.com"],
+    authorized_domains=[*web_hosts, "localhost", f"{project}.firebaseapp.com"],
     sign_in=gcp.identityplatform.ConfigSignInArgs(
         email=gcp.identityplatform.ConfigSignInEmailArgs(enabled=False),
     ),
@@ -237,7 +241,9 @@ web_key = gcp.projects.ApiKey(
             gcp.projects.ApiKeyRestrictionsApiTargetArgs(service="securetoken.googleapis.com"),
         ],
         browser_key_restrictions=gcp.projects.ApiKeyRestrictionsBrowserKeyRestrictionsArgs(
-            allowed_referrers=[f"https://{run_host}/*", "http://localhost:5173/*"],
+            # The auth handler page on <project>.firebaseapp.com also calls Identity Toolkit with this key.
+            allowed_referrers=[*[pulumi.Output.concat("https://", h, "/*") for h in web_hosts], "http://localhost:5173/*",
+                               f"https://{project}.firebaseapp.com/*"],
         ),
     ),
     opts=base,

@@ -181,6 +181,32 @@ def _has_words(words: list[str], haystack: str) -> bool:
     return all(w in have or any(h.startswith(w) for h in have) for w in words)
 
 
+PLAYBOOK_VIEW_CHARS = 1900  # what the agent reads of one playbook file; the tool result cap is 2,500
+BALANCED_VIEW_CHARS = 450
+ASK_VIEW_CHARS = 300
+
+
+def playbook_view(e: PlaybookEntry, limit: int = PLAYBOOK_VIEW_CHARS) -> str:
+    """The playbook file as the agent should read it: Red flags first and in full (they carry the High /
+    Medium / Low level to assign), then a short 'balanced' position and the suggested ask.
+
+    The file order is plain words, balanced, background, red flags; cutting the file at N characters used
+    to drop the red flags of 26 of 53 entries (7 entirely), so the model assigned its own severity."""
+    secs = sections(e.text)
+    flags = _section(secs, "red flags")
+    parts = []
+    if flags:
+        parts.append("RED FLAGS (assign exactly this level when a line matches): " + " ".join(flags.split()))
+    balanced = _section(secs, "what balanced looks like")
+    if balanced:
+        parts.append("BALANCED: " + clip(balanced, BALANCED_VIEW_CHARS))
+    ask = _section(secs, "suggested ask")
+    if ask:
+        parts.append("ASK: " + clip(ask, ASK_VIEW_CHARS))
+    text = "\n".join(parts) if parts else clip(e.text, limit)
+    return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
+
+
 def tokens(text: str) -> list[str]:
     return [t for t in _TOKEN.findall(text.lower()) if t not in _STOP]
 

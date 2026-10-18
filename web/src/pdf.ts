@@ -17,8 +17,9 @@ function pdfjs() {
 }
 
 export async function openPdf(url: string): Promise<PDFDocumentProxy> {
-  const m = await pdfjs();
-  return m.getDocument({ url, standardFontDataUrl: "/pdfjs/standard_fonts/" }).promise;
+  const [m, { pdfHeaders }] = await Promise.all([pdfjs(), import("./api")]);
+  const httpHeaders = await pdfHeaders();
+  return m.getDocument({ url, httpHeaders, standardFontDataUrl: "/pdfjs/standard_fonts/" }).promise;
 }
 
 /** Locates quotes on one page from its text layer. */

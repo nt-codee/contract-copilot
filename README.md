@@ -98,27 +98,52 @@ claim" with the reason, so you can see what the model said and why it was not sh
 
 ## Measured results
 
-The newest evaluation run (`eval/results/20261018T045101Z`, model `gemini-3.8-flash`) reviewed **8 synthetic contracts**
-(4 NDAs and 4 service agreements, one in Bahasa Malaysia and one a scan) against a hand-written answer key.
-The contracts are invented, so treat this as a regression check on a small set, not as a claim about real-world accuracy.
+The newest evaluation run (`eval/results/20261018T075234Z`, model `gemini-3.8-flash`) reviewed **all 25 synthetic contracts** in
+the repository against a hand-written answer key: 6 NDAs, 10 service agreements, and 3 each of employment, tenancy and hire
+purchase. Four are in Bahasa Malaysia and one is a scan. The contracts are invented, so treat this as a regression check on a
+small set, not as a claim about real-world accuracy.
 
 | Measure | Result |
 |---|---|
-| Expected issues found | **20 of 20** (12 of 12 high risk, 8 of 8 medium) |
-| Issues the review reported | 28 findings in total |
-| False highs (a high flag on a clause the key says is not high) | 3, on 2 of the 8 contracts |
-| Time per review, median / slowest | 17.9 s / 62.6 s |
-| LLM cost per review, mean | $0.0176 (embeddings excluded, about $0.001 more) |
-| Claims removed by verification | 1 across the 8 reviews |
-| Reviews that errored | 0 of 8 |
+| Expected issues found | **61 of 76 (80%)**: 44 of 54 high risk, 17 of 22 medium |
+| Issues the review reported | 105 findings in total |
+| False highs (a high flag on a clause the key says is not high) | **0** |
+| Contract type read correctly | 25 of 25 |
+| Overall risk label matches the key | 23 of 25 (one called high where the key says medium, one medium where it says high) |
+| Time per review, median / slowest | 23.3 s / 50.4 s |
+| LLM cost per review, mean | $0.0221 (embeddings excluded, about $0.001 more) |
+| Claims removed by verification | 3 of 248 claims made (1.2%); all 3 were findings, no citation was removed |
+| Reviews that errored | 0 of 25 |
 
-<p align="center"><img src="docs/public/eval-latency.svg" alt="Bar chart of review time for each of the 8 synthetic contracts, with the median at 17.9 seconds" width="100%"></p>
+By contract type, expected issues found:
 
-Timing depends on how busy the model endpoint is. An earlier run on the same day, with the same 8 contracts and the same recall,
-had a median of 90.6 s and a slowest review of 167.1 s. All three runs are kept in [`eval/results`](eval/results).
+| Contract type | Contracts | Found |
+|---|---|---|
+| NDA | 6 | 15 of 18 |
+| Service agreement | 10 | 22 of 31 |
+| Employment and freelance | 3 | 8 of 9 |
+| Tenancy | 3 | 7 of 9 |
+| Hire purchase | 3 | 9 of 9 |
+| **The three newer packs** | 9 | **24 of 27** |
+| **NDA and service agreement** | 16 | **37 of 49** |
+
+The counts are small (three contracts per newer pack), so the gap between the two groups is not a finding. The weak spots are
+visible in the run's clause table: data protection (0 of 2) and governing law (0 of 2) were not found, and termination was found
+in 6 of 10.
+
+<p align="center"><img src="docs/public/eval-latency.svg" alt="Bar chart of review time for each of the 25 synthetic contracts, with the median at 23.3 seconds" width="100%"></p>
+
+**What changed since the first full run.** The same 25 contracts were run earlier the same day (`20261018T072735Z`): 23 reviews
+completed and 2 errored because the AI service did not respond, 53 of 67 expected issues found, 3 false highs, median 21.7 s,
+slowest 161.6 s, $0.0202 per review. On the 23 contracts that completed both times, the expected issues found went from 53 to
+52 of 67, so the fixes did not raise recall. What they changed: the 3 false highs are gone, two contract-type misreads
+(`emp-03-freelance-bm`, `hp-03-personal-loan`) are read correctly, and all 25 reviews now complete.
+
+**The earlier 8-contract check.** The first scored run (`20261018T045101Z`) covered only the 4 NDAs and 4 service agreements
+that existed then: 20 of 20 expected issues found, 3 false highs, median 17.9 s, slowest 62.6 s, $0.0176 per review. On those
+same 8 contracts the newest run finds 19 of 20 (it misses the governing-law issue in `nda-03-predatory`), with no false highs.
+Timing depends on how busy the model endpoint is. All runs are kept in [`eval/results`](eval/results).
 Reproduce a run with `scripts/eval.py` (see below).
-
-Not measured yet: the employment, tenancy and hire purchase packs have sample contracts and answer keys but are not part of this scored run.
 
 ## Coverage
 

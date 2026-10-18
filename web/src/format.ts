@@ -14,6 +14,12 @@ export function contractTypeLabel(t: ContractType): string {
       return "NDA";
     case "service_agreement":
       return "Service agreement";
+    case "employment":
+      return "Employment or freelance";
+    case "tenancy":
+      return "Tenancy";
+    case "hire_purchase":
+      return "Hire purchase";
     default:
       return "Other agreement";
   }
@@ -50,4 +56,11 @@ export function countText(c: FindingCounts): string {
   if (c.medium) parts.push(`${c.medium} medium`);
   if (c.low) parts.push(`${c.low} low`);
   return parts.length ? parts.join(", ") : "No issues found";
+}
+
+/** The AI's version for people, e.g. "gemini-3.8-flash" -> "3.8 Flash". The full id goes in a tooltip. */
+export function aiVersion(model?: string | null): string {
+  if (!model) return "";
+  const v = model.replace(/^[a-z]+-/i, "").replace(/-/g, " ");
+  return v.replace(/\b([a-z])/g, (c) => c.toUpperCase());
 }

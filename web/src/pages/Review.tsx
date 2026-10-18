@@ -6,6 +6,9 @@ import DraftDialog from "../components/DraftDialog";
 import FindingItem from "../components/FindingItem";
 import Reader from "../components/Reader";
 import Trace from "../components/Trace";
+import Evidence from "../components/Evidence";
+import type { EvidenceTarget } from "../components/Evidence";
+import { History, LeftOut } from "../components/Checks";
 import KeyDates, { DeadlineLine } from "../components/KeyDates";
 import type { Marked, ReaderState } from "../components/Reader";
 import { RISK_BG, RISK_TEXT, RiskShape } from "../components/Risk";
@@ -32,6 +35,7 @@ export default function Review() {
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [evidence, setEvidence] = useState<EvidenceTarget | null>(null);
 
   const itemRefs = useRef(new Map<string, HTMLButtonElement>());
 
@@ -179,6 +183,7 @@ export default function Review() {
               locating={locating}
               onPick={pick}
               opensPage={!wide}
+              onEvidence={(c) => setEvidence({ m, c })}
             />
           ))}
         </ol>
@@ -207,6 +212,8 @@ export default function Review() {
     </>
   );
   const dialog = (
+    <>
+    <Evidence target={evidence} reviewId={review.id} onClose={() => setEvidence(null)} />
     <DraftDialog
       draft={draft}
       open={dialogOpen}
@@ -217,11 +224,12 @@ export default function Review() {
         window.setTimeout(() => pick(fid), 0);
       }}
     />
+    </>
   );
 
   if (wide)
     return (
-      <div className="grid h-[calc(100vh-60px)] grid-cols-[minmax(0,1fr)_minmax(400px,32vw)]">
+      <div className="grid h-screen grid-cols-[minmax(0,1fr)_minmax(400px,32vw)]">
         <h1 className="sr-only">Review of {review.filename}</h1>
         <section aria-label="The contract" className="min-h-0">
           {reader(false)}
@@ -276,7 +284,7 @@ export default function Review() {
           <div className="px-3 pb-[50vh] pt-4">{reader(true)}</div>
           <section aria-label={`Finding ${open.n}`} className="fixed inset-x-0 bottom-0 z-10 max-h-[46vh] overflow-y-auto bg-paper shadow-lift">
             <ol>
-              <FindingItem m={open} reviewId={review.id} open locating={locating} onPick={() => undefined} />
+              <FindingItem m={open} reviewId={review.id} open locating={locating} onPick={() => undefined} onEvidence={(c) => setEvidence({ m: open, c })} />
             </ol>
           </section>
         </div>
@@ -379,6 +387,8 @@ function Tail({ review }: { review: ReviewResult }) {
           </ul>
         </section>
       )}
+      <LeftOut review={review} />
+      <History review={review} />
       <footer className="border-t border-paper-line px-5 py-5 text-[0.9rem] text-ink-mute">
         <p>
           Reviewed in {formatSeconds(review.metrics.latency_ms)}

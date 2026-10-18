@@ -6,7 +6,7 @@ import { DeadlineLink } from "./KeyDates";
 import { RISK_TEXT, RiskLabel, RiskShape } from "./Risk";
 
 /** For a returning user: what is on file, what is due next, what was reviewed lately. */
-export default function YourContracts({ reviews }: { reviews: ReviewSummary[] }) {
+export default function YourContracts({ reviews, label }: { reviews: ReviewSummary[]; label?: string }) {
   if (reviews.length === 0) return null;
   const counts: Record<Risk, number> = { high: 0, medium: 0, low: 0 };
   reviews.forEach((r) => (counts[r.overall_risk] += 1));
@@ -17,11 +17,11 @@ export default function YourContracts({ reviews }: { reviews: ReviewSummary[] })
   const recent = reviews.slice(0, 3);
 
   return (
-    <section aria-labelledby="yours-title" className="border-b border-desk-line bg-desk-deep">
+    <section aria-labelledby="yours-title" className="border-b border-white/5 bg-desk-deep/70">
       <div className="mx-auto grid max-w-[1240px] gap-6 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)_minmax(0,4fr)] lg:gap-8">
         <div className="text-white">
           <h2 id="yours-title" className="tab text-desk-text">
-            Your contracts
+            {label ?? "Your contracts"}
           </h2>
           <p className="mt-1 text-[1.6rem] font-bold leading-tight [font-stretch:110%]">
             {reviews.length} reviewed

@@ -398,3 +398,48 @@ mockSummaries.push(
   { id: "rv_nda1", created_at: day(5), filename: "mutual-nda-integration.pdf", contract_type: "nda", overall_risk: "low", headline: "A balanced mutual NDA with a sensible 3-year term.", finding_counts: { low: 1 }, next_deadline: null },
 );
 
+
+// --- round 4: verification, removed claims, provenance, the agent's lookups ---
+mockReview.provenance = { model: "gemini-3.8-flash", kb_version: "kb-7f3a91", prompt_version: "review-v6", app_version: "2026.10.18" };
+mockReview.previous_review_id = "rv_prev";
+mockReview.owner = "co-kopikita";
+const V: Record<string, NonNullable<ReviewResult["findings"][number]["verification"]>> = {
+  f1: { quote_match: "exact", score: 100, citations_checked: 2, kb_version: "kb-7f3a91" },
+  f2: { quote_match: "normalised", score: 98, citations_checked: 2, kb_version: "kb-7f3a91" },
+  f3: { quote_match: "exact", score: 100, citations_checked: 3, kb_version: "kb-7f3a91", page_corrected_from: 2 },
+  f4: { quote_match: "fuzzy", score: 91, citations_checked: 1, kb_version: "kb-7f3a91" },
+};
+for (const f of mockReview.findings) {
+  f.verification = V[f.id];
+  for (const c of f.citations ?? []) {
+    if (c.kind === "company") {
+      c.doc_id = "cd_policy";
+      c.page = 2; // where these rules sit in the sample policy PDF; boxes are found from its text
+      c.boxes = [];
+    }
+    if (c.kind === "law") c.source_url = "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20136.pdf#page=31";
+  }
+}
+mockReview.removed = [
+  { kind: "finding", reason: "quote_not_found", text: "Vendor may share your data with affiliates: “The Provider may disclose Customer Data to its group companies.”", page: 3, finding_title: "Data shared with group companies" },
+  { kind: "citation", reason: "source_not_retrieved", text: "Consumer Protection Act 1999, s 24G", page: null, finding_title: "Automatic 20% annual price hike without exit right" },
+];
+mockReview.metrics.dropped_unverified = 1;
+mockReview.metrics.dropped_unverified_citations = 1;
+const detail = (tool: string, args: Record<string, unknown>, results: [string, string, string, number][], cited: string[]) =>
+  JSON.stringify({ tool, args, results: results.map(([ref, title, kind, score]) => ({ ref, title, kind, score })), cited });
+mockReview.trace = [
+  { step: 1, action: "read_contract", summary: "Read all 4 pages and found the parties, term and governing law", ms: 1400, detail: null },
+  { step: 2, action: "search_playbook", summary: "Compared renewal and notice terms with usual terms", ms: 900,
+    detail: detail("search_playbook", { contract_type: "service_agreement", clause_type: "auto_renewal", query: "renewal notice period registered post" },
+      [["playbook:service_agreement/auto_renewal", "Auto-renewal and price increases on renewal", "playbook", 0.91], ["playbook:service_agreement/term", "Term: how long the agreement lasts", "playbook", 0.64]], ["playbook:service_agreement/auto_renewal"]) },
+  { step: 3, action: "search_law", summary: "Checked Malaysian law on charges for ending a contract early", ms: 1800,
+    detail: detail("search_law", { jurisdiction: "my", query: "early termination charge all remaining fees penalty" },
+      [["my-ca1950-s75", "Contracts Act 1950, s 75: compensation where a sum or penalty is named", "law", 0.88], ["my-case-cubic-electronics", "Cubic Electronics v Mars Telecommunications", "case", 0.83], ["my-ca1950-s74", "Contracts Act 1950, s 74: compensation for loss caused by breach", "law", 0.61]], ["my-ca1950-s75", "my-case-cubic-electronics"]) },
+  { step: 4, action: "search_company", summary: "Checked your contracting policy: 4 rules apply", ms: 1200,
+    detail: detail("search_company", { query: "auto-renewal notice price increase early termination" },
+      [["company:cd_policy#4.2", "Rule 4.2 · renewal notice", "company", 0.9], ["company:cd_policy#5.3", "Rule 5.3 · fixed increases", "company", 0.86], ["company:cd_policy#7.1", "Rule 7.1 · early exit", "company", 0.81]], ["company:cd_policy#4.2", "company:cd_policy#5.3", "company:cd_policy#7.1"]) },
+  { step: 5, action: "read_page", summary: "Re-read page 2 to confirm how notice must be sent", ms: 900, detail: detail("read_page", { page: 2 }, [], []) },
+  { step: 6, action: "draft_findings", summary: "Wrote 5 findings and 1 missing protection", ms: 3300, detail: null },
+  { step: 7, action: "verify", summary: "Matched quotes to the contract’s own words; removed 1 point and 1 source that could not be confirmed", ms: 400, detail: null },
+];

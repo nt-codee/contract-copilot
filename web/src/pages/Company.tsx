@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, DragEvent } from "react";
 import { Link } from "react-router-dom";
-import { deleteCompanyDoc, getReview, listCompanyDocs, listReviews, uploadCompanyDoc } from "../api";
+import { companyPdfUrl, deleteCompanyDoc, getReview, listCompanyDocs, listReviews, uploadCompanyDoc } from "../api";
 import { FlagTab } from "../components/Risk";
+import Reader from "../components/Reader";
+import type { Marked, ReaderState } from "../components/Reader";
 import { deriveRules, docTitle } from "../rules";
 import type { PolicyRule } from "../rules";
 import { formatDate } from "../format";
@@ -258,7 +260,9 @@ function PolicyDocs({ docs, reviews }: { docs: CompanyDoc[]; reviews: ReviewResu
           const mine = rules.filter((r) => !r.docId || r.docId === d.id);
           if (mine.length === 0) return null;
           return (
-            <article key={d.id} className="sheet relative mt-5 px-5 py-6 pr-14 sm:px-10 sm:py-9 sm:pr-20" aria-label={docTitle(d)}>
+            <div key={d.id} className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <PolicyPdf doc={d} reviews={reviews ?? []} />
+            <article className="sheet relative px-5 py-6 pr-14 sm:px-10 sm:py-9 sm:pr-20" aria-label={docTitle(d)}>
               <p className="tab text-ink-mute">
                 {d.filename} · {d.pages} {d.pages === 1 ? "page" : "pages"}
               </p>
@@ -269,6 +273,7 @@ function PolicyDocs({ docs, reviews }: { docs: CompanyDoc[]; reviews: ReviewResu
                 ))}
               </ol>
             </article>
+            </div>
           );
         })}
     </section>
@@ -324,5 +329,30 @@ function Rule({ r }: { r: PolicyRule }) {
         </ul>
       )}
     </li>
+  );
+}
+
+/** The policy PDF itself, in the same reader as contracts, with each quoted rule boxed. */
+function PolicyPdf({ doc, reviews }: { doc: CompanyDoc; reviews: ReviewResult[] }) {
+  const [state, setState] = useState<ReaderState>("loading");
+  const [found, setFound] = useState<Record<string, [number, number, number, number][]>>({});
+  const marks: Marked[] = [];
+  const seen = new Set<string>();
+  for (const r of reviews)
+    for (const f of r.findings)
+      for (const c of f.citations ?? []) {
+        if (c.kind !== "company" || (c.doc_id && c.doc_id !== doc.id) || !c.page) continue;
+        const key = `${c.page}|${c.excerpt.slice(0, 40)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const mid = `pol-${marks.length}`;
+        marks.push({ n: marks.length + 1, boxes: c.boxes?.length ? c.boxes : found[mid] ?? [], f: { ...f, id: mid, page: c.page, quote: c.excerpt, title: c.title, risk: f.policy_breach ? "high" : "medium" } });
+      }
+  if (state === "error") return null;
+  const noop = () => undefined;
+  return (
+    <section aria-label={`${docTitle(doc)}, the PDF`} className="hidden h-[80vh] min-h-[560px] overflow-hidden rounded-[3px] bg-desk-deep xl:block">
+      <Reader url={companyPdfUrl(doc.id)} items={marks} selected={null} focus={null} onSelect={noop} onLocated={(x) => setFound((cur) => ({ ...cur, ...x }))} onState={setState} />
+    </section>
   );
 }

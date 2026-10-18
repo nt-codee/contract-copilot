@@ -12,8 +12,9 @@ THE CONTRACT (page-tagged)
 
 STAGE 1: RESEARCH (one turn)
 Your tools:
-- search_playbook(contract_type, clause_type): the balanced, market-standard position for one clause
-  type. This is what you compare the contract against.
+- search_playbook(contract_type, clause_type): the balanced position and the RED FLAGS (each tagged
+  High, Medium or Low) for one clause type of one contract type. This is what you compare the contract
+  against. There is a playbook for each contract type listed under "CLAUSE TYPES" below.
 - set_jurisdiction(governing_law, jurisdiction): fixes which country's law applies. Call it once, first.
 - search_law(query, jurisdiction, clause_type): Malaysian ("my") or Singapore ("sg") statutes and
   cases that bear on a clause.
@@ -25,15 +26,25 @@ exactly once in this turn: jurisdiction is "my" for Malaysian law, "sg" for Sing
 any other law, and "my" if the contract names none. A Malaysian contract is judged on Malaysian law and a
 Singapore contract on Singapore law, never the other way round; search_law uses the country you set
 here whatever jurisdiction you give it. For a contract under another country's law, search_law checks
-Malaysian law only as a fallback. Then call: search_playbook for every clause type you may flag,
+Malaysian law only as a fallback. Also decide the contract type first (stage 2, item 1), because search_playbook must use that
+contract type: an employment or freelance contract is looked up under "employment", never under
+"service_agreement". Then call: search_playbook for every clause type you may flag,
 search_law for the areas where a rule may matter (penalties and fixed damages, restraint of trade,
 exclusion of liability, personal data, limitation periods), and search_company for the same topics. Do not repeat a search. You have at
 most {max_tools} tool calls in total. After the results come back you write the review; there is no
 second round.
 
 STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
-1. contract_type: "nda" (non-disclosure / confidentiality agreement, including "perjanjian
-   kerahsiaan"), "service_agreement" (services, SaaS, master services, consulting), or "other".
+1. contract_type: pick the one whose playbook fits best:
+   - "nda": non-disclosure / confidentiality agreement, including "perjanjian kerahsiaan".
+   - "service_agreement": a business buying services or software from a vendor (services, SaaS, master
+     services, consulting, outsourcing, logistics).
+   - "employment": an employment contract, or a freelance, contractor or commission agreement where an
+     individual sells their own work or time ("perjanjian pekerjaan", "perjanjian freelance").
+   - "tenancy": a lease or rental of a home, room or shop lot ("perjanjian sewa").
+   - "hire_purchase": hire purchase of a vehicle or goods, and consumer or personal loans with a
+     guarantor ("sewa beli", "pinjaman peribadi").
+   - "other": none of the above.
 2. language: ISO 639-1 code of the contract text ("en", "ms", ...). parties: names as the contract uses them.
    jurisdiction: "my", "sg" or "other" from the governing-law clause; "my" if unclear. If the research
    says the governing law was fixed, use exactly that jurisdiction.
@@ -44,12 +55,20 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
      with a long notice window, the vendor owning work the reader paid for).
    - medium: one-sided but common; worth asking about.
    - low: minor drafting point.
+   The playbook's Red flags are tagged High, Medium or Low: when a clause matches a red-flag line, assign
+   exactly that level, neither higher nor lower, and use your own judgement only for a clause no line
+   covers. A cap of 3 to 6 months' fees, for example, is Medium in the playbook, not High.
    Do NOT flag a clause that matches the playbook's balanced position. A fair contract may have zero
    high findings; that is a correct answer.
 4. "quote" MUST be copied character for character from the contract text, in the original language,
    from a single [PAGE n] block, and "page" MUST be that n. Quote the shortest span that shows the
    problem, ideally one sentence, 8 to 60 words. Never paraphrase, translate, merge sentences from
    different places, or add ellipses. Findings whose quote cannot be found are discarded automatically.
+   clause_type: use the clause type of the playbook file whose red flag the clause matches, taken from
+   the list under "CLAUSE TYPES" for your contract type; use "other" only when no file fits. Never use a
+   clause type from another contract type's list (for example early_termination is for tenancy and hire
+   purchase; in a service agreement an early termination fee belongs under "termination", and a
+   discretionary surcharge under "payment").
 5. missing_clauses: protections the playbook expects that the contract does not contain at all.
 6. baseline_ref: the playbook FILE you compared against, e.g. "nda/liability.md", or "".
 7. citations: for a finding, list the sources a tool returned in this session that support it: kind
@@ -79,6 +98,12 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
     sentence under 140 characters; summary is 1 to 3 short sentences.
 """
 
+CLAUSE_TYPES_HEADING = """
+
+CLAUSE TYPES (the playbook has one file for each, per contract type)
+{vocabulary}
+"""
+
 AGENT_START = ("Plan every lookup you need and issue all the tool calls now, in this one turn.")
 
 FINAL_USER = ("Stage 2. Write the review now as JSON following the schema, using the research above. "
@@ -90,8 +115,13 @@ def contract_text(pages: list[str]) -> str:
     return f"The contract has {len(pages)} pages.\n\n{body}"
 
 
-def agent_system(pages: list[str], max_tools: int) -> str:
-    return AGENT_SYSTEM.format(contract=contract_text(pages), max_tools=max_tools)
+def agent_system(pages: list[str], max_tools: int, vocabulary: dict[str, list[str]] | None = None) -> str:
+    """The system prompt. `vocabulary` maps each contract type to the clause types its playbook covers."""
+    text = AGENT_SYSTEM.format(contract=contract_text(pages), max_tools=max_tools)
+    if vocabulary:
+        lines = "\n".join(f"- {ctype}: {', '.join(clauses)}" for ctype, clauses in sorted(vocabulary.items()))
+        text += CLAUSE_TYPES_HEADING.format(vocabulary=lines)
+    return text
 
 
 def research_transcript(steps: list[tuple[str, dict, str]], fixed: str | None = None) -> str:
