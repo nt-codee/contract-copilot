@@ -1,0 +1,38 @@
+{
+  "id": "emp-03-freelance-bm",
+  "contract_type": "employment",
+  "language": "ms",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "ip_ownership",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "termasuk karya, alat, templat dan kod Freelancer yang sedia ada"
+    },
+    {
+      "clause_type": "payment",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "sembilan puluh (90) hari selepas penerimaan"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "medium",
+      "page": 3,
+      "quote_contains": "tidak bertanggungjawab membayar apa-apa yuran bagi kerja yang sedang dijalankan"
+    },
+    {
+      "clause_type": "non_compete",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "selama dua belas (12) bulan selepas ia tamat"
+    }
+  ],
+  "must_not_flag_high": [
+    "confidentiality",
+    "data_protection",
+    "governing_law",
+    "dispute_resolution"
+  ]
+}

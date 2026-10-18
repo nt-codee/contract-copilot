@@ -1,0 +1,19 @@
+{
+  "id": "hp-01-fair",
+  "contract_type": "hire_purchase",
+  "language": "en",
+  "expected_overall_risk": "low",
+  "must_flag": [],
+  "must_not_flag_high": [
+    "term",
+    "payment",
+    "interest_rate",
+    "fees_charges",
+    "early_termination",
+    "repossession",
+    "guarantor",
+    "insurance",
+    "warranty",
+    "dispute_resolution"
+  ]
+}

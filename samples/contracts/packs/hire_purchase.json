@@ -1,0 +1,5 @@
+[
+  ["hp-01-fair", "Car hire-purchase agreement (balanced, Malaysia)", "hire_purchase", "en", false],
+  ["hp-02-used-car", "Used-car hire-purchase agreement arranged by a dealer", "hire_purchase", "en", false],
+  ["hp-03-personal-loan", "Personal loan agreement with a guarantor", "hire_purchase", "en", false]
+]

@@ -62,13 +62,13 @@ export default function Trace({ steps, seconds }: { steps: TraceStep[]; seconds:
             {steps.length} steps · {seconds}
           </span>
         </span>
-        <span aria-hidden="true" className="text-ink-mute transition-transform group-open:rotate-180">
+        <span aria-hidden="true" className="text-ink-mute group-open:rotate-180">
           ▾
         </span>
       </summary>
       <ol className="relative px-5 pb-5">
         {steps.map((s, i) => (
-          <li key={s.step} className="trace-step relative flex gap-3 pb-3 last:pb-0" style={{ ["--i" as string]: i }}>
+          <li key={s.step} className="relative flex gap-3 pb-3 last:pb-0" style={{ ["--i" as string]: i }}>
             {i < steps.length - 1 && <span aria-hidden="true" className="absolute bottom-0 left-[13px] top-7 w-px bg-paper-line" />}
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-paper-line bg-white text-desk">
               <Glyph a={s.action} />

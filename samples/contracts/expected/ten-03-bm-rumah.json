@@ -1,0 +1,39 @@
+{
+  "id": "ten-03-bm-rumah",
+  "contract_type": "tenancy",
+  "language": "ms",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "deposit",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "seluruh Deposit hendaklah dilucuthakkan oleh Pemilik"
+    },
+    {
+      "clause_type": "early_termination",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "Jika Penyewa meninggalkan Bilik sebelum tamat tempoh sewa"
+    },
+    {
+      "clause_type": "auto_renewal",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "diperbaharui secara automatik untuk suatu tempoh dua (2) tahun"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "atas apa-apa sebab dengan memberi notis bertulis tujuh (7) hari"
+    }
+  ],
+  "must_not_flag_high": [
+    "term",
+    "payment",
+    "repairs",
+    "rent_review",
+    "governing_law"
+  ]
+}

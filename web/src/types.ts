@@ -138,6 +138,38 @@ export interface ReviewResult {
   jurisdiction?: string | null;
   /** default [] */
   trace?: TraceStep[];
+  /** default [] */
+  key_dates?: KeyDate[];
+}
+
+export type KeyDateKind = "start" | "end" | "renewal" | "notice_deadline" | "payment" | "price_change" | "other";
+
+export interface KeyDate {
+  /** plain words, e.g. "Last day to cancel before it renews for 24 months" */
+  label: string;
+  kind: KeyDateKind;
+  /** ISO date when it can be computed from the contract, else null */
+  date?: string | null;
+  /** how it is derived */
+  rule?: string | null;
+  page: number;
+  finding_id?: string | null;
+}
+
+export type KnowledgeKind = "law" | "case" | "playbook";
+
+export interface KnowledgeEntry {
+  id: string;
+  kind: KnowledgeKind;
+  jurisdiction?: string | null;
+  contract_type?: string | null;
+  title: string;
+  citation?: string | null;
+  clause_types?: string[];
+  plain?: string | null;
+  /** markdown; only on the detail endpoint */
+  text?: string | null;
+  url?: string | null;
 }
 
 export interface FindingCounts {
@@ -154,6 +186,8 @@ export interface ReviewSummary {
   overall_risk: Risk;
   headline: string;
   finding_counts: FindingCounts;
+  /** earliest upcoming notice_deadline or renewal */
+  next_deadline?: KeyDate | null;
 }
 
 export interface NegotiationAsk {

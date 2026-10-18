@@ -110,5 +110,68 @@
     "contract_type": "nda",
     "language": "en",
     "file": "nda-06-employee-style.pdf"
+  },
+  {
+    "id": "emp-01-fair",
+    "title": "Employment offer letter: operations executive (KL)",
+    "contract_type": "employment",
+    "language": "en",
+    "file": "emp-01-fair.pdf"
+  },
+  {
+    "id": "emp-02-startup",
+    "title": "Employment contract: startup sales executive",
+    "contract_type": "employment",
+    "language": "en",
+    "file": "emp-02-startup.pdf"
+  },
+  {
+    "id": "emp-03-freelance-bm",
+    "title": "Perjanjian Perkhidmatan Freelance (freelance contract, in Bahasa Malaysia)",
+    "contract_type": "employment",
+    "language": "ms",
+    "file": "emp-03-freelance-bm.pdf"
+  },
+  {
+    "id": "hp-01-fair",
+    "title": "Car hire-purchase agreement (balanced, Malaysia)",
+    "contract_type": "hire_purchase",
+    "language": "en",
+    "file": "hp-01-fair.pdf"
+  },
+  {
+    "id": "hp-02-used-car",
+    "title": "Used-car hire-purchase agreement arranged by a dealer",
+    "contract_type": "hire_purchase",
+    "language": "en",
+    "file": "hp-02-used-car.pdf"
+  },
+  {
+    "id": "hp-03-personal-loan",
+    "title": "Personal loan agreement with a guarantor",
+    "contract_type": "hire_purchase",
+    "language": "en",
+    "file": "hp-03-personal-loan.pdf"
+  },
+  {
+    "id": "ten-01-fair",
+    "title": "Residential tenancy agreement: condominium apartment (Singapore, balanced)",
+    "contract_type": "tenancy",
+    "language": "en",
+    "file": "ten-01-fair.pdf"
+  },
+  {
+    "id": "ten-02-shoplot",
+    "title": "Tenancy agreement: cafe shop lot (Petaling Jaya)",
+    "contract_type": "tenancy",
+    "language": "en",
+    "file": "ten-02-shoplot.pdf"
+  },
+  {
+    "id": "ten-03-bm-rumah",
+    "title": "Perjanjian Sewa Bilik (room rental, in Bahasa Malaysia)",
+    "contract_type": "tenancy",
+    "language": "ms",
+    "file": "ten-03-bm-rumah.pdf"
   }
 ]

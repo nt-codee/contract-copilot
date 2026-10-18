@@ -5,6 +5,7 @@ import type { Box } from "../locate";
 import type { Finding } from "../types";
 import { RISK_LABEL } from "../format";
 import { FlagTab, RISK_BOX, RISK_TEXT, RiskShape } from "./Risk";
+import { MARK_STAGGER, drawMarks, pulse } from "../motion";
 
 export interface Marked {
   f: Finding;
@@ -28,7 +29,7 @@ interface Props {
   compact?: boolean;
 }
 
-const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+import { reducedMotion as reduced } from "../motion";
 
 export default function Reader({ url, items, selected, focus, onSelect, onLocated, onState, compact }: Props) {
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
@@ -189,7 +190,6 @@ export default function Reader({ url, items, selected, focus, onSelect, onLocate
         {!doc && (
           <div className="sheet mx-auto aspect-[1/1.414] w-full max-w-[760px] overflow-hidden" role="status">
             <span className="sr-only">Opening the contract</span>
-            <div className="reading h-[12%] w-full bg-gradient-to-b from-transparent via-desk/10 to-transparent" />
           </div>
         )}
         {doc && width > 0 && (
@@ -233,6 +233,9 @@ function Page(props: {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(pageNo <= 2);
+  const [drawn, setDrawn] = useState(false);
+  const [seen, setSeen] = useState(false);
+  const played = useRef(new Set<string>());
   const height = Math.round((width * size.h) / size.w);
 
   useEffect(() => {
@@ -255,13 +258,44 @@ function Page(props: {
       c.width = Math.floor(vp.width);
       c.height = Math.floor(vp.height);
       task = page.render({ canvas: c, viewport: vp });
-      await task.promise.catch(() => undefined);
+      await task.promise.then(() => live && setDrawn(true)).catch(() => undefined);
     })();
     return () => {
       live = false;
       task?.cancel();
     };
   }, [doc, pageNo, width, size.w, near]);
+
+  // Moment 1: once the page is drawn and in view, mark each finding in turn.
+  useEffect(() => {
+    if (seen || !boxRef.current) return;
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setSeen(true), { threshold: 0.2 });
+    io.observe(boxRef.current);
+    return () => io.disconnect();
+  }, [seen]);
+  const boxedIds = marks.filter((m) => m.boxes.length > 0).map((m) => m.f.id).join(",");
+  useEffect(() => {
+    const root = boxRef.current;
+    if (!root || !drawn || !seen) return;
+    const todo = marks.filter((m) => m.boxes.length > 0 && !played.current.has(m.f.id)).sort((a, b) => a.n - b.n);
+    todo.forEach((m, i) => {
+      played.current.add(m.f.id);
+      const el = root.querySelector<HTMLElement>(`[data-mark="${m.f.id}"]`);
+      if (el) drawMarks(el, 150 + i * MARK_STAGGER);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawn, seen, boxedIds]);
+
+  // Moment 3: a pick from the list pulses the quote once (not on first open).
+  useEffect(() => {
+    if (!focus || focus.k === 0) return;
+    const m = marks.find((x) => x.f.id === focus.id);
+    const el = boxRef.current?.querySelector<HTMLElement>(`[data-box="${focus.id}"]`);
+    if (!m || !el) return;
+    const t = window.setTimeout(() => pulse(el, RISK_BOX[m.f.risk].ring), reduced() ? 0 : 420);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.k, focus?.id]);
 
   return (
     <div ref={boxRef} className="relative" style={{ width, height }}>
@@ -278,13 +312,14 @@ function Page(props: {
         const right = Math.max(...m.boxes.map((b) => b[2]));
         const pad = 0.004;
         return (
-          <div key={m.f.id}>
+          <div key={m.f.id} data-mark={m.f.id}>
             {/* The highlighted lines. Clicking them selects the finding. */}
             {m.boxes.map((b, i) => (
               <div
                 key={i}
                 onClick={() => onSelect(m.f.id)}
-                className="absolute cursor-pointer mix-blend-multiply"
+                data-line=""
+                className="absolute origin-left cursor-pointer mix-blend-multiply"
                 style={{
                   left: `${(b[0] - pad) * 100}%`,
                   top: `${(b[1] - pad) * 100}%`,
@@ -297,10 +332,9 @@ function Page(props: {
             ))}
             {/* Outline of the whole quote; pulses when picked from the list. */}
             <div
-              key={focus?.id === m.f.id ? focus.k : 0}
               data-box={m.f.id}
               aria-hidden="true"
-              className={`pointer-events-none absolute rounded-[2px] ${focus?.id === m.f.id ? "pulse" : ""}`}
+              className="pointer-events-none absolute rounded-[2px]"
               style={{
                 left: `${(left - pad * 2) * 100}%`,
                 top: `${(top - pad * 2) * 100}%`,
@@ -315,7 +349,8 @@ function Page(props: {
             {/* Margin bracket spanning the quoted lines. */}
             <div
               aria-hidden="true"
-              className="absolute"
+              data-bracket=""
+              className="absolute origin-top"
               style={{
                 left: `${Math.min(right + 0.025, 0.955) * 100}%`,
                 top: `${top * 100}%`,
@@ -331,13 +366,14 @@ function Page(props: {
               onClick={() => onSelect(m.f.id)}
               aria-pressed={on}
               aria-label={`Finding ${m.n}: ${m.f.title}. ${RISK_LABEL[m.f.risk]}, page ${m.f.page}`}
+              data-tab=""
               className="absolute left-full flex min-h-[44px] items-center"
               style={{ top: `calc(${top * 100}% - 8px)` }}
             >
               <FlagTab
                 n={m.n}
                 risk={m.f.risk}
-                className={`shadow-lift transition-transform ${on ? "translate-x-1 scale-110" : ""}`}
+                className={`shadow-lift ${on ? "translate-x-1 scale-110" : ""}`}
               />
             </button>
           </div>

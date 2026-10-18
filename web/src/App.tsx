@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Review from "./pages/Review";
 import Library from "./pages/Library";
 import Company from "./pages/Company";
+import Knowledge from "./pages/Knowledge";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -14,6 +15,8 @@ export default function App() {
         <Route path="/reviews/:id" element={<Review />} />
         <Route path="/library" element={<Library />} />
         <Route path="/rules" element={<Company />} />
+        <Route path="/knowledge" element={<Knowledge />} />
+        <Route path="/knowledge/:id" element={<Knowledge />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

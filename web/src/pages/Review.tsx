@@ -6,6 +6,7 @@ import DraftDialog from "../components/DraftDialog";
 import FindingItem from "../components/FindingItem";
 import Reader from "../components/Reader";
 import Trace from "../components/Trace";
+import KeyDates, { DeadlineLine } from "../components/KeyDates";
 import type { Marked, ReaderState } from "../components/Reader";
 import { RISK_BG, RISK_TEXT, RiskShape } from "../components/Risk";
 import { RISK_LABEL, RISK_ORDER, contractTypeLabel, formatCost, formatSeconds, languageLabel } from "../format";
@@ -199,8 +200,24 @@ export default function Review() {
     </Verdict>
   );
 
-  const tail = <Tail review={review} />;
-  const dialog = <DraftDialog draft={draft} open={dialogOpen} items={items} onClose={() => setDialogOpen(false)} />;
+  const tail = (
+    <>
+      <KeyDates review={review} items={items} onPick={pick} />
+      <Tail review={review} />
+    </>
+  );
+  const dialog = (
+    <DraftDialog
+      draft={draft}
+      open={dialogOpen}
+      items={items}
+      onClose={() => setDialogOpen(false)}
+      onShow={(fid) => {
+        setDialogOpen(false);
+        window.setTimeout(() => pick(fid), 0);
+      }}
+    />
+  );
 
   if (wide)
     return (
@@ -312,6 +329,7 @@ function Verdict({ review, items, children }: { review: ReviewResult; items: Mar
           {lawLabel(review.jurisdiction) && ` · ${lawLabel(review.jurisdiction)}`}
         </li>
       </ul>
+      <DeadlineLine review={review} items={items} />
       <div className="mt-3.5">{children}</div>
     </section>
   );

@@ -1,0 +1,42 @@
+{
+  "id": "hp-02-used-car",
+  "contract_type": "hire_purchase",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "interest_rate",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "interest at a flat rate of 5.8% a year"
+    },
+    {
+      "clause_type": "insurance",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "only with Bintang Cover Berhad"
+    },
+    {
+      "clause_type": "repossession",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "immediately and without notice if the Hirer misses any one (1) instalment"
+    },
+    {
+      "clause_type": "early_termination",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "no rebate of terms charges will be given"
+    },
+    {
+      "clause_type": "warranty",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "The Vehicle is sold and let as seen"
+    }
+  ],
+  "must_not_flag_high": [
+    "term",
+    "guarantor"
+  ]
+}

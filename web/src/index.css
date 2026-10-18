@@ -79,26 +79,8 @@
   }
 }
 
-/* --- Motion. Each one is short and runs once. --- */
-
-@keyframes pulse-box {
-  0% { box-shadow: 0 0 0 0 var(--ring); }
-  40% { box-shadow: 0 0 0 7px var(--ring); }
-  100% { box-shadow: 0 0 0 0 transparent; }
-}
-.pulse { animation: pulse-box 0.9s ease-out 2; }
-
-@keyframes rise {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: none; }
-}
-.rise { animation: rise 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
-
-@keyframes reading {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(900%); }
-}
-.reading { animation: reading 2.2s ease-in-out infinite; }
+/* --- Motion: four moments only (see src/motion.ts). CSS here is the hero's
+   preview of moment 1; everything else is the Web Animations API. --- */
 
 /* Hero: highlight sweeps, bracket draws, flag drops, note slides in. */
 @keyframes sweep { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
@@ -124,9 +106,3 @@
     scroll-behavior: auto !important;
   }
 }
-
-/* Check trail: steps arrive in order when the disclosure opens. */
-@keyframes step-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-details[open] .trace-step { animation: step-in 0.3s ease-out calc(var(--i) * 70ms) both; }
-@keyframes ping { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); } }
-.ping { animation: ping 1.4s ease-out infinite; }

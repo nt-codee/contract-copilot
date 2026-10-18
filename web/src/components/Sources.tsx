@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { Citation, CitationKind } from "../types";
 
 const KIND: Record<CitationKind, string> = {
@@ -9,6 +10,23 @@ const KIND: Record<CitationKind, string> = {
 };
 
 const PLACE: Record<string, string> = { my: "Malaysia", sg: "Singapore" };
+
+/** Knowledge excerpts are markdown; show them as plain sentences. */
+function plain(md: string): string {
+  return md
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/(^|\s)[-*]\s+/g, "$1")
+    .replace(/^#+\s*/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** "kopi-kita-contracting-policy" reads as "Kopi Kita contracting policy". */
+function label(c: Citation): string {
+  if (c.kind !== "company" || /\s/.test(c.title)) return c.title;
+  return c.title.split(/[-_]+/).map((w, i) => (i < 2 ? w[0].toUpperCase() + w.slice(1) : w)).join(" ");
+}
 
 /** Compact source chips; one opens at a time to show its excerpt. */
 export default function Sources({ items, idBase }: { items: Citation[]; idBase: string }) {
@@ -33,7 +51,7 @@ export default function Sources({ items, idBase }: { items: Citation[]; idBase: 
               }`}
             >
               <span className={`tab shrink-0 !text-[0.72rem] ${open === i ? "text-desk-text" : "text-ink-mute"}`}>{KIND[it.kind]}</span>
-              <span className="line-clamp-2">{it.title}</span>
+              <span className="line-clamp-2">{label(it)}</span>
             </button>
           </li>
         ))}
@@ -45,7 +63,21 @@ export default function Sources({ items, idBase }: { items: Citation[]; idBase: 
             {c.jurisdiction && PLACE[c.jurisdiction] ? ` · ${PLACE[c.jurisdiction]}` : ""}
             {c.kind === "company" && c.page ? ` · page ${c.page}` : ""}
           </p>
-          <blockquote className="mt-1 font-doc text-[0.98rem] leading-relaxed text-ink">“{c.excerpt}”</blockquote>
+          <blockquote className="mt-1 font-doc text-[0.98rem] leading-relaxed text-ink">“{plain(c.excerpt)}”</blockquote>
+          <span className="mt-1 flex flex-wrap gap-x-5">
+          {c.kind !== "company" && (
+            <Link
+              to={`/knowledge/${encodeURIComponent(c.kind === "playbook" && !c.ref.startsWith("playbook:") ? `playbook:${c.ref}` : c.ref)}`}
+              className="inline-flex min-h-[44px] items-center gap-1 text-[0.92rem] font-semibold text-desk underline underline-offset-4 hover:text-ink"
+            >
+              {c.kind === "playbook" ? "Why this is the usual term" : "Read it in full"} <span aria-hidden="true">→</span>
+            </Link>
+          )}
+          {c.kind === "company" && (
+            <Link to="/rules" className="inline-flex min-h-[44px] items-center gap-1 text-[0.92rem] font-semibold text-desk underline underline-offset-4 hover:text-ink">
+              See your rules <span aria-hidden="true">→</span>
+            </Link>
+          )}
           {(c.kind === "law" || c.kind === "case") && c.url && (
             <a
               href={c.url}
@@ -53,10 +85,11 @@ export default function Sources({ items, idBase }: { items: Citation[]; idBase: 
               rel="noopener noreferrer"
               className="mt-1 inline-flex min-h-[44px] items-center gap-1 text-[0.92rem] font-semibold text-desk underline underline-offset-4 hover:text-ink"
             >
-              Read the source <span aria-hidden="true">↗</span>
+              Official source <span aria-hidden="true">↗</span>
               <span className="sr-only">(opens in a new tab)</span>
             </a>
           )}
+          </span>
         </div>
       )}
     </div>

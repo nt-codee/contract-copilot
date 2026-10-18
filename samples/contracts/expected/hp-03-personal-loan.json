@@ -1,0 +1,38 @@
+{
+  "id": "hp-03-personal-loan",
+  "contract_type": "hire_purchase",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "fees_charges",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "so that the late fee compounds daily"
+    },
+    {
+      "clause_type": "interest_rate",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "increase the rate of interest in Clause 2.1 to 24% a year"
+    },
+    {
+      "clause_type": "guarantor",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "liable for all costs, charges and expenses of every kind"
+    },
+    {
+      "clause_type": "guarantor",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "Lender may demand payment from the Guarantor first"
+    }
+  ],
+  "must_not_flag_high": [
+    "insurance",
+    "early_termination",
+    "repossession",
+    "term"
+  ]
+}

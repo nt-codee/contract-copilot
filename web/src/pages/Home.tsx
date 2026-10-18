@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { listSamples, reviewSample, uploadReview } from "../api";
+import { listReviews, listSamples, reviewSample, uploadReview } from "../api";
+import YourContracts from "../components/YourContracts";
 import HeroPreview from "../components/HeroPreview";
 import Progress from "../components/Progress";
 import { contractTypeLabel, languageLabel } from "../format";
-import type { ReviewResult, Sample } from "../types";
+import type { ReviewResult, ReviewSummary, Sample } from "../types";
 
 const MAX_BYTES = 10 * 1024 * 1024;
-const FEATURED = "msa-02-autorenew";
+const FEATURED = "msa-05-saas";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -18,9 +19,13 @@ export default function Home() {
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [reviews, setReviews] = useState<ReviewSummary[]>([]);
 
   useEffect(() => {
     let live = true;
+    listReviews()
+      .then((r) => live && setReviews(r))
+      .catch(() => undefined);
     listSamples()
       .then((s) => live && setSamples(s))
       .catch(() => live && setSamples([]));
@@ -87,6 +92,7 @@ export default function Home() {
         </div>
       )}
 
+      <YourContracts reviews={reviews} />
       <section aria-labelledby="promise" className="mx-auto grid max-w-[1240px] gap-x-16 px-5 pb-16 pt-8 [grid-template-areas:'head'_'copy'_'preview'] sm:px-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:content-center lg:pb-24 lg:pt-16 lg:[grid-template-areas:'head_preview'_'copy_preview']">
         <div className="self-end text-white [grid-area:head]">
           <p className="tab text-desk-text">For founders who sign without a lawyer</p>

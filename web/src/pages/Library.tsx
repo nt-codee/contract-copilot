@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { getReview, listReviews, searchContracts } from "../api";
 import { FlagTab, RISK_BOX, RISK_TEXT, RiskLabel, RiskShape } from "../components/Risk";
 import { excerpt, groupHits } from "../group";
+import { DeadlineLink } from "../components/KeyDates";
+import { parseDay } from "../dates";
 import type { ContractMatches, Match } from "../group";
 import { RISK_ORDER } from "../format";
 import { contractTypeLabel, formatDate } from "../format";
@@ -59,6 +61,7 @@ export default function Library() {
   const [reviews, setReviews] = useState<ReviewSummary[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [flags, setFlags] = useState<Flags>({});
+  const [sort, setSort] = useState<"deadline" | "recent" | "risk">("deadline");
 
   useEffect(() => {
     let live = true;
@@ -211,28 +214,65 @@ export default function Library() {
             </Link>
           </div>
         ) : (
-          <ul className="sheet mt-4 divide-y divide-paper-line">
-            {reviews.map((r) => (
-              <li key={r.id}>
-                <Link to={`/reviews/${r.id}`} className="grid gap-1.5 px-5 py-4 hover:bg-paper-soft sm:grid-cols-[1fr_auto] sm:items-center sm:gap-6">
-                  <span className="min-w-0">
+          <>
+            <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Sort contracts">
+              <span className="text-[0.92rem] text-desk-text">Sort by</span>
+              {([["deadline", "Next deadline"], ["recent", "Most recent"], ["risk", "Highest risk"]] as const).map(([v, l]) => (
+                <button
+                  key={v}
+                  type="button"
+                  aria-pressed={sort === v}
+                  onClick={() => setSort(v)}
+                  className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-3 text-[0.92rem] ${sort === v ? "border-white bg-white font-semibold text-ink" : "border-desk-line text-white hover:border-desk-text"}`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+            <ul className="sheet mt-3 divide-y divide-paper-line">
+              {sorted(reviews, sort).map((r) => (
+                <li key={r.id} className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_13rem_auto] sm:items-center sm:gap-6">
+                  <Link to={`/reviews/${r.id}`} className="min-w-0 hover:underline">
                     <span className="block break-all font-semibold text-ink">{r.filename}</span>
                     <span className="mt-0.5 block text-[0.95rem] text-ink-soft">{r.headline}</span>
                     <span className="tab mt-1.5 block text-ink-mute">
                       {contractTypeLabel(r.contract_type)} · {formatDate(r.created_at)}
                     </span>
-                  </span>
+                  </Link>
+                  <div className="min-w-0 border-l-2 border-paper-line pl-3">
+                    {r.next_deadline ? (
+                      <DeadlineLink d={r.next_deadline} reviewId={r.id} />
+                    ) : (
+                      <span className="tab text-ink-mute">No deadline found</span>
+                    )}
+                  </div>
                   <span className="flex flex-col gap-1 sm:items-end">
                     <RiskLabel risk={r.overall_risk} />
                     <Counts c={r.finding_counts} />
                   </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </section>
     </div>
+  );
+}
+
+function sorted(rs: ReviewSummary[], by: "deadline" | "recent" | "risk"): ReviewSummary[] {
+  const now = Date.now();
+  // Upcoming deadlines first (soonest first), then passed ones, then contracts without one.
+  const t = (r: ReviewSummary) => {
+    const d = parseDay(r.next_deadline?.date)?.getTime();
+    if (d == null) return Infinity;
+    return d >= now - 86400000 ? d : 1e15 + (now - d);
+  };
+  const order = { high: 0, medium: 1, low: 2 } as const;
+  return [...rs].sort((a, b) =>
+    by === "deadline" ? t(a) - t(b) || b.created_at.localeCompare(a.created_at)
+    : by === "risk" ? order[a.overall_risk] - order[b.overall_risk] || t(a) - t(b)
+    : b.created_at.localeCompare(a.created_at),
   );
 }
 

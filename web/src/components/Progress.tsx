@@ -1,83 +1,98 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { settle } from "../motion";
 
-/** Generic stages and when each usually starts (seconds). Labels only; the server reports the real trail. */
-const STEPS: [string, number][] = [
-  ["Reading every page", 0],
-  ["Checking Malaysian and Singapore law", 4],
-  ["Checking your company rules", 10],
-  ["Comparing each clause with usual terms", 16],
-  ["Matching every quote to the contract’s own words", 26],
+/**
+ * What the review does, in order, and when each usually starts (seconds).
+ * The server answers in one go, so these follow typical timing; the
+ * review's own record of its steps is shown on the result.
+ */
+const STEPS: [string, string, number][] = [
+  ["Read", "Reading every page", 0],
+  ["Law", "Checking Malaysian and Singapore law", 4],
+  ["Your rules", "Checking your company rules", 9],
+  ["Usual terms", "Comparing each clause with usual terms", 14],
+  ["Checked", "Matching every quote to the contract’s own words", 24],
 ];
+const PAGES = 4;
 
-/** Illustrative marks that appear on the page as the review goes on. */
-const MARKS: { top: number; h: number; at: number; tone: string }[] = [
-  { top: 22, h: 9, at: 6, tone: "rgba(217,58,43,.28)" },
-  { top: 47, h: 6, at: 13, tone: "rgba(233,164,0,.36)" },
-  { top: 66, h: 9, at: 19, tone: "rgba(217,58,43,.28)" },
-];
-
+/** Moment 2: steps join the list one at a time; the page being read carries an edge mark. */
 export default function Progress({ subject }: { subject: string }) {
   const [secs, setSecs] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setSecs((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, []);
-  const step = STEPS.reduce((cur, [, at], i) => (secs >= at ? i : cur), 0);
+  const shown = STEPS.filter(([, , at]) => secs >= at).length;
+  const step = shown - 1;
+  // While reading, the mark moves page to page; after that it rests on the last one read.
+  const reading = step === 0 ? Math.min(PAGES, secs + 1) : PAGES;
 
   return (
-    <div className="mx-auto grid max-w-5xl items-center gap-10 px-5 py-12 sm:px-8 md:grid-cols-[1fr_300px] md:py-20">
+    <div className="mx-auto grid max-w-5xl items-start gap-10 px-5 py-12 sm:px-8 md:grid-cols-[minmax(0,1fr)_260px] md:py-20">
       <div className="text-white">
         <p className="tab text-desk-text">Reviewing</p>
         <h1 className="display mt-2 break-words text-[1.9rem] sm:text-[2.6rem]">{subject}</h1>
         <p className="sr-only" role="status">
-          {STEPS[step][0]}
+          {STEPS[step][1]}
         </p>
-        <ol className="mt-8 space-y-1">
-          {STEPS.map(([label, at], i) => {
-            const state = i < step ? "done" : i === step ? "now" : "next";
-            const took = i < step ? STEPS[i + 1][1] - at : null;
-            return (
-              <li
-                key={label}
-                aria-current={state === "now" ? "step" : undefined}
-                className={`flex min-h-[44px] items-center gap-3 rounded-[3px] px-2 transition-colors ${
-                  state === "now" ? "bg-white/10 text-white" : state === "done" ? "text-white" : "text-desk-text"
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`relative grid h-7 w-7 shrink-0 place-items-center rounded-[3px] text-[0.85rem] font-bold ${
-                    state === "done" ? "bg-white text-desk" : state === "now" ? "bg-high-box text-white" : "border border-desk-line"
-                  }`}
-                >
-                  {state === "done" ? "✓" : i + 1}
-                  {state === "now" && <span className="ping absolute inset-0 rounded-[3px] border-2 border-high-box" />}
-                </span>
-                <span className={`flex-1 ${state === "now" ? "font-semibold" : ""}`}>
-                  {label}
-                  <span className="sr-only">{state === "done" ? " (done)" : state === "now" ? " (in progress)" : " (next)"}</span>
-                </span>
-                <span aria-hidden="true" className="tab normal-case text-desk-text">
-                  {took != null ? `${took} s` : state === "now" ? `${secs - at} s` : ""}
-                </span>
-              </li>
-            );
-          })}
+        <ol className="mt-8">
+          {STEPS.slice(0, shown).map(([tag, label, at], i) => (
+            <Step key={label} tag={tag} label={label} last={i === shown - 1} done={i < step} took={i < step ? STEPS[i + 1][2] - at : secs - at} />
+          ))}
         </ol>
         <p className="mt-6 text-[0.95rem] text-desk-text">Usually 20 to 60 seconds · {secs} s so far.</p>
       </div>
 
-      <div aria-hidden="true" className="sheet relative mx-auto aspect-[1/1.414] w-full max-w-[300px] overflow-hidden p-7">
-        {Array.from({ length: 16 }).map((_, i) => (
-          <div key={i} className="mb-3 h-[6px] rounded-sm bg-paper-line" style={{ width: `${[92, 100, 96, 70][i % 4]}%`, marginTop: i % 5 === 0 && i ? 18 : 0 }} />
-        ))}
-        {MARKS.map((m) =>
-          secs >= m.at ? (
-            <div key={m.top} className="rise absolute left-5 right-5" style={{ top: `${m.top}%`, height: `${m.h}%`, background: m.tone }} />
-          ) : null,
-        )}
-        <div className="reading absolute inset-x-0 top-0 h-[12%] border-b-2 border-high-box bg-gradient-to-b from-transparent to-high-box/20" />
-      </div>
+      <ol aria-hidden="true" className="grid grid-cols-4 gap-3 md:grid-cols-2 md:pt-10">
+        {Array.from({ length: PAGES }).map((_, i) => {
+          const p = i + 1;
+          const now = step === 0 && p === reading;
+          const read = p < reading || step > 0;
+          return (
+            <li key={p} className="relative">
+              <div className={`aspect-[1/1.414] rounded-[2px] bg-paper p-[12%] shadow-page ${read || now ? "" : "opacity-60"}`}>
+                {[100, 92, 96, 64, 0, 100, 88, 70].map((w, j) =>
+                  w ? <div key={j} className="mb-[9%] h-[3px] rounded-sm bg-paper-line" style={{ width: `${w}%` }} /> : <div key={j} className="h-[6%]" />,
+                )}
+              </div>
+              {/* The edge mark: a tab on the page being read. */}
+              {now && <span className="absolute -right-1.5 top-[18%] h-[22%] w-1.5 rounded-r-[2px] bg-high-box" />}
+              <span className="tab mt-1 block text-center !text-[0.7rem] text-desk-text">{p}</span>
+            </li>
+          );
+        })}
+      </ol>
     </div>
+  );
+}
+
+function Step({ tag, label, last, done, took }: { tag: string; label: string; last: boolean; done: boolean; took: number }) {
+  const ref = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    if (ref.current) settle(ref.current, 0, 8);
+  }, []);
+  return (
+    <li ref={ref} className="relative flex gap-3 pb-4 last:pb-0" aria-current={last ? "step" : undefined}>
+      {!last && <span aria-hidden="true" className="absolute bottom-0 left-[13px] top-7 w-px bg-desk-line" />}
+      <span
+        aria-hidden="true"
+        className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[0.8rem] font-bold ${
+          done ? "border-white bg-white text-desk" : "border-high-box bg-high-box text-white"
+        }`}
+      >
+        {done ? "✓" : "•"}
+      </span>
+      <span className="min-w-0 pt-0.5">
+        <span className="tab text-desk-text">
+          {tag}
+          <span className="normal-case"> · {took} s</span>
+        </span>
+        <span className={`block leading-snug ${last ? "font-semibold text-white" : "text-white"}`}>
+          {label}
+          {last && "…"}
+          <span className="sr-only">{done ? " (done)" : " (in progress)"}</span>
+        </span>
+      </span>
+    </li>
   );
 }

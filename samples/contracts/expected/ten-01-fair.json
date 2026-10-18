@@ -1,0 +1,20 @@
+{
+  "id": "ten-01-fair",
+  "contract_type": "tenancy",
+  "language": "en",
+  "expected_overall_risk": "low",
+  "must_flag": [],
+  "must_not_flag_high": [
+    "term",
+    "deposit",
+    "payment",
+    "rent_review",
+    "repairs",
+    "termination",
+    "early_termination",
+    "auto_renewal",
+    "insurance",
+    "assignment",
+    "governing_law"
+  ]
+}

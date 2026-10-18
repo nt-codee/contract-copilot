@@ -1,0 +1,46 @@
+{
+  "id": "emp-02-startup",
+  "contract_type": "employment",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "probation",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "at its sole discretion for such further period or periods"
+    },
+    {
+      "clause_type": "working_hours",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "all overtime is deemed included in the salary and is unpaid"
+    },
+    {
+      "clause_type": "non_compete",
+      "risk": "high",
+      "page": 4,
+      "quote_contains": "anywhere in Southeast Asia"
+    },
+    {
+      "clause_type": "salary_deductions",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "deduct training costs and any unrecovered bonus"
+    },
+    {
+      "clause_type": "notice_period",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "not less than three (3) months' written notice"
+    }
+  ],
+  "must_not_flag_high": [
+    "confidentiality",
+    "ip_ownership",
+    "leave",
+    "data_protection",
+    "governing_law",
+    "dispute_resolution"
+  ]
+}

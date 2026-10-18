@@ -1,0 +1,23 @@
+{
+  "id": "emp-01-fair",
+  "contract_type": "employment",
+  "language": "en",
+  "expected_overall_risk": "low",
+  "must_flag": [],
+  "must_not_flag_high": [
+    "probation",
+    "working_hours",
+    "leave",
+    "notice_period",
+    "salary_deductions",
+    "payment",
+    "termination",
+    "non_compete",
+    "non_solicit",
+    "confidentiality",
+    "ip_ownership",
+    "data_protection",
+    "governing_law",
+    "dispute_resolution"
+  ]
+}

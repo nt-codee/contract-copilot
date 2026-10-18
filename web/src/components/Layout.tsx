@@ -35,18 +35,22 @@ export default function Layout() {
         Skip to the content
       </a>
       <header className="relative z-20 bg-desk-deep">
-        <div className="flex h-[60px] items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="flex h-[60px] items-center justify-between gap-2 px-3 sm:gap-4 sm:px-6">
           <NavLink to="/" className="flex min-h-[44px] items-center gap-2.5 text-white" aria-label="Contract Co-pilot, home">
             <Mark />
-            <span className="whitespace-nowrap text-[1rem] font-bold tracking-tight [font-stretch:105%] sm:text-[1.1rem] sm:[font-stretch:112%]">Contract Co-pilot</span>
+            <span className="hidden whitespace-nowrap text-[1rem] font-bold min-[480px]:inline tracking-tight [font-stretch:105%] sm:text-[1.1rem] sm:[font-stretch:112%]">Contract Co-pilot</span>
           </NavLink>
-          <nav aria-label="Main" className="flex items-center sm:gap-1">
+          <nav aria-label="Main" className="flex min-w-0 items-center sm:gap-1">
             <NavLink to="/" end className={navClass}>
               <span className="hidden sm:inline">Review a contract</span>
               <span className="sm:hidden">Review</span>
             </NavLink>
             <NavLink to="/library" className={navClass}>
               Library
+            </NavLink>
+            <NavLink to="/knowledge" className={navClass}>
+              <span className="hidden sm:inline">Knowledge</span>
+              <span className="sm:hidden">Law</span>
             </NavLink>
             <NavLink to="/rules" className={navClass}>
               <span className="hidden sm:inline">Your company rules</span>

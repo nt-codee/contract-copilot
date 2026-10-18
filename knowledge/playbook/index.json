@@ -24,5 +24,42 @@
     "service_agreement/data_protection.md",
     "service_agreement/governing_law.md",
     "service_agreement/dispute_resolution.md"
+  ],
+  "hire_purchase": [
+    "hire_purchase/term.md",
+    "hire_purchase/payment.md",
+    "hire_purchase/interest_rate.md",
+    "hire_purchase/fees_charges.md",
+    "hire_purchase/early_termination.md",
+    "hire_purchase/repossession.md",
+    "hire_purchase/guarantor.md",
+    "hire_purchase/insurance.md",
+    "hire_purchase/warranty.md",
+    "hire_purchase/dispute_resolution.md"
+  ],
+  "employment": [
+    "employment/probation.md",
+    "employment/working_hours.md",
+    "employment/leave.md",
+    "employment/notice_period.md",
+    "employment/termination.md",
+    "employment/salary_deductions.md",
+    "employment/non_compete.md",
+    "employment/non_solicit.md",
+    "employment/ip_ownership.md",
+    "employment/confidentiality.md",
+    "employment/payment.md"
+  ],
+  "tenancy": [
+    "tenancy/term.md",
+    "tenancy/deposit.md",
+    "tenancy/payment.md",
+    "tenancy/rent_review.md",
+    "tenancy/repairs.md",
+    "tenancy/termination.md",
+    "tenancy/early_termination.md",
+    "tenancy/auto_renewal.md",
+    "tenancy/insurance.md",
+    "tenancy/assignment.md"
   ]
 }

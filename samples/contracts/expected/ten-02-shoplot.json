@@ -1,0 +1,46 @@
+{
+  "id": "ten-02-shoplot",
+  "contract_type": "tenancy",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "deposit",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "non-refundable at the Landlord's discretion"
+    },
+    {
+      "clause_type": "rent_review",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "may, in its sole discretion, increase the Rent by any amount"
+    },
+    {
+      "clause_type": "repairs",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "including structural repairs to the roof, external walls, foundation, columns and main drainage"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "re-enter the Premises and change the locks"
+    },
+    {
+      "clause_type": "early_termination",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "the Tenant shall pay the Landlord all Rent for the remainder of the Term"
+    }
+  ],
+  "must_not_flag_high": [
+    "term",
+    "payment",
+    "insurance",
+    "assignment",
+    "governing_law",
+    "auto_renewal"
+  ]
+}

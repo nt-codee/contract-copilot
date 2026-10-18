@@ -1129,7 +1129,8 @@
           "enum": [
             "quote_not_found",
             "source_not_retrieved",
-            "no_company_citation"
+            "no_company_citation",
+            "wrong_jurisdiction"
           ]
         },
         "text": {

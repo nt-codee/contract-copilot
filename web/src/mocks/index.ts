@@ -1,7 +1,7 @@
 // Offline data for VITE_MOCK=1. Copied from a live review of the bundled
 // synthetic sample msa-02-autorenew, with boxes located by tools/boxes.mjs.
 // The id is the live one, so the PDF still loads through the dev proxy.
-import type { Citation, CompanyDoc, NegotiationDraft, ReviewResult, ReviewSummary, Sample, SearchHit } from "../types";
+import type { Citation, CompanyDoc, KeyDate, NegotiationDraft, ReviewResult, ReviewSummary, Sample, SearchHit } from "../types";
 
 export const mockReview: ReviewResult = {
   "id": "f8d3bc083e06",
@@ -308,12 +308,12 @@ export const mockNegotiation: NegotiationDraft = {
 const POLICY = "kopi-kita-contracting-policy.pdf";
 const law75 = {
   kind: "law" as const,
-  ref: "my-contracts-act-s75",
+  ref: "my-ca1950-s75",
   title: "Contracts Act 1950 (Malaysia), s.75",
   jurisdiction: "my",
   excerpt:
     "When a contract has been broken, if a sum is named in the contract as the amount to be paid in case of such breach, the party complaining of the breach is entitled to receive reasonable compensation not exceeding the amount so named.",
-  url: "https://www.agc.gov.my/",
+  url: "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20136.pdf",
   page: null,
 };
 const cubic = {
@@ -341,14 +341,14 @@ const extra: Record<string, { citations: Citation[]; policy_breach: string | nul
   f1: {
     citations: [
       rule(`${POLICY}, Rule 4.2`, 1, "The notice window to stop renewal must be 30 days or less, and each renewal period must be 12 months or less."),
-      playbook("sa/auto_renewal", "Usual terms: auto-renewal", "Renewal periods of 12 months or less, with 30 days' notice and a reminder from the vendor."),
+      playbook("playbook:service_agreement/auto_renewal", "Usual terms: auto-renewal", "Renewal periods of 12 months or less, with 30 days' notice and a reminder from the vendor."),
     ],
     policy_breach: "Your rules allow renewals of 12 months or less with 30 days' notice; this is 24 months with 90 days.",
   },
   f2: {
     citations: [
       rule(`${POLICY}, Rule 5.3`, 2, "Fixed automatic increases (for example \"10% every year\") are not acceptable, even if they look small."),
-      playbook("sa/payment", "Usual terms: price changes", "Increases capped at inflation or 3 to 5%, with 60 days' notice and a right to leave."),
+      playbook("playbook:service_agreement/payment", "Usual terms: price changes", "Increases capped at inflation or 3 to 5%, with 60 days' notice and a right to leave."),
     ],
     policy_breach: "Your rules cap increases at CPI + 3% a year; this is a fixed 20%.",
   },
@@ -374,4 +374,27 @@ mockReview.trace = [
   { step: 7, action: "verify", summary: "Matched every quote to the contract's own words; none dropped", ms: 400 },
 ];
 
-export const mockCompanyDocs: CompanyDoc[] = [];
+export const mockCompanyDocs: CompanyDoc[] = [
+  { id: "cd_policy", filename: POLICY, title: "Kopi Kita Sdn Bhd: Contracting policy", created_at: "2026-10-18T03:10:00Z", pages: 4 },
+];
+
+mockReview.key_dates = [
+  { label: "Agreement starts", kind: "start", date: "2026-08-15", rule: "The Effective Date", page: 1, finding_id: null },
+  { label: "Last day to cancel before it renews for 24 months", kind: "notice_deadline", date: "2027-05-17", rule: "90 days before the initial 12-month term ends, by registered post only", page: 2, finding_id: "f1" },
+  { label: "Fees go up 20%", kind: "price_change", date: "2027-08-15", rule: "Each anniversary of the Effective Date", page: 2, finding_id: "f2" },
+  { label: "Renews for 24 months", kind: "renewal", date: "2027-08-15", rule: "End of the initial 12-month term", page: 2, finding_id: "f1" },
+  { label: "Invoices due", kind: "payment", date: null, rule: "Monthly, within 30 days of each invoice", page: 2, finding_id: null },
+];
+
+const dl = (label: string, kind: KeyDate["kind"], date: string | null, page: number, finding_id: string | null): KeyDate => ({ label, kind, date, page, finding_id, rule: null });
+const day = (n: number) => `2026-10-${String(18 - n).padStart(2, "0")}T0${n % 9}:15:00Z`;
+mockSummaries.length = 0;
+mockSummaries.push(
+  { id: mockReview.id, created_at: day(0), filename: mockReview.filename, contract_type: "service_agreement", overall_risk: "high", headline: mockReview.verdict.headline, finding_counts: { high: 3, medium: 1 }, next_deadline: mockReview.key_dates[1] },
+  { id: "rv_pos", created_at: day(1), filename: "pos-terminal-rental.pdf", contract_type: "service_agreement", overall_risk: "high", headline: "Five-year rental with a fee for every month left if you leave early.", finding_counts: { high: 2, medium: 2 }, next_deadline: dl("Last day to cancel before it renews for 12 months", "notice_deadline", "2026-12-01", 3, "f1") },
+  { id: "rv_clean", created_at: day(2), filename: "office-cleaning-services.pdf", contract_type: "service_agreement", overall_risk: "medium", headline: "Fair overall, but the vendor can change the scope with 7 days' notice.", finding_counts: { medium: 2, low: 1 }, next_deadline: dl("Renews for 12 months", "renewal", "2027-01-31", 2, null) },
+  { id: "rv_nda3", created_at: day(3), filename: "nda-distribution-overseas.pdf", contract_type: "nda", overall_risk: "high", headline: "Secrecy lasts forever and blocks you from working with any competitor for 3 years.", finding_counts: { high: 2, medium: 1 }, next_deadline: null },
+  { id: "rv_app", created_at: day(4), filename: "app-development-and-support.pdf", contract_type: "service_agreement", overall_risk: "medium", headline: "Your liability has no cap while the developer's is one month of fees.", finding_counts: { high: 1, medium: 2, low: 1 }, next_deadline: dl("Support term ends", "end", "2027-03-02", 4, null) },
+  { id: "rv_nda1", created_at: day(5), filename: "mutual-nda-integration.pdf", contract_type: "nda", overall_risk: "low", headline: "A balanced mutual NDA with a sensible 3-year term.", finding_counts: { low: 1 }, next_deadline: null },
+);
+

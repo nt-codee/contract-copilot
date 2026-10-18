@@ -1,6 +1,7 @@
 import type {
   ApiErrorBody,
   CompanyDoc,
+  KnowledgeEntry,
   NegotiationDraft,
   ReviewResult,
   ReviewSummary,
@@ -175,4 +176,34 @@ export async function deleteCompanyDoc(id: string): Promise<void> {
     const body = (await res.json().catch(() => null)) as Partial<ApiErrorBody> | null;
     throw new ApiError(body?.error?.code ?? "unknown", body?.error?.message ?? "The document was not removed. Try again.");
   }
+}
+
+export interface KnowledgeQuery {
+  kind?: string;
+  jurisdiction?: string;
+  contract_type?: string;
+  q?: string;
+}
+
+export async function listKnowledge(query: KnowledgeQuery = {}): Promise<KnowledgeEntry[]> {
+  if (MOCK) {
+    const m = await import("./mocks/knowledge");
+    await wait(200);
+    return m.filterKnowledge(query);
+  }
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(query)) if (v) p.set(k, v);
+  const qs = p.toString();
+  return request<KnowledgeEntry[]>(`/api/knowledge${qs ? `?${qs}` : ""}`);
+}
+
+export async function getKnowledge(id: string): Promise<KnowledgeEntry> {
+  if (MOCK) {
+    const m = await import("./mocks/knowledge");
+    await wait(150);
+    const e = m.mockKnowledge.find((k) => k.id === id);
+    if (!e) throw new ApiError("not_found", "That entry is not in the knowledge base.");
+    return e;
+  }
+  return request<KnowledgeEntry>(`/api/knowledge/${encodeURIComponent(id)}`);
 }

@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import type { DragEvent } from "react";
-import { deleteCompanyDoc, listCompanyDocs, uploadCompanyDoc } from "../api";
+import type { CSSProperties, DragEvent } from "react";
+import { Link } from "react-router-dom";
+import { deleteCompanyDoc, getReview, listCompanyDocs, listReviews, uploadCompanyDoc } from "../api";
+import { FlagTab } from "../components/Risk";
+import { deriveRules, docTitle } from "../rules";
+import type { PolicyRule } from "../rules";
 import { formatDate } from "../format";
-import type { CompanyDoc } from "../types";
+import type { CompanyDoc, ReviewResult } from "../types";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const SAMPLE = "/samples/kopi-kita-contracting-policy.pdf";
@@ -18,6 +22,23 @@ export default function Company() {
   const [confirm, setConfirm] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [reviews, setReviews] = useState<ReviewResult[] | null>(null);
+
+  // Full reviews carry the citations and breaches the rules are derived from.
+  useEffect(() => {
+    let live = true;
+    listReviews()
+      .then((list) => Promise.all(list.slice(0, 24).map((x) => getReview(x.id).catch(() => null))))
+      .then((rs) => {
+        if (!live) return;
+        const seen = new Set<string>();
+        setReviews(rs.filter((x): x is ReviewResult => !!x && !seen.has(x.id) && !!seen.add(x.id)));
+      })
+      .catch(() => live && setReviews([]));
+    return () => {
+      live = false;
+    };
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -49,7 +70,7 @@ export default function Company() {
     try {
       const doc = await uploadCompanyDoc(file);
       setDocs((d) => [doc, ...(d ?? [])]);
-      setNotice(`Added ${doc.title || doc.filename}. New reviews will check against it.`);
+      setNotice(`Added ${docTitle(doc)}. New reviews will check against it.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "The document was not added. Try again.");
     } finally {
@@ -63,7 +84,7 @@ export default function Company() {
     try {
       await deleteCompanyDoc(doc.id);
       setDocs((d) => (d ?? []).filter((x) => x.id !== doc.id));
-      setNotice(`Removed ${doc.title || doc.filename}.`);
+      setNotice(`Removed ${docTitle(doc)}.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "The document was not removed. Try again.");
     } finally {
@@ -168,7 +189,7 @@ export default function Company() {
           <ul className="sheet mt-4 divide-y divide-paper-line">
             {uploading && (
               <li className="flex items-center gap-4 px-5 py-4" role="status">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-desk" aria-hidden="true" />
+                <span className="h-2 w-2 rounded-full bg-desk" aria-hidden="true" />
                 <span className="text-ink-soft">Reading {uploading}…</span>
               </li>
             )}
@@ -183,7 +204,7 @@ export default function Company() {
                   <path d="M31 12h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7z" fill="#121A2B" />
                 </svg>
                 <span className="min-w-0">
-                  <span className="block break-all font-semibold text-ink">{d.title || d.filename}</span>
+                  <span className="block break-all font-semibold text-ink">{docTitle(d)}</span>
                   <span className="tab mt-1 block text-ink-mute">
                     {d.title ? `${d.filename} · ` : ""}
                     {d.pages} {d.pages === 1 ? "page" : "pages"} · added {formatDate(d.created_at)} · checked in every new review
@@ -201,7 +222,7 @@ export default function Company() {
                     </button>
                   </span>
                 ) : (
-                  <button type="button" className="btn-line !min-h-[44px] self-start px-4 sm:self-auto" onClick={() => setConfirm(d.id)} aria-label={`Remove ${d.title || d.filename}`}>
+                  <button type="button" className="btn-line !min-h-[44px] self-start px-4 sm:self-auto" onClick={() => setConfirm(d.id)} aria-label={`Remove ${docTitle(d)}`}>
                     Remove
                   </button>
                 )}
@@ -210,6 +231,98 @@ export default function Company() {
           </ul>
         )}
       </section>
+
+      {docs && docs.length > 0 && <PolicyDocs docs={docs} reviews={reviews} />}
     </div>
+  );
+}
+
+function PolicyDocs({ docs, reviews }: { docs: CompanyDoc[]; reviews: ReviewResult[] | null }) {
+  const rules = reviews ? deriveRules(reviews, docs) : null;
+  const broken = rules?.filter((r) => r.breaches.length > 0) ?? [];
+  const contracts = new Set(broken.flatMap((r) => r.breaches.map((b) => b.review.id)));
+  return (
+    <section aria-labelledby="policy-title" className="mt-12">
+      <h2 id="policy-title" className="text-[1.35rem] font-bold text-white">
+        Your rules, and the contracts that break them
+      </h2>
+      <p className="mt-1 text-desk-text">
+        {rules === null
+          ? "Reading your reviews…"
+          : rules.length === 0
+            ? "No review has quoted these rules yet. Review a contract and every rule it breaks will show here."
+            : `${rules.length} ${rules.length === 1 ? "rule has" : "rules have"} come up so far · ${contracts.size} ${contracts.size === 1 ? "contract breaks" : "contracts break"} at least one.`}
+      </p>
+      {rules && rules.length > 0 &&
+        docs.map((d) => {
+          const mine = rules.filter((r) => !r.docId || r.docId === d.id);
+          if (mine.length === 0) return null;
+          return (
+            <article key={d.id} className="sheet relative mt-5 px-5 py-6 pr-14 sm:px-10 sm:py-9 sm:pr-20" aria-label={docTitle(d)}>
+              <p className="tab text-ink-mute">
+                {d.filename} · {d.pages} {d.pages === 1 ? "page" : "pages"}
+              </p>
+              <h3 className="mt-1 font-doc text-[1.4rem] font-bold leading-snug text-ink">{docTitle(d)}</h3>
+              <ol className="mt-5 space-y-6">
+                {mine.map((r) => (
+                  <Rule key={r.key} r={r} />
+                ))}
+              </ol>
+            </article>
+          );
+        })}
+    </section>
+  );
+}
+
+function Rule({ r }: { r: PolicyRule }) {
+  const n = r.breaches.length;
+  return (
+    <li className="relative">
+      <p className="font-doc text-[1.05rem] leading-[1.6] text-ink">
+        <span className="font-bold">{r.number ? `${r.number} ` : ""}</span>
+        {r.excerpt ? (
+          <span
+            className={n ? "hl" : undefined}
+            style={n ? ({ ["--hl" as string]: "rgba(217,58,43,.16)", borderBottom: "2px solid #D93A2B" } as CSSProperties) : undefined}
+          >
+            {r.excerpt}
+          </span>
+        ) : (
+          <span className="text-ink-soft">Rule {r.number} of your policy</span>
+        )}
+      </p>
+      <p className="tab mt-1 text-ink-mute">
+        {r.number ? `Rule ${r.number}` : r.title}
+        {r.page ? ` · page ${r.page}` : ""}
+      </p>
+      {/* Margin tab: how many contracts break this rule. */}
+      <span
+        className={`tab absolute -right-12 top-0 inline-flex h-7 min-w-[2.6rem] items-center justify-center rounded-r-[3px] px-2 !text-[0.85rem] shadow-lift sm:-right-[4.6rem] ${
+          n ? "bg-high text-white" : "bg-paper-soft text-ink-mute"
+        }`}
+        aria-label={n ? `${n} ${n === 1 ? "contract breaks" : "contracts break"} this rule` : "No contract breaks this rule"}
+      >
+        {n ? `✕ ${n}` : "✓"}
+      </span>
+      {n > 0 && (
+        <ul className="mt-2 space-y-1.5 border-l-2 border-high pl-3">
+          {r.breaches.map((b) => (
+            <li key={b.review.id + b.finding.id}>
+              <Link
+                to={`/reviews/${b.review.id}?finding=${encodeURIComponent(b.finding.id)}`}
+                className="group flex min-h-[44px] items-start gap-2.5 py-1 text-[0.95rem] leading-snug"
+              >
+                <FlagTab n={b.n} risk={b.finding.risk} className="!h-6 !min-w-[2rem] shrink-0 !rounded-[3px]" />
+                <span className="min-w-0">
+                  <span className="block break-all font-semibold text-ink group-hover:underline">{b.review.filename}</span>
+                  <span className="block text-ink-soft">{b.finding.policy_breach}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }
