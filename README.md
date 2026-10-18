@@ -32,6 +32,8 @@ notice, a price that can rise without limit, a liability cap that protects only 
 
 ## See it work
 
+**[Watch the 3-minute demo video](https://drive.google.com/file/d/1KztL52YcRw1_XKTOd6A3fr5pkWpoL8yx/view)** (recorded on an earlier version of the interface).
+
 Select a finding and the contract scrolls to its boxed words; the X-ray shows every lookup the review made.
 
 <p align="center"><img src="docs/public/demo-review.gif" alt="A saved review of a synthetic POS software agreement: boxed clauses on the contract, a selected finding with the company rule it breaks, then the review X-ray of recorded lookups" width="100%"></p>
