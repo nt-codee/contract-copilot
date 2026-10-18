@@ -55,7 +55,8 @@
           "excerpt": "an invented section"
         }
       ],
-      "policy_breach": ""
+      "policy_breach": "",
+      "consequence": "Clause 5.1 makes you liable without any limit for any loss the vendor suffers."
     },
     {
       "clause_type": "liability",
@@ -74,7 +75,8 @@
           "excerpt": "balanced"
         }
       ],
-      "policy_breach": "Your policy requires vendor liability of at least 12 months of fees."
+      "policy_breach": "Your policy requires vendor liability of at least 12 months of fees.",
+      "consequence": "Under clause 5.2 a data loss would get you back at most one month of fees."
     },
     {
       "clause_type": "auto_renewal",
@@ -100,7 +102,8 @@
       "suggested_ask": "Please make the indemnity mutual.",
       "baseline_ref": "",
       "citations": [],
-      "policy_breach": ""
+      "policy_breach": "",
+      "consequence": "You would pay all of the vendor's claims."
     }
   ],
   "missing_clauses": [

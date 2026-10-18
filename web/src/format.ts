@@ -64,3 +64,8 @@ export function aiVersion(model?: string | null): string {
   const v = model.replace(/^[a-z]+-/i, "").replace(/-/g, " ");
   return v.replace(/\b([a-z])/g, (c) => c.toUpperCase());
 }
+
+/** A filename with soft break points after - _ . so it wraps between words, never mid-word. */
+export function breakable(name: string): string {
+  return name.replace(/([-_.])/g, "$1\u200B");
+}

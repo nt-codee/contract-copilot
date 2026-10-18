@@ -50,6 +50,7 @@ def test_no_token_reaches_the_demo(anon, services):
     assert anon.get("/api/company/docs").json() == []
     assert anon.get("/api/search", params={"q": "liability"}).json() == []
     assert anon.get("/api/activity").json() == []
+    anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})  # explicit offline seed
     r = anon.post("/api/reviews/sample/demo-01")
     assert r.status_code == 200 and r.json()["owner"] == "demo" and r.json()["created_by"] is None
     rid = r.json()["id"]
@@ -63,14 +64,14 @@ def test_no_token_reaches_the_demo(anon, services):
 
 
 def test_demo_visitor_cannot_rewrite_the_shared_demo(anon, services):
-    first = anon.post("/api/reviews/sample/demo-01").json()
+    first = anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
     n = len(services.llm.calls)
     again = anon.post("/api/reviews/sample/demo-01", params={"refresh": 1}).json()
     assert again["id"] == first["id"] and len(services.llm.calls) == n  # refresh ignored, cache served
 
 
 def test_views_by_anonymous_visitors_are_not_logged(anon):
-    rid = anon.post("/api/reviews/sample/demo-01").json()["id"]
+    rid = anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()["id"]
     anon.get(f"/api/reviews/{rid}")
     assert "viewed_review" not in actions(anon)
 
@@ -265,7 +266,7 @@ def test_same_document_in_two_workspaces_stays_separate(client, bob):
 
 
 def test_signed_in_user_gets_a_private_copy_of_a_sample(anon, client, bob, services):
-    demo = anon.post("/api/reviews/sample/demo-01").json()
+    demo = anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
     n = len(services.llm.calls)
     mine = client.post("/api/reviews/sample/demo-01").json()
     assert len(services.llm.calls) == n  # copied, no model call
@@ -367,7 +368,10 @@ def test_firestore_audit_append_uses_create_so_events_cannot_be_overwritten():
 def test_review_carries_provenance_and_content_hash(client, services, monkeypatch):
     r = upload(client)
     assert r["provenance"] == {"model": "fake-llm", "kb_version": services.kb_version,
-                               "prompt_version": services.prompt_version, "app_version": "dev"}
+                               "prompt_version": services.prompt_version, "app_version": "dev",
+                               "options": {"contract_type": "auto", "jurisdiction": "auto",
+                                           "apply_company_rules": True, "perspective": "auto",
+                                           "company_doc_ids": None}}
     assert len(r["content_hash"]) == 64 and r["previous_review_id"] is None and r["owner"] == WS_ALICE
 
 
@@ -543,7 +547,7 @@ def test_admin_users_have_review_counts_and_last_seen(client, bob, admin):
 
 
 def test_copies_of_samples_do_not_count_as_model_runs(anon, client, admin, services):
-    anon.post("/api/reviews/sample/demo-01")
+    anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})
     client.post("/api/reviews/sample/demo-01")  # a free copy
     o = admin_mod.overview(services, 7, use_cache=False)
     assert o["reviews"] == 2

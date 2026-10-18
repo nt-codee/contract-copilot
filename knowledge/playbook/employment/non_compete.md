@@ -9,8 +9,14 @@ you leave. It can block you from earning a living in your own field.
 ## What balanced looks like
 - **Best: no post-employment non-compete.** Confidentiality and non-solicitation clauses already
   protect the employer's secrets and clients.
-- If one is truly needed: limited to **named competitors or a specific product**, a short period
-  (**6-12 months at most**), a narrow area, and ideally **paid garden leave** for that time.
+- **Malaysia:** no restraint after the contract ends. Section 28 of the Contracts Act 1950 makes it
+  void with no general reasonableness exception (my-ca1950-s28), so narrowing it or paying for it does
+  not make it valid. Ask to delete it and keep the confidentiality clause.
+- **Singapore**, if one is truly needed: limited to **named competitors or a specific product**, a short
+  period (**6-12 months at most**) and a narrow area (*Man Financial v Wong* [2007] SGCA 53). Paid
+  garden leave is an option only for an employee whose employment, and salary, continues through it.
+- **Freelancers and contractors** are not employees: they have no salary to continue, so garden leave
+  does not apply. A restraint on serving other clients after the work ends is the thing to remove.
 
 ## Background (general, not advice)
 - This is general information, not legal advice.
@@ -32,5 +38,7 @@ you leave. It can block you from earning a living in your own field.
 - **Low:** a short, narrow restraint paid as garden leave.
 
 ## Suggested ask
-"Please remove the non-compete, or limit it to named direct competitors for no more than 6 months,
-with my salary paid as garden leave for that period."
+Malaysia (employee or freelancer): "Please delete the restriction on working for others after the
+agreement ends; the confidentiality clause already protects your information."
+Singapore employee: "Please remove the non-compete, or limit it to named direct competitors for no more
+than 6 months, with my salary paid as garden leave for that period."

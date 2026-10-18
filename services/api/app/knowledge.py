@@ -43,6 +43,24 @@ class LawEntry:
     when: str = ""
     body: str = ""  # the whole markdown body, for the detail view
     deeplink: str = ""  # link to the exact provision (app/data/deeplinks.json), "" when unknown
+    # what a citation of this entry may back: clause type -> word stems one of which the finding's quote
+    # must contain (empty: any quote); "*" is any clause type. From the `supports` frontmatter; defaults to
+    # clause_types.
+    supports: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    caveat: str = ""  # carried into the explanation of any finding that cites this entry
+    applies_to: str = ""  # "employee": the statute protects employees only (contract of service)
+
+    def scope(self) -> dict[str, tuple[str, ...]]:
+        return dict(self.supports) if self.supports else {c: () for c in self.clause_types}
+
+    def supports_claim(self, clause_type: str, quote: str) -> bool:
+        """True if this entry's text backs a finding of `clause_type` about `quote`."""
+        scope = self.scope()
+        low = quote.lower()
+        for key in (clause_type, "*"):  # "*": any clause type, provided the quote shows the stems
+            if key in scope and (not scope[key] or any(s in low for s in scope[key])):
+                return True
+        return False
 
     @property
     def link(self) -> str:
@@ -183,7 +201,7 @@ def _has_words(words: list[str], haystack: str) -> bool:
 
 PLAYBOOK_VIEW_CHARS = 1900  # what the agent reads of one playbook file; the tool result cap is 2,500
 BALANCED_VIEW_CHARS = 450
-ASK_VIEW_CHARS = 300
+ASK_VIEW_CHARS = 700
 
 
 def playbook_view(e: PlaybookEntry, limit: int = PLAYBOOK_VIEW_CHARS) -> str:
@@ -280,6 +298,16 @@ def clip(text: str, n: int) -> str:
     return text if len(text) <= n else text[: n - 3].rstrip() + "..."
 
 
+def parse_supports(items: list[str]) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """`[liability, early_termination=return|terminat]` -> (("liability", ()), ("early_termination",
+    ("return", "terminat")))."""
+    out = []
+    for it in items:
+        clause, _, stems = str(it).partition("=")
+        out.append((clause.strip(), tuple(s.strip().lower() for s in stems.split("|") if s.strip())))
+    return tuple(out)
+
+
 def load_law(law_dir: Path) -> list[LawEntry]:
     entries: list[LawEntry] = []
     for path in sorted(law_dir.glob("*/*.md")) if law_dir.is_dir() else []:
@@ -292,13 +320,15 @@ def load_law(law_dir: Path) -> list[LawEntry]:
                 log.warning("skipping %s: no Text section or bad jurisdiction", path)
                 continue
             ct = meta.get("clause_types") or []
+            sup = meta.get("supports") or []
             entries.append(LawEntry(
                 id=str(meta.get("id") or path.stem), jurisdiction=jur, kind=str(meta.get("kind") or "statute"),
                 title=str(meta.get("title") or path.stem), citation=str(meta.get("citation") or ""),
                 clause_types=tuple(ct if isinstance(ct, list) else [ct]),
                 source_url=str(meta.get("source_url") or ""), text=text,
                 plain=_section(secs, "in plain words"), when=_section(secs, "when it matters"),
-                body=body.strip()))
+                body=body.strip(), supports=parse_supports(sup if isinstance(sup, list) else [sup]),
+                caveat=str(meta.get("caveat") or ""), applies_to=str(meta.get("applies_to") or "")))
         except Exception:  # one bad file must not take the agent down
             log.exception("could not load law entry %s", path)
     return entries

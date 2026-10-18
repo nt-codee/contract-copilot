@@ -74,19 +74,22 @@ def test_search_law_tool_shape_and_size(toolbox):
     out = toolbox.run(call("search_law", query="penalty damages", jurisdiction="my"))
     body = json.loads(out.payload)
     first = body["results"][0]
-    assert set(first) == {"ref", "title", "citation", "excerpt", "plain", "url"}
+    # supports: the finding types a citation may back (verification enforces it); caveat only when set
+    assert {"ref", "title", "citation", "excerpt", "plain", "url", "supports"} <= set(first) <= {
+        "ref", "title", "citation", "excerpt", "plain", "url", "supports", "caveat"}
+    assert first["supports"].startswith("cite only on findings of type: ")
     assert first["ref"] == "my-contracts-act-s75" and len(first["excerpt"]) <= 400
-    assert len(out.payload) <= 2500
+    assert len(out.payload) <= agent_mod.MAX_RESULT_CHARS
     assert [s.ref for s in out.sources] == [r["ref"] for r in body["results"]]
     assert out.sources[0].jurisdiction == "my" and out.sources[0].kind == "law"
     bad = json.loads(toolbox.run(call("search_law", query="x", jurisdiction="fr")).payload)
     assert "error" in bad
 
 
-def test_results_are_capped_at_2500_chars():
+def test_results_are_capped_at_max_result_chars():
     big = [{"ref": f"r{i}", "title": "t", "excerpt": "word " * 200, "plain": "plain " * 100} for i in range(4)]
     text = agent_mod.compact(big)
-    assert len(text) <= 2500 and len(json.loads(text)["results"]) == 4
+    assert len(text) <= agent_mod.MAX_RESULT_CHARS == 3200 and len(json.loads(text)["results"]) == 4
 
 
 def test_search_playbook_and_read_page(toolbox):
@@ -127,8 +130,8 @@ def test_loop_tool_call_then_result_then_final(kb):
     # the final call saw the research, and knows exactly which refs came back
     assert set(outcome.known) == {"my-contracts-act-s75", "service_agreement/liability"}
     assert outcome.turns == 1 and outcome.tool_calls == 2
-    assert [t.action for t in trace.steps] == ["search_law", "search_playbook", "draft_findings"]
-    assert [t.step for t in trace.steps] == [1, 2, 3]
+    assert [t.action for t in trace.steps] == ["plan_research", "search_law", "search_playbook", "draft_findings"]
+    assert [t.step for t in trace.steps] == [1, 2, 3, 4]
 
 
 def test_final_call_is_prompted_with_the_research(kb):
@@ -149,7 +152,7 @@ def test_final_call_is_prompted_with_the_research(kb):
 def test_tool_call_cap_16_in_the_one_planning_turn(kb):
     llm = ScriptedLLM(lambda n: [call("read_page", n=1 + i % 3) for i in range(20)])
     outcome, trace = _run(llm, kb)
-    assert outcome.tool_calls == 16 and len(trace.steps) == 16 + 1
+    assert outcome.tool_calls == 16 and len(trace.steps) == 1 + 16 + 1
     assert llm.calls[-1]["purpose"] == "review"
     assert sum(c["purpose"] == "agent" for c in llm.calls) == 1  # budget gone: no follow-up turn
 
@@ -249,9 +252,10 @@ def test_trace_summaries_are_plain_words_from_the_arguments(name, args, expected
 def test_trace_in_agent_run_uses_generated_summaries_and_times(kb):
     llm = ScriptedLLM([[call("search_law", query="penalty liquidated damages", jurisdiction="my")]])
     _, trace = _run(llm, kb)
-    assert trace.steps[0].summary == "Checked Malaysian law on penalty clauses"
-    d = json.loads(trace.steps[0].detail)  # what the agent looked up and found, for "show your work"
-    assert trace.steps[0].ms is not None and d["tool"] == "search_law" and d["args"]["jurisdiction"] == "my"
+    assert trace.steps[0].action == "plan_research"
+    assert trace.steps[1].summary == "Checked Malaysian law on penalty clauses"
+    d = json.loads(trace.steps[1].detail)  # what the agent looked up and found, for "show your work"
+    assert trace.steps[1].ms is not None and d["tool"] == "search_law" and d["args"]["jurisdiction"] == "my"
     assert d["results"][0]["ref"] == "my-contracts-act-s75" and d["results"][0]["kind"] == "law"
     assert d["results"][0]["title"] == "Contracts Act 1950, s.75" and d["results"][0]["score"] > 0
     assert d["cited"] == []  # filled in after citation verification
@@ -314,7 +318,8 @@ def test_review_cites_company_policy_and_keeps_policy_breach(services, client, p
                       files={"file": ("policy.pdf", make_pdf(POLICY), "application/pdf")}).json()
     llm = ScriptedLLM([[call("search_company", query="vendor liability cap months of fees")]])
     final = LLMReview.model_validate_json((llm.fixtures_dir / "review.json").read_text())
-    final.findings[2].citations = [LLMCitation(kind="company", ref=f"company:{doc['id']}", excerpt="made up")]
+    final.findings[2].citations = [LLMCitation(kind="company", ref=f"company:{doc['id']}",
+                                                   excerpt="Vendor liability must never be capped below 12 months of fees paid.")]  # the rule's own words
     final.findings[2].policy_breach = "Our policy requires at least 12 months of fees."
     llm.generate = lambda **kw: (final, agent_mod.LLMUsage(llm.model, 10, 5))
     services.llm = llm
@@ -325,7 +330,7 @@ def test_review_cites_company_policy_and_keeps_policy_breach(services, client, p
     c = f["citations"][0]
     assert c["kind"] == "company" and c["ref"] == f"company:{doc['id']}" and c["title"] == "policy"
     assert "12 months" in c["excerpt"] and c["page"] == 1
-    assert body["trace"][1]["summary"] == "Checked your company's rules on liability caps"
+    assert body["trace"][2]["summary"] == "Checked your company's rules on liability caps"
     # the other findings, whose citations were only in the fixture, lose a breach they could not back
     assert sum(1 for f in body["findings"] if f["policy_breach"]) == 1
 

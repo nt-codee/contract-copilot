@@ -15,11 +15,11 @@ function LegalPage({ title, intro, children }: { title: string; intro: string; c
   return (
     <div className="mx-auto max-w-[860px] px-5 pb-20 pt-8 sm:px-8 sm:pt-12">
       <article className="sheet px-5 py-8 sm:px-12 sm:py-12">
-        <p className="tab text-ink-mute">Contract Co-pilot · Last updated {UPDATED}</p>
-        <h1 className="display mt-2 text-[2rem] text-ink sm:text-[2.5rem]">{title}</h1>
-        <p className="mt-4 text-[1.05rem] leading-relaxed text-ink-soft">{intro}</p>
+        <p className="meta text-ink-mute">Last updated {UPDATED}</p>
+        <h1 className="display mt-2 text-2xl text-ink sm:text-2xl">{title}</h1>
+        <p className="mt-4 text-base leading-relaxed text-ink-soft">{intro}</p>
         <ol className="mt-8 space-y-6 border-t border-paper-line pt-6">{children}</ol>
-        <p className="mt-10 border-t border-paper-line pt-5 text-[0.95rem] text-ink-soft">
+        <p className="mt-10 border-t border-paper-line pt-5 text-sm text-ink-soft">
           Questions: <a href={`mailto:${CONTACT}`} className="font-semibold text-desk underline underline-offset-4 hover:text-ink">{CONTACT}</a>
         </p>
       </article>
@@ -30,10 +30,10 @@ function LegalPage({ title, intro, children }: { title: string; intro: string; c
 function Clause({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
     <li className="grid grid-cols-[2rem_minmax(0,1fr)] gap-x-2">
-      <span className="font-doc text-[1.1rem] font-bold text-ink">{n}.</span>
+      <span className="font-doc text-lg font-bold text-ink">{n}.</span>
       <div>
-        <h2 className="font-doc text-[1.15rem] font-bold leading-snug text-ink">{title}</h2>
-        <div className="mt-1.5 space-y-2 text-[1rem] leading-relaxed text-ink">{children}</div>
+        <h2 className="font-doc text-lg font-bold leading-snug text-ink">{title}</h2>
+        <div className="mt-1.5 space-y-2 text-base leading-relaxed text-ink">{children}</div>
       </div>
     </li>
   );

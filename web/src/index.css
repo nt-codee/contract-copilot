@@ -1,4 +1,4 @@
-@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/public-sans/wght.css";
 @import "@fontsource/tinos/400.css";
 @import "@fontsource/tinos/700.css";
 
@@ -12,7 +12,10 @@
   }
   body {
     @apply bg-desk font-sans text-ink antialiased;
-    font-size: 1.0625rem;
+    font-size: 1rem; /* text-base, 16px */
+    /* Same grain as .desk-bg, so a page that ends above the fold shows no flat seam below it. */
+    background-image: url("./assets/grain.svg");
+    background-size: 180px 180px;
     line-height: 1.55;
     min-height: 100vh;
   }
@@ -31,21 +34,38 @@
 }
 
 @layer components {
-  /* Display voice: Archivo stretched wide. Used only for headlines. */
+  /* Display voice: Public Sans heavy, tracked tight. Used only for headlines. */
   .display {
-    font-stretch: 118%;
     font-weight: 800;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.028em;
     line-height: 1.04;
   }
-  /* Tab voice: Archivo condensed caps for folios, flags and counts. */
+  /* Flag voice: small bold caps. ONE role only: risk (FlagTab, RiskLabel, the verdict
+     chip). Everything else that used `.tab` moves to `.meta` or `.label` below. */
   .tab {
-    font-stretch: 75%;
-    font-weight: 650;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     font-size: 0.8125rem;
     line-height: 1.2;
+  }
+  /* Meta: dates, page numbers, counts, file names, captions. Sentence case, 13px, normal width,
+     tabular figures so counts and dates do not jitter. Colour comes from the context
+     (text-ink-mute on paper 5.7:1, text-desk-text on the desk 7.3:1). */
+  .meta {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.005em;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Label: a section or field heading. Sentence case, 15px semibold. Replaces `tab text-ink-mute`
+     on h2/h3/dt. */
+  .label {
+    font-size: 0.9375rem;
+    line-height: 1.4rem;
+    font-weight: 650;
+    letter-spacing: 0;
   }
   .btn {
     @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[3px] px-5 py-2.5 font-semibold transition-colors;
@@ -53,17 +73,12 @@
   .btn-go {
     @apply btn relative bg-white text-ink hover:bg-paper-soft disabled:cursor-wait disabled:opacity-70;
   }
-  /* The primary action carries the signature: a red flag tab on its right edge. */
-  .btn-flag { margin-right: 0.5rem; }
-  .btn-flag::after {
-    content: "";
-    position: absolute;
-    right: -8px;
-    top: 9px;
-    width: 8px;
-    height: 20px;
-    background: #d93a2b;
-    border-radius: 0 2px 2px 0;
+  /* Red is for risk only, so the primary button no longer carries a red flag tab.
+     `.btn-flag` is kept as a no-op so existing markup does not break; drop it when touched. */
+  .btn-flag { }
+  /* Primary action on paper: signature blue. White on #2450C0 is 7.0:1. */
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-deep disabled:cursor-wait disabled:opacity-70;
   }
   .btn-ink {
     @apply btn bg-ink text-white hover:bg-desk-deep;
@@ -112,11 +127,12 @@
   background-image:
     url("./assets/grain.svg"),
     radial-gradient(ellipse 60% 50% at 82% -6%, rgba(132, 168, 232, 0.15), transparent 72%),
-    radial-gradient(ellipse 45% 38% at 60% 18%, rgba(255, 214, 160, 0.045), transparent 70%),
-    radial-gradient(ellipse 70% 60% at -10% 110%, rgba(8, 18, 42, 0.5), transparent 70%),
-    linear-gradient(180deg, transparent 55%, rgba(10, 24, 54, 0.35));
-  background-size: 180px 180px, auto, auto, auto, auto;
+    radial-gradient(ellipse 80% 70% at 50% 40%, transparent 55%, rgba(8, 18, 42, 0.38)),
+    linear-gradient(180deg, transparent 55%, rgba(10, 24, 54, 0.3));
+  background-size: 180px 180px, auto, auto, auto;
 }
+/* Linen: the weave of blue-back deed cloth. Fine warp and weft on a 4px pitch, a chain line every
+   128px, shown most where the lamp falls (raking light shows texture) and fading away from it. */
 .desk-bg::before {
   content: "";
   position: absolute;
@@ -124,17 +140,24 @@
   z-index: -1;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(196, 210, 238, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(196, 210, 238, 0.07) 1px, transparent 1px),
-    linear-gradient(rgba(196, 210, 238, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(196, 210, 238, 0.035) 1px, transparent 1px);
-  background-size: 160px 160px, 160px 160px, 32px 32px, 32px 32px;
-  -webkit-mask-image: radial-gradient(ellipse 90% 1100px at 75% 0, #000 25%, transparent 85%);
-  mask-image: radial-gradient(ellipse 90% 1100px at 75% 0, #000 25%, transparent 85%);
+    linear-gradient(90deg, rgba(196, 210, 238, 0.05) 1px, transparent 1px),
+    repeating-linear-gradient(0deg, rgba(196, 210, 238, 0.035) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(196, 210, 238, 0.02) 0 1px, transparent 1px 4px);
+  background-size: 128px 100%, auto, auto;
+  -webkit-mask-image: radial-gradient(ellipse 90% 1100px at 78% 0, #000 15%, rgba(0, 0, 0, 0.35) 70%, transparent 95%);
+  mask-image: radial-gradient(ellipse 90% 1100px at 78% 0, #000 15%, rgba(0, 0, 0, 0.35) 70%, transparent 95%);
 }
 .desk-calm {
   background: #1e3a6e;
 }
+
+/* Two papers. UI paper (cards, rails, lists) is a cool vellum; a document (the contract page, a
+   policy, a letter, a law excerpt) is pure white, so the document always reads as the brightest
+   thing on the desk. Elevation: e1 shadow-page (panels), e2 shadow-lift (popovers, flags),
+   e3 shadow-float (dialogs, the hero finding card). */
+.desk-bg .sheet { background-color: #f5f7fa; }
+.page-doc,
+.desk-bg .page-doc { background-color: #ffffff; }
 
 /* First-load reveal: blocks rise into place in order of --d. */
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -181,37 +204,33 @@
     linear-gradient(180deg, rgba(8, 18, 42, 0.18), transparent 70%);
   border-radius: 0 0 24px 24px;
 }
-/* Eyebrow: the tab voice with a red flag tick, the same mark as the primary button. */
+/* Eyebrow: whose or which page, sentence case (the caps voice is for risk only, see .tab). Use
+   only where the h1 does not already say it. Accent tick, not red: red stays for risk. */
 .page-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   color: #c4d2ee;
-  font-stretch: 75%;
-  font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.8125rem;
-  line-height: 1.2;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4rem;
 }
 .page-eyebrow::before {
   content: "";
   width: 4px;
   height: 0.95rem;
   border-radius: 0 2px 2px 0;
-  background: #d93a2b;
+  background: #9db9f5;
 }
 .page-title {
   margin-top: 0.75rem;
   color: #fff;
-  font-size: 2.1rem;
-  font-stretch: 118%;
+  font-size: 2.25rem; /* text-2xl */
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.04;
 }
-@media (min-width: 640px) { .page-title { font-size: 2.6rem; } }
-.page-lede { margin-top: 0.75rem; max-width: 42rem; color: #c4d2ee; font-size: 1.05rem; }
+.page-lede { margin-top: 0.75rem; max-width: 42rem; color: #c4d2ee; font-size: 1.125rem; line-height: 1.65rem; } /* text-lg */
 
 /* Surface: layered paper. Contact + near + ambient shadow, a lit top edge, and a faint fall-off
    to the bottom so a long sheet does not read as a flat white slab. Replaces `sheet`. */
@@ -238,12 +257,9 @@
   border-bottom: 1px solid #dce2ec;
   box-shadow: inset 0 1px 0 #ffffff;
   color: #44506a;
-  font-stretch: 75%;
   font-weight: 650;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.8125rem;
-  line-height: 1.2;
+  font-size: 0.9375rem;
+  line-height: 1.4rem;
 }
 @media (min-width: 640px) { .panel-head { padding-inline: 2rem; } }
 /* Soft divider between list rows: a rule that fades out at both ends. Replaces `divide-y divide-paper-line`. */
@@ -256,4 +272,28 @@
   border-top: 1px solid transparent;
   border-image: linear-gradient(90deg, transparent, #dce2ec 6%, #dce2ec 94%, transparent) 1;
 }
+}
+
+/* --- Colour roles. Red (high.*) = high risk and the active finding flag, nothing else.
+   Accent (accent.*) = primary action, links, navigation. Deadlines are toned by urgency. --- */
+@layer components {
+  /* Deadline surfaces. Use with border-l-4. Text stays ink on all three (15:1 or better). */
+  .due-later { background: #f3f5f9; border-color: #121a2b; }            /* more than 30 days */
+  .due-soon  { background: #fff0cc; border-color: #e9a400; }            /* 0-30 days: amber, not red */
+  .due-past  { background: #f3f5f9; border-color: #8b95aa; color: #44506a; } /* passed: quiet */
+  /* The date text inside, when it needs a tone: amber-dark 5.6:1 on #FFF0CC. */
+  .due-soon .due-date { color: #8a5300; }
+  /* Active navigation marker (sidebar, page strip). */
+  .nav-mark { background: #9db9f5; }
+}
+
+/* An indeterminate illustration, never a simulation of completed review stages. */
+@keyframes paper-inspect { 0%, 100% { transform: translateY(-8px); } 50% { transform: translateY(10px); } }
+.progress-paper .progress-glass { animation: paper-inspect 3s ease-in-out infinite; }
+.progress-paper[data-stage="reading"] .progress-mark { opacity: 0; }
+.progress-paper[data-stage="researching"] .progress-glass { transform: translateX(8px); }
+.progress-paper[data-stage="locating"] .progress-mark { stroke-width: 3; }
+.progress-ready .progress-glass { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .progress-paper .progress-glass { animation: none; transform: none; }
 }

@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
-import { useNavigate } from "react-router-dom";
-import { listReviews, listSamples, reviewSample, uploadReview } from "../api";
-import YourContracts from "../components/YourContracts";
+import { Link, useNavigate } from "react-router-dom";
+import { listReviews, listSamples, uploadReview } from "../api";
 import Dashboard from "../components/Dashboard";
-import { SignInButton } from "../components/Account";
+import { GuestButton, SignInButton } from "../components/Account";
 import { ApiError, SIGN_IN_CODE } from "../api";
 import { useSession } from "../useSession";
 import HeroVisual from "../components/HeroVisual";
 import Progress from "../components/Progress";
 import { contractTypeLabel, languageLabel } from "../format";
 import type { ReviewResult, ReviewSummary, Sample } from "../types";
+import { pickCurated, randomSample } from "../samples";
 
 const MAX_BYTES = 10 * 1024 * 1024;
-const FEATURED = "msa-05-saas";
+const OK_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+const isAccepted = (f: File) => OK_TYPES.includes(f.type) || /\.(pdf|jpe?g|png)$/i.test(f.name);
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -71,8 +73,8 @@ export default function Home() {
 
   function handleFile(file: File | undefined | null) {
     if (!file) return;
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      setError("That file is not a PDF. Save or export the contract as a PDF and try again.");
+    if (!isAccepted(file)) {
+      setError("That file is not a PDF, JPG or PNG. Save the contract as a PDF, or take a photo of each page.");
       return;
     }
     setNeedSignIn(false);
@@ -91,7 +93,14 @@ export default function Home() {
 
   if (busyLabel) return <Progress subject={busyLabel} />;
 
-  const featured = samples?.find((s) => s.id === FEATURED) ?? samples?.[0];
+  // Five on show, one per contract type; the rest behind "See all samples".
+  const curated = pickCurated(samples ?? []);
+  const rest = (samples ?? []).filter((s) => !curated.includes(s));
+  // "Try a sample": a random one each click, opened as a preview first, never straight to a finished review.
+  function trySample() {
+    const s = randomSample(samples ?? []);
+    if (s) navigate(`/sample/${s.id}`);
+  }
 
   return (
     <div
@@ -107,14 +116,14 @@ export default function Home() {
     >
       {dragging && (
         <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-30 grid place-items-center bg-desk-deep/90">
-          <p className="display border-2 border-dashed border-white px-10 py-8 text-[2rem] text-white">Drop the PDF to review it</p>
+          <p className="display border-2 border-dashed border-white px-10 py-8 text-2xl text-white">Drop the PDF to review it</p>
         </div>
       )}
 
       <input
         ref={inputRef}
         type="file"
-        accept="application/pdf,.pdf"
+        accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
         className="sr-only"
         tabIndex={-1}
         aria-hidden="true"
@@ -123,7 +132,7 @@ export default function Home() {
           e.target.value = "";
         }}
       />
-      {session.user && (
+      {(session.user || session.guest) && (
         <>
           {error ? (
             <div className="mx-auto max-w-[1240px] px-5 pt-6 sm:px-8">
@@ -134,55 +143,41 @@ export default function Home() {
           ) : null}
           <Dashboard
             reviews={reviews}
-            onUpload={() => inputRef.current?.click()}
-            onSample={featured ? () => void run(featured.title, () => reviewSample(featured.id)) : null}
+            onUpload={() => navigate("/review")}
+            onSample={samples?.length ? trySample : null}
           />
         </>
       )}
-      {!session.user && <YourContracts reviews={reviews} label="Sample workspace" />}
-      {!session.user && <section aria-labelledby="promise" className="mx-auto grid max-w-[1240px] gap-x-16 px-5 pb-20 pt-8 [grid-template-areas:'head'_'copy'_'preview'] sm:px-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:content-center lg:pb-28 lg:pt-16 lg:[grid-template-areas:'head_preview'_'copy_preview']">
+      {!session.user && !session.guest && <section aria-labelledby="promise" className="mx-auto grid max-w-[1240px] gap-x-14 px-5 pb-16 pt-8 [grid-template-areas:'head'_'copy'_'preview'] sm:px-8 sm:pt-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:pb-20 lg:pt-14 lg:[grid-template-areas:'head_preview'_'copy_preview']">
         <div className="reveal self-end text-white [grid-area:head]" style={{ ["--d" as string]: "0s" }}>
-          <p className="tab text-desk-text">For founders who sign without a lawyer</p>
-          <h1 id="promise" className="display mt-3 text-[2.25rem] sm:mt-4 sm:text-[3.5rem]">
+          <h1 id="promise" className="display max-w-[15ch] text-2xl sm:text-3xl">
             Your vendor’s contract, marked up before you sign.
           </h1>
-          {/* The five contract types it knows, as tabs on a file. */}
-          <ul aria-label="Contracts it reviews" className="mt-6 flex flex-wrap gap-2">
-            {["NDAs", "Service agreements", "Employment and freelance", "Tenancy", "Hire purchase"].map((t) => (
-              <li key={t} className="tab rounded-t-[3px] border-b-2 border-high-box bg-white/10 px-2.5 py-1.5 !text-[0.78rem] text-white">
-                {t}
-              </li>
-            ))}
-          </ul>
         </div>
-        <div className="mt-14 self-center [grid-area:preview] lg:mt-0">
+        <div className="mt-12 self-center [grid-area:preview] lg:mt-0">
           <HeroVisual />
         </div>
         <div className="reveal text-white [grid-area:copy] lg:mt-0" style={{ ["--d" as string]: "0.12s" }}>
-          <p className="mt-5 max-w-xl text-[1.1rem] text-desk-text sm:text-[1.2rem]">
+          <p className="mt-5 max-w-xl text-lg text-desk-text">
             In about a minute you see its own pages with every risky clause boxed, what it means in plain words, what to ask
             for, and a reply ready to send.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <button
-              type="button"
-              className="btn-go btn-flag !min-h-[52px] !px-6 text-[1.05rem]"
-              disabled={!featured}
-              onClick={() => featured && void run(featured.title, () => reviewSample(featured.id))}
-            >
+          <p className="mt-3 max-w-xl text-desk-text">Works on NDAs, service, employment, tenancy and hire-purchase agreements.</p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <button type="button" className="btn-go !min-h-[52px] !px-6 text-base" disabled={!samples?.length} onClick={trySample}>
               Try a sample contract <span aria-hidden="true">→</span>
             </button>
-            <button type="button" className="btn-desk !min-h-[52px] !px-6 text-[1.05rem]" onClick={() => inputRef.current?.click()} aria-describedby="upload-help">
+            <button type="button" className="btn-desk !min-h-[52px] !px-6 text-base" onClick={() => inputRef.current?.click()} aria-describedby="upload-help">
               Upload a PDF
             </button>
           </div>
-          <p id="upload-help" className="mt-4 text-[0.95rem] text-desk-text">
-            PDF up to 10 MB and 40 pages, in English or Bahasa Malaysia. Or drop it anywhere on this page.
+          <p id="upload-help" className="mt-4 text-sm text-desk-text">
+            PDF, or a photo of each page (JPG or PNG), up to 10 MB and 40 pages, in English or Bahasa Malaysia. Or drop it anywhere on this page.
           </p>
           {needSignIn && (
             <div ref={errorRef} tabIndex={-1} role="alert" className="mt-5 rounded-[3px] bg-white px-4 py-4 text-ink">
               <p className="font-semibold">Sign in with Google to review your own contract.</p>
-              <p className="mt-1 text-[0.95rem] text-ink-soft">Your contracts stay in your own workspace. The samples work without signing in.</p>
+              <p className="mt-1 text-sm text-ink-soft">Your contracts stay in your own workspace. The samples work without signing in.</p>
               <div className="mt-3">
                 <SignInButton />
               </div>
@@ -196,12 +191,26 @@ export default function Home() {
         </div>
       </section>}
 
+      {!session.user && !session.guest && (
+        <section aria-labelledby="demo-title" className="border-t border-white/5">
+          <div className="mx-auto flex max-w-[1240px] flex-col gap-4 px-5 py-8 sm:px-8 md:flex-row md:items-center md:justify-between">
+            <div className="text-white">
+              <h2 id="demo-title" className="text-xl font-bold">See it as a team uses it</h2>
+              <p className="mt-1 max-w-2xl text-desk-text">Look around a made-up company, Kopi Kita Sdn Bhd, with its contracts, deadlines, company rules and team. Nothing there can be changed.</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <GuestButton className="!min-h-[52px] !px-5" />
+              {session.available && <SignInButton className="!min-h-[52px] !px-5" />}
+            </div>
+          </div>
+        </section>
+      )}
       <section aria-labelledby="samples-title" className="border-t border-white/5 bg-desk-deep/75">
         <div className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8">
-          <h2 id="samples-title" className="text-[1.35rem] font-bold text-white">
-            Or open one of our sample contracts
+          <h2 id="samples-title" className="text-xl font-bold text-white">
+            Sample contracts, one of each kind
           </h2>
-          <p className="mt-1 text-desk-text">All made up, so you can see a full review without sharing your own.</p>
+          <p className="mt-1 text-desk-text">All made up. Open one to read it first, then review it.</p>
           {samples === null ? (
             <p className="mt-6 text-desk-text" role="status">
               Loading samples…
@@ -209,37 +218,53 @@ export default function Home() {
           ) : samples.length === 0 ? (
             <p className="mt-6 text-desk-text">Samples are not available right now. You can still upload your own PDF.</p>
           ) : (
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {samples.map((s) => (
-                <li key={s.id} className="pr-3">
-                  <button
-                    type="button"
-                    onClick={() => void run(s.title, () => reviewSample(s.id))}
-                    className="group relative flex h-full min-h-[132px] w-full flex-col items-start justify-between gap-3 rounded-[3px] bg-paper p-4 pr-5 text-left shadow-page lift"
-                  >
-                    <span className="font-doc text-[1.02rem] font-bold leading-snug text-ink">{s.title}</span>
-                    <span aria-hidden="true" className="block w-full space-y-1.5">
-                      <span className="block h-[5px] w-full rounded-sm bg-paper-line" />
-                      <span className="block h-[5px] w-4/5 rounded-sm bg-paper-line" />
-                    </span>
-                    <span className="tab flex w-full items-center justify-between text-ink-mute">
-                      {contractTypeLabel(s.contract_type)}
-                      <span className="text-ink">
-                        Review it <span aria-hidden="true" className="inline-block transition-transform group-hover:translate-x-0.5">→</span>
-                      </span>
-                    </span>
-                    {/* Edge tab: the contract's language, like a tab on a file copy. */}
-                    <span className="tab absolute -right-3 top-4 rounded-r-[3px] bg-desk px-1.5 py-1 !text-[0.72rem] text-white shadow-lift">
-                      {s.language === "ms" ? "BM" : s.language.toUpperCase()}
-                      <span className="sr-only"> · {languageLabel(s.language)}</span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {curated.map((s) => (
+                  <li key={s.id}>
+                    <SampleCard s={s} />
+                  </li>
+                ))}
+              </ul>
+              {rest.length > 0 && (
+                <details className="group mt-5">
+                  <summary className="inline-flex min-h-[44px] cursor-pointer items-center font-semibold text-white underline underline-offset-4">
+                    See all {samples.length} samples
+                  </summary>
+                  <ul className="mt-4 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
+                    {rest.map((s) => (
+                      <li key={s.id} className="border-b border-white/10">
+                        <Link to={`/sample/${s.id}`} className="flex min-h-[44px] flex-col justify-center py-2 text-white hover:underline">
+                          <span className="font-semibold leading-snug">{s.title}</span>
+                          <span className="meta text-desk-text">
+                            {contractTypeLabel(s.contract_type)}, {languageLabel(s.language)}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </>
           )}
         </div>
       </section>
     </div>
+  );
+}
+
+/** A sample as a sheet of paper: its title, its type and language. Opens the preview, not a review. */
+function SampleCard({ s }: { s: Sample }) {
+  return (
+    <Link
+      to={`/sample/${s.id}`}
+      className="flex h-full min-h-[148px] w-full flex-col justify-between gap-4 rounded-[3px] bg-paper p-4 text-left shadow-page lift"
+    >
+      <span className="font-doc text-base font-bold leading-snug text-ink">{s.title}</span>
+      <span className="meta text-ink-mute">
+        {contractTypeLabel(s.contract_type)}
+        {s.language !== "en" ? `, ${languageLabel(s.language)}` : ""}
+      </span>
+    </Link>
   );
 }

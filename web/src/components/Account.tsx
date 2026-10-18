@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteMyData } from "../api";
-import { signIn, signOut, switchWorkspace } from "../session";
+import { enterGuest, exitGuest, signIn, signOut, switchWorkspace } from "../session";
 import { useSession } from "../useSession";
 
 function Avatar({ name, photo, size = 32 }: { name?: string | null; photo?: string | null; size?: number }) {
@@ -13,7 +13,7 @@ function Avatar({ name, photo, size = 32 }: { name?: string | null; photo?: stri
   return photo ? (
     <img src={photo} alt="" width={size} height={size} referrerPolicy="no-referrer" className="shrink-0 rounded-full" />
   ) : (
-    <span aria-hidden="true" style={{ width: size, height: size }} className="grid shrink-0 place-items-center rounded-full bg-white text-[0.8rem] font-bold text-desk">
+    <span aria-hidden="true" style={{ width: size, height: size }} className="grid shrink-0 place-items-center rounded-full bg-white text-xs font-bold text-desk">
       {initials}
     </span>
   );
@@ -27,6 +27,32 @@ export function GoogleMark() {
       <path fill="#FBBC05" d="M3.9 10.7a5.4 5.4 0 0 1 0-3.4V5H.9a9 9 0 0 0 0 8z" />
       <path fill="#EA4335" d="M9 3.6c1.3 0 2.5.5 3.5 1.4l2.6-2.6A9 9 0 0 0 .9 5l3 2.3C4.6 5.1 6.6 3.6 9 3.6z" />
     </svg>
+  );
+}
+
+/** Enter the read-only demo company. */
+export function GuestButton({ className = "" }: { className?: string }) {
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <span className="inline-flex flex-col">
+      <button
+        type="button"
+        className={`btn-desk ${className}`}
+        onClick={async () => {
+          setError(null);
+          try {
+            await enterGuest();
+            navigate("/");
+          } catch (e) {
+            setError((e as Error).message);
+          }
+        }}
+      >
+        View the demo company
+      </button>
+      {error && <span role="alert" className="mt-1 text-sm font-medium text-[#FFB1A8]">{error}</span>}
+    </span>
   );
 }
 
@@ -59,7 +85,7 @@ export function SignInButton({ className = "", label = "Sign in with Google" }: 
         {label && (busy ? "Signing in…" : label)}
       </button>
       {error && (
-        <span role="alert" className="mt-1 text-[0.9rem] font-medium text-[#FFB1A8]">
+        <span role="alert" className="mt-1 text-sm font-medium text-[#FFB1A8]">
           {error}
         </span>
       )}
@@ -102,10 +128,31 @@ export default function Account({ slim = false, compact = false }: { slim?: bool
 
   if (s.loading) return <span className="h-8 w-8" aria-hidden="true" />;
 
+  if (!s.user && s.guest)
+    return (
+      <div className={slim ? "flex justify-center" : "space-y-2"}>
+        {!slim && (
+          <p className="meta rounded-[3px] bg-medium-box px-2 py-1 text-center text-xs text-ink">Demo, read-only</p>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            exitGuest();
+            navigate("/");
+          }}
+          title={slim ? "Leave the demo" : undefined}
+          className={`btn-desk !min-h-[44px] ${slim ? "!w-11 !px-0" : "w-full"} ${compact ? "!min-h-[40px] !px-3 text-sm" : ""}`}
+        >
+          {slim ? <span aria-hidden="true">×</span> : "Leave the demo"}
+          {slim && <span className="sr-only">Leave the demo</span>}
+        </button>
+      </div>
+    );
+
   if (!s.user)
     return (
       <>
-        {compact && s.available ? <SignInButton className="!min-h-[40px] !px-3 text-[0.92rem]" label="Sign in" /> : compact ? <span className="w-11" /> : null}
+        {compact && s.available ? <SignInButton className="!min-h-[40px] !px-3 text-sm" label="Sign in" /> : compact ? <span className="w-11" /> : null}
         {done && (
           <span role="status" className="sr-only">
             {done}
@@ -143,8 +190,8 @@ export default function Account({ slim = false, compact = false }: { slim?: bool
       >
         <Avatar name={s.user.name} photo={s.user.photo_url} />
         <span className={slim ? "hidden" : "min-w-0 flex-1"}>
-          <span className="block max-w-[11rem] truncate text-[0.88rem] font-semibold leading-tight">{ws?.name ?? "Your workspace"}</span>
-          <span className="tab block !text-[0.68rem] text-desk-text">{s.workspace?.role}</span>
+          <span className="block max-w-[11rem] truncate text-sm font-semibold leading-tight">{ws?.name ?? "Your workspace"}</span>
+          <span className="meta block text-xs text-desk-text">{s.workspace?.role}</span>
         </span>
         {!slim && <span aria-hidden="true" className="text-desk-text">▴</span>}
         <span className="sr-only">Account menu for {s.user.name ?? s.user.email}, workspace {ws?.name}</span>
@@ -154,11 +201,11 @@ export default function Account({ slim = false, compact = false }: { slim?: bool
         <div role="menu" className={`absolute z-40 w-[18rem] ${compact ? "right-0 top-full mt-1" : "bottom-full left-0 mb-2"} rounded-[3px] bg-paper py-2 text-ink shadow-lift`}>
           <div className="border-b border-paper-line px-4 pb-3 pt-1">
             <p className="truncate font-semibold">{s.user.name}</p>
-            <p className="truncate text-[0.9rem] text-ink-soft">{s.user.email}</p>
+            <p className="truncate text-sm text-ink-soft">{s.user.email}</p>
           </div>
           {list.length > 1 && (
             <div className="border-b border-paper-line py-1" role="group" aria-label="Workspaces">
-              <p className="tab px-4 pt-2 text-ink-mute">Workspace</p>
+              <p className="meta px-4 pt-2 text-ink-mute">Workspace</p>
               {list.map((w) => (
                 <button
                   key={w.workspace.id}
@@ -189,9 +236,9 @@ export default function Account({ slim = false, compact = false }: { slim?: bool
 
       <dialog ref={dialogRef} onClose={() => setConfirm(false)} aria-labelledby="del-title" className="w-[min(30rem,calc(100vw-32px))] rounded-[3px] bg-paper p-0 shadow-lift">
         <div className="px-6 py-6">
-          <h2 id="del-title" className="display text-[1.5rem] text-ink">Delete my data?</h2>
+          <h2 id="del-title" className="display text-xl text-ink">Delete my data?</h2>
           <p className="mt-3 text-ink">This removes everything for your account: your uploads, your reviews, your company documents and your activity. It cannot be undone.</p>
-          <p className="mt-2 text-[0.95rem] text-ink-soft">Workspaces you share with others keep the reviews other people ran.</p>
+          <p className="mt-2 text-sm text-ink-soft">Workspaces you share with others keep the reviews other people ran.</p>
           {delError && <p role="alert" className="mt-4 rounded-[3px] bg-high-tint px-3 py-2 font-medium text-high">{delError}</p>}
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" className="btn bg-high text-white hover:bg-[#8f1e18]" onClick={() => void doDelete()} disabled={deleting}>

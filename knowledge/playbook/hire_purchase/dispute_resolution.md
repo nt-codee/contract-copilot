@@ -18,4 +18,4 @@ Where and how a dispute is settled, and your route to complain.
 - **Low:** notices of dispute must be in a fixed form.
 
 ## Suggested ask
-"Please confirm that disputes will be heard in the courts of Malaysia (or Singapore) and that nothing in the agreement stops me from using the lender's complaints process or a regulator's complaints channel."
+"Please let disputes be heard in the courts of the country whose law governs this agreement, delete the time limit for bringing a claim, and confirm that nothing in the agreement stops me from using the lender's complaints process or a regulator's complaints channel."

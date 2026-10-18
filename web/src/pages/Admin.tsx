@@ -31,7 +31,7 @@ export default function Admin() {
   if (!allowed)
     return (
       <div className="mx-auto max-w-xl px-5 py-16 text-white">
-        <h1 className="display text-[2rem]">Admin</h1>
+        <h1 className="display text-2xl">Admin</h1>
         <p className="mt-3 text-desk-text">This page is for the people who run Contract Co-pilot.</p>
       </div>
     );
@@ -42,13 +42,12 @@ export default function Admin() {
     <div className="mx-auto max-w-[1240px] px-5 pb-20 pt-10 sm:px-8 sm:pt-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="tab text-desk-text">Admin · every workspace</p>
-          <h1 className="display mt-2 text-[2.1rem] text-white sm:text-[2.6rem]">How Contract Co-pilot is used</h1>
+          <h1 className="display mt-2 text-2xl text-white sm:text-2xl">Usage across workspaces</h1>
           <p className="mt-2 max-w-2xl text-desk-text">Counts and timings only. Contract text stays inside each workspace.</p>
         </div>
         <div role="group" aria-label="Period" className="flex gap-1.5">
           {[7, 30, 90].map((d) => (
-            <button key={d} type="button" aria-pressed={days === d} onClick={() => setDays(d)} className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-3 text-[0.92rem] ${days === d ? "border-white bg-white font-semibold text-ink" : "border-desk-line text-white hover:border-desk-text"}`}>
+            <button key={d} type="button" aria-pressed={days === d} onClick={() => setDays(d)} className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-3 text-sm ${days === d ? "border-white bg-white font-semibold text-ink" : "border-desk-line text-white hover:border-desk-text"}`}>
               {d} days
             </button>
           ))}
@@ -60,10 +59,10 @@ export default function Admin() {
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[3fr_2fr]">
         <section aria-labelledby="users-title" className="sheet min-w-0 overflow-hidden">
-          <h2 id="users-title" className="tab border-b border-paper-line px-5 py-3 text-ink-mute">People{users ? ` · ${users.length}` : ""}</h2>
+          <h2 id="users-title" className="label border-b border-paper-line px-5 py-3 text-ink-soft">People{users ? `, ${users.length}` : ""}</h2>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-[0.92rem]">
-              <thead className="tab text-ink-mute">
+            <table className="w-full min-w-[560px] text-left text-sm">
+              <thead className="label text-ink-soft">
                 <tr className="border-b border-paper-line">
                   <th scope="col" className="px-5 py-2 font-[inherit]">Person</th>
                   <th scope="col" className="px-3 py-2 font-[inherit]">Workspace</th>
@@ -76,7 +75,7 @@ export default function Admin() {
                   <tr key={u.uid}>
                     <td className="px-5 py-2.5">
                       <span className="block font-semibold text-ink">{u.name ?? "—"}</span>
-                      <span className="block break-all text-ink-soft">{u.email}</span>
+                      <span className="block break-words text-ink-soft">{u.email}</span>
                     </td>
                     <td className="px-3 py-2.5 text-ink">{u.workspaces.map((w) => `${w.name} (${w.role})`).join(", ")}</td>
                     <td className="px-3 py-2.5 text-right font-semibold text-ink">{u.review_count}</td>
@@ -88,9 +87,9 @@ export default function Admin() {
           </div>
         </section>
         <section aria-labelledby="all-activity" className="sheet min-w-0 px-5 py-4">
-          <h2 id="all-activity" className="tab text-ink-mute">Activity · all workspaces</h2>
+          <h2 id="all-activity" className="label text-ink-soft">Activity, all workspaces</h2>
           <div className="mt-3 max-h-[560px] overflow-y-auto pr-1">
-            {events ? <ActivityList events={events.slice(0, 40)} names={names} showWorkspace /> : <p role="status" className="text-ink-soft">Loading…</p>}
+            {events ? <ActivityList events={events.slice(0, 40)} names={names} showWorkspace technical /> : <p role="status" className="text-ink-soft">Loading…</p>}
           </div>
         </section>
       </div>

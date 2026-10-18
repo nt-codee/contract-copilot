@@ -53,7 +53,7 @@ export function Markdown({ text }: { text: string }) {
     }
     if (quote.length) {
       blocks.push(
-        <blockquote key={`${k}q`} className="mt-3 border-l-4 border-ink pl-4 font-doc text-[1.05rem] leading-relaxed">
+        <blockquote key={`${k}q`} className="mt-3 border-l-4 border-ink pl-4 font-doc text-base leading-relaxed">
           {inline(quote.join(" "), k)}
         </blockquote>,
       );
@@ -72,7 +72,7 @@ export function Markdown({ text }: { text: string }) {
       const k = `h${blocks.length}`;
       blocks.push(
         h[1].length <= 2 ? (
-          <h2 key={k} className="tab mt-7 !text-[0.95rem] text-ink first:mt-0">{inline(h[2], k)}</h2>
+          <h2 key={k} className="label mt-7 text-sm text-ink first:mt-0">{inline(h[2], k)}</h2>
         ) : (
           <h3 key={k} className="mt-5 font-semibold text-ink">{inline(h[2], k)}</h3>
         ),
@@ -95,5 +95,5 @@ export function Markdown({ text }: { text: string }) {
     }
   }
   flush();
-  return <div className="text-[1rem] text-ink">{blocks}</div>;
+  return <div className="text-base text-ink">{blocks}</div>;
 }

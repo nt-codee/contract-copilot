@@ -5,6 +5,7 @@ kind: statute
 title: "Employment Act 1968, s 88A: annual leave"
 citation: "Employment Act 1968 (2020 Rev Ed; informal consolidation in force from 5/12/2025), s 88A(1), (8)"
 clause_types: [leave]
+applies_to: employee
 source_url: "https://sso.agc.gov.sg/Act/EmA1968?ProvIds=pr88A-"
 retrieved: 2026-10-18
 licence_note: "Official SSO PDF downloaded manually by the user on 2026-10-18; quoted with attribution under SSO terms cl 13"

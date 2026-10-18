@@ -41,10 +41,27 @@ class LLMUsage:
     model: str
     input_tokens: int = 0
     output_tokens: int = 0
+    # tokens of calls the fallback model answered (the primary stalled); counted apart for the cost
+    fallback_model: str | None = None
+    fallback_input_tokens: int = 0
+    fallback_output_tokens: int = 0
+    fallback_purposes: list[str] = field(default_factory=list)  # e.g. ["agent", "review"]
 
     def add(self, other: "LLMUsage") -> None:
         self.input_tokens += other.input_tokens
         self.output_tokens += other.output_tokens
+        self.fallback_input_tokens += other.fallback_input_tokens
+        self.fallback_output_tokens += other.fallback_output_tokens
+        self.fallback_purposes += other.fallback_purposes
+        self.fallback_model = other.fallback_model or self.fallback_model
+
+    @property
+    def total_input(self) -> int:
+        return self.input_tokens + self.fallback_input_tokens
+
+    @property
+    def total_output(self) -> int:
+        return self.output_tokens + self.fallback_output_tokens
 
 
 @dataclass
@@ -182,10 +199,22 @@ class CompanyStore(Protocol):
     def delete(self, doc_id: str, *, owner: str) -> bool:
         """Remove the doc and its chunks. False when there was no such doc."""
         ...
-    def search(self, vector: list[float], limit: int, *, owner: str) -> list[tuple[CompanyChunk, float]]: ...
+    def search(self, vector: list[float], limit: int, *, owner: str,
+               doc_ids: frozenset[str] | None = None) -> list[tuple[CompanyChunk, float]]:
+        """Nearest passages of the workspace's policies; with `doc_ids`, only passages of those documents."""
+        ...
     def delete_owner(self, owner: str) -> list[str]:
         """Remove every doc of a workspace. Returns the removed doc ids."""
         ...
+
+
+class SpendCounter(Protocol):
+    """A named counter shared by every instance, with a cap checked and incremented atomically."""
+
+    def take(self, key: str, cap: int) -> bool:
+        """Add one to `key` unless it is already at `cap`. True when taken, False when the cap was reached."""
+        ...
+    def used(self, key: str) -> int: ...
 
 
 class AuthVerifier(Protocol):

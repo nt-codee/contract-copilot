@@ -20,4 +20,10 @@ Every charge other than the instalment itself: processing, stamp duty, admin, la
 - **Low:** a small fee for a statement or for a settlement figure.
 
 ## Suggested ask
-"Please list every fee and charge with its amount, remove the daily compounding late fee in favour of simple interest on the overdue amount, and limit legal costs to those actually and reasonably incurred."
+Use only the charges this contract states, and fix the clause you quoted; never name a charge (a daily
+fee, compounding, a percentage penalty) the contract does not contain. Pick what applies:
+- a power to change fees by notice: "Please delete the right to change any fee by notice, and list
+  every fee and charge with its amount in the agreement."
+- a late charge plus interest: "Please charge either the late fee or simple interest on the overdue
+  amount, not both."
+- open-ended legal costs: "Please limit legal costs to those actually and reasonably incurred."

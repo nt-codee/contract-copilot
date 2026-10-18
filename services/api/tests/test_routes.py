@@ -40,8 +40,8 @@ def test_review_end_to_end_with_fake_llm(client, services, pdf_bytes):
     assert cites[0]["title"] == "Contracts Act 1950, s.75" and "MODEL-WRITTEN" not in cites[0]["excerpt"]
     assert body["metrics"]["dropped_unverified_citations"] == 1 and body["jurisdiction"] == "my"
     assert [t["action"] for t in body["trace"]] == [
-        "read_contract", "search_law", "search_playbook", "search_company", "read_page",
-        "draft_findings", "verify"]
+        "read_contract", "plan_research", "search_law", "search_playbook", "search_company", "read_page",
+        "plan_research", "draft_findings", "verify"]
 
 
 def test_get_list_and_pdf(client, pdf_bytes):

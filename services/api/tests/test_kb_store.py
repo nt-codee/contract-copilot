@@ -293,7 +293,7 @@ def test_trace_detail_json_and_cited_after_verification(kb):
                         call("search_playbook", contract_type="service_agreement", clause_type="liability")]])
     trace = Trace()
     outcome = run_agent(llm, Toolbox(kb, MemoryCompanyStore(), HashEmbedder(), PAGES, owner="demo"), PAGES, trace)
-    law, playbook = (json.loads(s.detail) for s in trace.steps[:2])
+    law, playbook = (json.loads(s.detail) for s in trace.steps[1:3])
     assert set(law) == {"tool", "args", "results", "cited"} and law["tool"] == "search_law"
     assert law["args"] == {"query": "penalty liquidated damages", "jurisdiction": "my"}
     assert {"ref", "title", "kind", "score"} == set(law["results"][0]) and law["results"][0]["ref"] == "my-contracts-act-s75"
@@ -301,7 +301,7 @@ def test_trace_detail_json_and_cited_after_verification(kb):
     assert law["cited"] == [] and playbook["cited"] == []
     # after verification only what ended up in a finding is marked
     fill_cited(trace.steps, {"my-contracts-act-s75"})
-    law, playbook = (json.loads(s.detail) for s in trace.steps[:2])
+    law, playbook = (json.loads(s.detail) for s in trace.steps[1:3])
     assert law["cited"] == ["my-contracts-act-s75"] and playbook["cited"] == []
     assert trace.steps[-1].detail == "5 candidate findings" and outcome.tool_calls == 2
 
@@ -402,7 +402,8 @@ def test_company_citation_gets_doc_id_page_and_boxes(client, services, pdf_bytes
     from app.models import LLMReview
 
     final = LLMReview.model_validate_json((llm.fixtures_dir / "review.json").read_text())
-    final.findings[2].citations = [LLMCitation(kind="company", ref=f"company:{doc['id']}", excerpt="made up")]
+    final.findings[2].citations = [LLMCitation(kind="company", ref=f"company:{doc['id']}",
+                                                   excerpt="Vendor liability must never be capped below 12 months of fees paid.")]  # the rule's own words
     final.findings[2].policy_breach = "Our policy requires at least 12 months of fees."
     llm.generate = lambda **kw: (final, __import__("app.ports", fromlist=["LLMUsage"]).LLMUsage(llm.model, 10, 5))
     services.llm = llm
@@ -513,13 +514,23 @@ def test_removed_claim_no_company_citation():
     assert found[0].policy_breach is None
     assert [(r.kind, r.reason, r.text, r.page, r.finding_title) for r in removed] == [
         ("policy_breach", "no_company_citation", "Our policy forbids unlimited liability.", 2, "Cap")]
-    # with a verified company citation the breach stays and nothing is removed
-    known = {"company:d": [Citation(kind="company", ref="company:d", title="p", excerpt="e", page=1, doc_id="d")]}
+    # with a verified company citation whose rule the model quotes, the breach stays and nothing is removed
+    rule = "Vendor liability must never be uncapped or capped below 12 months of fees."
+    known = {"company:d": [Citation(kind="company", ref="company:d", title="p", excerpt="1. " + rule, page=1,
+                                    doc_id="d")]}
     removed2: list = []
     kept, *_ = verify_findings([_f("The Customer shall be liable without limit for any loss", title="Cap",
-                                   citations=[LLMCitation(kind="company", ref="company:d", excerpt="x")],
+                                   citations=[LLMCitation(kind="company", ref="company:d", excerpt=rule)],
                                    breach="Our policy forbids unlimited liability.")], PAGES, known, removed=removed2)
     assert kept[0].policy_breach and removed2 == []
+    # cited but not quoted (the model's words are not the rule's): no breach
+    removed3: list = []
+    kept, *_ = verify_findings([_f("The Customer shall be liable without limit for any loss", title="Cap",
+                                   citations=[LLMCitation(kind="company", ref="company:d", excerpt="we never accept "
+                                                          "unlimited exposure to vendors")],
+                                   breach="Our policy forbids unlimited liability.")], PAGES, known, removed=removed3)
+    assert kept[0].policy_breach is None and kept[0].citations  # the citation itself stays
+    assert [(r.kind, r.reason) for r in removed3] == [("policy_breach", "no_company_citation")]
 
 
 def test_removed_claims_are_persisted_and_returned(client, services, pdf_bytes):
@@ -662,8 +673,8 @@ def test_lock_applies_before_the_searches_of_the_same_turn(two_country_kb):
     outcome = run_agent(llm, tools, PAGES, trace)
     assert (outcome.jurisdiction, outcome.governing_law, outcome.jurisdiction_source) == ("my", "the laws of Malaysia", "tool")
     assert set(outcome.known) <= {"my-contracts-act-s75", "my-contracts-act-s28"}  # the sg search ran as Malaysian
-    assert [t.action for t in trace.steps] == ["search_law", "draft_findings"]  # set_jurisdiction is not a lookup
-    assert trace.steps[0].summary.startswith("Checked Malaysian law on")  # said "sg", searched (and reported) "my"
+    assert [t.action for t in trace.steps] == ["plan_research", "search_law", "draft_findings"]  # set_jurisdiction is not a lookup
+    assert trace.steps[1].summary.startswith("Checked Malaysian law on")  # said "sg", searched (and reported) "my"
 
 
 def test_final_call_is_told_the_fixed_jurisdiction(two_country_kb):

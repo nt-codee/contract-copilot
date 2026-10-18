@@ -31,7 +31,7 @@ log = logging.getLogger("cc.agent")
 
 MAX_TURNS = 2
 MAX_TOOL_CALLS = 16
-MAX_RESULT_CHARS = 2500
+MAX_RESULT_CHARS = 3200  # law results also carry each entry's supports scope and caveat
 MAX_PAGE_CHARS = 4000
 COMPANY_EXCERPT = 600
 CITATION_EXCERPT = 400
@@ -163,12 +163,16 @@ def tool_summary(name: str, args: dict) -> str:
 class Trace:
     """Numbered TraceSteps, appended from any phase of the pipeline."""
 
-    def __init__(self) -> None:
+    def __init__(self, origin: float | None = None) -> None:
+        self.origin = time.monotonic() if origin is None else origin
         self.steps: list[TraceStep] = []
 
-    def add(self, action: str, summary: str, detail: str | None = None, ms: float | None = None) -> None:
+    def add(self, action: str, summary: str, detail: str | None = None, ms: float | None = None, *,
+            start: float | None = None, turn: int | None = None, batch: int | None = None) -> None:
         self.steps.append(TraceStep(step=len(self.steps) + 1, action=action, summary=summary,  # type: ignore[arg-type]
-                                    detail=detail, ms=int(ms) if ms is not None else None))
+                                    detail=detail, ms=int(ms) if ms is not None else None,
+                                    start_ms=int((start - self.origin) * 1000) if start is not None else None,
+                                    turn=turn, batch=batch))
 
 
 # ---- tools ----------------------------------------------------------------------------------
@@ -176,6 +180,15 @@ class Trace:
 
 def _result(src: Citation, score: float | None) -> dict:
     return {"ref": src.ref, "title": src.title, "kind": src.kind, "score": score}
+
+
+def supports_line(e) -> str:
+    """What a citation of `e` may back, as the model reads it. Verification enforces the same scope."""
+    parts = []
+    for clause, stems in e.scope().items():
+        name = "any clause" if clause == "*" else clause
+        parts.append(f"{name} (only if the quoted clause mentions: {', '.join(stems[:4])})" if stems else name)
+    return "cite only on findings of type: " + "; ".join(parts)
 
 
 def _jurisdiction(value) -> str | None:
@@ -186,7 +199,7 @@ def _jurisdiction(value) -> str | None:
 def _shrink(items: list[dict]) -> None:
     """Clip the long text fields of every item by 15%, in place."""
     for it in items:
-        for key in ("excerpt", "plain"):
+        for key in ("excerpt", "plain", "caveat"):
             v = it.get(key)
             if isinstance(v, str) and len(v) > 40:
                 it[key] = clip(v, int(len(v) * 0.85))
@@ -243,6 +256,8 @@ class Toolbox:
         """`owner` scopes the company-policy lookups and the playbook overrides to one workspace."""
         self.kb, self.company, self.embedder, self.pages = kb, company, embedder, pages
         self.owner, self.overrides, self.home = owner, overrides, home
+        self.company_rules = True  # False: the reader switched company rules off for this review
+        self.company_doc_ids: frozenset[str] | None = None  # only these policy documents; None: all of them
         self.jurisdiction: str | None = None  # my | sg | other, once fixed
         self.governing_law: str | None = None
         self.jurisdiction_source: str | None = None  # "tool" | "majority"
@@ -302,8 +317,11 @@ class Toolbox:
         items, sources, scores = [], [], {}
         for e, score in hits:
             excerpt, plain = clip(e.text, TEXT_EXCERPT), clip(e.plain, PLAIN_EXCERPT)
-            items.append({"ref": e.id, "title": e.title, "citation": e.citation, "excerpt": excerpt,
-                          "plain": plain, "url": e.link})
+            item = {"ref": e.id, "title": e.title, "citation": e.citation, "excerpt": excerpt,
+                    "plain": plain, "url": e.link, "supports": supports_line(e)}
+            if e.caveat:
+                item["caveat"] = e.caveat
+            items.append(item)
             kind = "case" if e.kind == "case" else "law"
             sources.append(Citation(kind=kind, ref=e.id, title=e.title, jurisdiction=e.jurisdiction,
                                     excerpt=excerpt, url=e.source_url or None, source_url=e.link or None))
@@ -342,6 +360,9 @@ class Toolbox:
         return ToolOutput(compact([item]), [src], e.title, [_result(src, 1.0)])
 
     def _company(self, a: dict) -> ToolOutput:
+        if not self.company_rules:
+            return ToolOutput(json.dumps({"results": [], "note": "company rules are switched off for this review"}), [],
+                              "company rules switched off")
         query = str(a.get("query") or "").strip()
         if not query:
             return ToolOutput(json.dumps({"error": "give a query"}))
@@ -349,7 +370,7 @@ class Toolbox:
             return ToolOutput(json.dumps({"results": [], "note": "no company documents uploaded"}), [],
                               "no company documents")
         vectors, _ = self.embedder.embed([query], query=True)
-        hits = self.company.search(vectors[0], TOP_K, owner=self.owner)
+        hits = self.company.search(vectors[0], TOP_K, owner=self.owner, doc_ids=self.company_doc_ids)
         items, sources = [], []
         for c, _score in hits:
             items.append({"ref": f"company:{c.doc_id}", "title": c.title, "page": c.page,
@@ -416,7 +437,7 @@ def _lock_jurisdiction(tools: Toolbox, calls: list[ToolCall]) -> tuple[list[Tool
     return keep, skipped
 
 
-def _run_all(tools: Toolbox, calls: list[ToolCall]) -> list[tuple[ToolOutput, float]]:
+def _run_all(tools: Toolbox, calls: list[ToolCall]) -> list[tuple[ToolOutput, float, float]]:
     """Run the calls in parallel, in order of the list."""
     with ThreadPoolExecutor(max_workers=max(1, len(calls))) as pool:
         return list(pool.map(_timed(tools), calls))
@@ -444,38 +465,66 @@ def clause_vocabulary(kb) -> dict[str, list[str]]:
 
 
 def _timed(tools: Toolbox):
-    def run(call: ToolCall) -> tuple[ToolOutput, float]:
+    def run(call: ToolCall) -> tuple[ToolOutput, float, float]:
         t0 = time.monotonic()
         out = tools.run(call)
-        return out, (time.monotonic() - t0) * 1000
+        return out, (time.monotonic() - t0) * 1000, t0
 
     return run
 
 
+def apply_options(tools: Toolbox, options) -> list[ToolSpec]:
+    """Put the reader's choices into effect and return the tools the model may use.
+
+    A chosen jurisdiction is locked before the first turn (the lock never moves), so set_jurisdiction is withdrawn;
+    switching company rules off withdraws search_company and makes the tool itself refuse."""
+    specs = list(TOOLS)
+    if options is None:
+        return specs
+    if options.jurisdiction != "auto":
+        name = {"MY": "Malaysian", "SG": "Singapore"}[options.jurisdiction]
+        tools.lock(options.jurisdiction.lower(), f"chosen by the reader: {name} law", "user")
+        specs = [t for t in specs if t.name != "set_jurisdiction"]
+    if not options.apply_company_rules:
+        tools.company_rules = False
+        specs = [t for t in specs if t.name != "search_company"]
+    elif options.company_doc_ids:
+        tools.company_doc_ids = frozenset(options.company_doc_ids)
+    return specs
+
+
 def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
-              max_turns: int = MAX_TURNS, max_tool_calls: int = MAX_TOOL_CALLS) -> AgentOutcome:
+              max_turns: int = MAX_TURNS, max_tool_calls: int = MAX_TOOL_CALLS, options=None) -> AgentOutcome:
     vocabulary = clause_vocabulary(tools.kb)
-    system = prompts.agent_system(pages, max_tool_calls, vocabulary)  # the whole contract: the review call
-    plan_system = prompts.agent_system(pages, max_tool_calls, vocabulary, outline=True)  # planning turns
+    specs = apply_options(tools, options)
+    system = prompts.agent_system(pages, max_tool_calls, vocabulary, options=options)  # the whole contract: the review call
+    plan_system = prompts.agent_system(pages, max_tool_calls, vocabulary, outline=True, options=options)  # planning turns
     outlined = plan_system != system
     usage = LLMUsage(model=llm.model)
     messages = [ChatMessage(role="user", text=prompts.AGENT_START)]
     known: dict[str, list[Citation]] = {}
     research: list[tuple[str, dict, str]] = []
-    n_calls = turns = 0
+    n_calls = turns = batches = 0
     wants_pages = True  # turn 1 always runs; later turns only if the previous one asked for read_page
 
     while turns < max_turns and n_calls < max_tool_calls and wants_pages:
+        t_plan = time.monotonic()
+        turns += 1
+        failed = False
         try:
-            reply, u = llm.chat(system=plan_system, messages=messages, tools=TOOLS, purpose="agent",
-                                force_tools=(turns == 0))
+            reply, u = llm.chat(system=plan_system, messages=messages, tools=specs, purpose="agent",
+                                force_tools=(turns == 1))
         except UpstreamError:
-            if turns == 0:
+            failed = True
+            if turns == 1:
                 raise
             log.warning("agent follow-up turn failed; writing the review with what we have")
             break
+        finally:
+            trace.add("plan_research", "Planned the research",
+                      "Planning call failed" if failed else None,
+                      (time.monotonic() - t_plan) * 1000, start=t_plan, turn=turns)
         usage.add(u)
-        turns += 1
         # after turn 1 only read_page may run: the plan was supposed to be complete
         calls = [c for c in reply.tool_calls if turns == 1 or c.name == "read_page"]
         if not calls:
@@ -483,12 +532,13 @@ def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
         messages.append(reply)
         run_now = calls[:max_tool_calls - n_calls]  # calls beyond the budget are ignored
         run_now, skipped = _lock_jurisdiction(tools, run_now)
+        batches += 1
         timed = _run_all(tools, run_now)
         results: list[ToolResult] = []
         for call in skipped:  # a function call always needs an answer in the history
             results.append(ToolResult(name=call.name, id=call.id, result={
                 "error": "skipped: this search named a different country than the governing law"}))
-        for call, (out, ms) in zip(run_now, timed, strict=True):
+        for call, (out, ms, started) in zip(run_now, timed, strict=True):
             n_calls += 1
             results.append(ToolResult(name=call.name, result=json.loads(out.payload), id=call.id))
             research.append((call.name, call.args, out.payload))
@@ -498,7 +548,8 @@ def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
                 continue  # not a lookup; the fixed jurisdiction is shown on the first trace step
             shown = {**call.args, "jurisdiction": tools.search_jurisdiction(call.args.get("jurisdiction"))} \
                 if call.name == "search_law" else call.args
-            trace.add(call.name, tool_summary(call.name, shown), trace_detail(call, out), ms)
+            trace.add(call.name, tool_summary(call.name, shown), trace_detail(call, out), ms,
+                      start=started, turn=turns, batch=batches)
         messages.append(ChatMessage(role="tool", tool_results=results))
         wants_pages = any(c.name == "read_page" for c in run_now)
 
@@ -508,7 +559,8 @@ def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
                           schema=LLMReview, purpose="review")
     usage.add(u)
     trace.add("draft_findings", "Wrote the findings and the plain-English summary",
-              f"{len(out.findings)} candidate findings", (time.monotonic() - t0) * 1000)
+              f"{len(out.findings)} candidate findings", (time.monotonic() - t0) * 1000,
+              start=t0, turn=turns + 1)
     return AgentOutcome(review=out, known=known, usage=usage, turns=turns, tool_calls=n_calls,
                         jurisdiction=tools.jurisdiction, governing_law=tools.governing_law,
                         jurisdiction_source=tools.jurisdiction_source, outlined=outlined)

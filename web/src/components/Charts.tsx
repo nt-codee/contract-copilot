@@ -37,7 +37,7 @@ export function Panel({ title, summary, children, className = "", visual = true 
   return (
     <figure className={`sheet min-w-0 px-5 py-4 ${className}`}>
       <figcaption>
-        <span className="tab block text-ink-mute">{title}</span>
+        <span className="meta block text-ink-mute">{title}</span>
         {visual && <span className="sr-only">{summary}</span>}
       </figcaption>
       <div ref={ref} aria-hidden={visual || undefined} className="chart mt-3">
@@ -49,10 +49,10 @@ export function Panel({ title, summary, children, className = "", visual = true 
 
 export function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
-    <div className="sheet min-w-0 px-5 py-4">
-      <p className="tab text-ink-mute">{label}</p>
-      <p className="mt-1 text-[1.9rem] font-bold leading-none text-ink [font-stretch:110%]">{value}</p>
-      {note && <p className="mt-1.5 text-[0.9rem] text-ink-soft">{note}</p>}
+    <div className="sheet min-w-0 overflow-hidden px-5 py-4">
+      <p className="meta text-ink-mute">{label}</p>
+      <p className="mt-1 whitespace-nowrap text-[clamp(1.35rem,2.1vw,1.9rem)] font-bold leading-none text-ink [font-stretch:105%]" title={value}>{value}</p>
+      {note && <p className="mt-1.5 text-sm text-ink-soft">{note}</p>}
     </div>
   );
 }
@@ -120,7 +120,7 @@ export function Trend({ data, keyName }: { data: Record<string, string | number>
 
 export function Legend() {
   return (
-    <ul className="mt-2 flex gap-4 text-[0.85rem] text-ink-soft" aria-hidden="true">
+    <ul className="mt-2 flex gap-4 text-xs text-ink-soft" aria-hidden="true">
       {(["high", "medium", "low"] as const).map((r) => (
         <li key={r} className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-[1px]" style={{ background: C[r] }} />

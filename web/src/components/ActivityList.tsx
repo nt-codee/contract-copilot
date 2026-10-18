@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { aiVersion } from "../format";
+import { reviewTitle } from "../titles";
 import type { AuditAction, AuditEvent } from "../types";
 
 const VERB: Record<AuditAction, string> = {
@@ -56,7 +57,7 @@ function day(iso: string): string {
   return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
 }
 
-function facts(e: AuditEvent): string[] {
+function facts(e: AuditEvent, technical: boolean): string[] {
   const d = e.detail ?? {};
   const out: string[] = [];
   if (typeof d.findings === "number") out.push(`${d.findings} findings`);
@@ -64,8 +65,8 @@ function facts(e: AuditEvent): string[] {
   if (typeof d.removed === "number" && d.removed) out.push(`${d.removed} gone`);
   if (typeof d.asks === "number") out.push(`${d.asks} asks`);
   if (typeof d.latency_ms === "number") out.push(`${Math.round(d.latency_ms / 1000)} s`);
-  if (typeof d.model === "string") out.push(`AI ${aiVersion(String(d.model))}`);
-  if (typeof d.kb_version === "string") out.push(`knowledge ${String(d.kb_version).slice(0, 10)}`);
+  if (technical && typeof d.model === "string") out.push(`AI ${aiVersion(String(d.model))}`);
+  if (technical && typeof d.kb_version === "string") out.push(`knowledge ${String(d.kb_version).slice(0, 10)}`);
   return out;
 }
 
@@ -74,7 +75,8 @@ export interface Names {
 }
 
 /** The audit trail, grouped by day. */
-export default function ActivityList({ events, names, showWorkspace = false }: { events: AuditEvent[]; names: Names; showWorkspace?: boolean }) {
+/** `technical`: also show the AI version and knowledge library id (Admin only; elsewhere they are system words). */
+export default function ActivityList({ events, names, showWorkspace = false, technical = false }: { events: AuditEvent[]; names: Names; showWorkspace?: boolean; technical?: boolean }) {
   if (events.length === 0) return <p className="text-ink-soft">Nothing has happened in this workspace yet.</p>;
   const groups: [string, AuditEvent[]][] = [];
   for (const e of events) {
@@ -87,7 +89,7 @@ export default function ActivityList({ events, names, showWorkspace = false }: {
     <div className="space-y-6">
       {groups.map(([label, list]) => (
         <section key={label} aria-label={label}>
-          <h3 className="tab text-ink-mute">{label}</h3>
+          <h3 className="label text-ink-soft">{label}</h3>
           <ol className="mt-2">
             {list.map((e, i) => {
               const who = e.actor === "demo" ? "Sample workspace" : names[e.actor] ?? "Someone";
@@ -95,7 +97,7 @@ export default function ActivityList({ events, names, showWorkspace = false }: {
               return (
                 <li key={e.id} className="relative grid grid-cols-[3.4rem_minmax(0,1fr)] gap-x-3 pb-4 last:pb-0">
                   {i < list.length - 1 && <span aria-hidden="true" className="absolute bottom-0 left-[1.7rem] top-8 w-px bg-paper-line" />}
-                  <span aria-hidden="true" className={`tab relative inline-flex h-7 items-center justify-center rounded-[3px] !text-[0.72rem] ${tone(e.action)}`}>
+                  <span aria-hidden="true" className={`tab relative inline-flex h-7 items-center justify-center rounded-[3px] text-xs ${tone(e.action)}`}>
                     {TAB[e.action]}
                   </span>
                   <span className="min-w-0 pt-0.5 leading-snug">
@@ -105,21 +107,21 @@ export default function ActivityList({ events, names, showWorkspace = false }: {
                         <>
                           {" "}
                           {linkable ? (
-                            <Link to={`/reviews/${e.target_id}`} className="break-all font-semibold text-desk underline underline-offset-4 hover:text-ink">
-                              {e.target_label}
+                            <Link to={`/reviews/${e.target_id}`} className="break-words font-semibold text-desk underline underline-offset-4 hover:text-ink">
+                              {reviewTitle({ filename: e.target_label })}
                             </Link>
                           ) : (
-                            <span className="break-all font-semibold">{e.target_label}</span>
+                            <span className="break-words font-semibold">{reviewTitle({ filename: e.target_label })}</span>
                           )}
                         </>
                       )}
                     </span>
-                    <span className="tab mt-0.5 block text-ink-mute">
-                      <span className="normal-case">{when(e.at)}</span>
-                      {facts(e).map((f) => (
-                        <span key={f} className="normal-case"> · {f}</span>
+                    <span className="meta mt-0.5 block text-ink-mute" data-system={technical ? "" : undefined}>
+                      <span>{when(e.at)}</span>
+                      {facts(e, technical).map((f) => (
+                        <span key={f}>, {f}</span>
                       ))}
-                      {showWorkspace && e.workspace_id && <span className="normal-case"> · {e.workspace_id}</span>}
+                      {showWorkspace && e.workspace_id && <span>, {e.workspace_id}</span>}
                     </span>
                   </span>
                 </li>

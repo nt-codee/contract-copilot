@@ -15,9 +15,9 @@ function SourceTab({ e }: { e: Pick<KnowledgeEntry, "kind" | "jurisdiction" | "c
   const tone = e.kind === "playbook" ? "bg-paper-soft text-ink border border-paper-line" : e.kind === "case" ? "bg-desk text-white" : "bg-ink text-white";
   const where = e.jurisdiction ? (e.jurisdiction === "my" ? "MY" : "SG") : e.contract_type ? TYPE[e.contract_type] ?? "" : "";
   return (
-    <span className={`tab inline-flex items-center gap-1.5 rounded-[3px] px-1.5 py-1 !text-[0.72rem] ${tone}`}>
+    <span className={`meta inline-flex items-center gap-1.5 rounded-[3px] px-1.5 py-1 text-xs ${tone}`}>
       {KIND[e.kind]}
-      {where && <span className="opacity-80">· {where}</span>}
+      {where && <span className="opacity-80">{where}</span>}
     </span>
   );
 }
@@ -25,7 +25,7 @@ function SourceTab({ e }: { e: Pick<KnowledgeEntry, "kind" | "jurisdiction" | "c
 function Filter<T extends string>(props: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
     <fieldset className="min-w-0">
-      <legend className="tab mb-1.5 text-desk-text">{props.label}</legend>
+      <legend className="label mb-1.5 text-desk-text">{props.label}</legend>
       <div className="flex flex-wrap gap-1.5">
         {props.options.map(([v, l]) => (
           <button
@@ -33,7 +33,7 @@ function Filter<T extends string>(props: { label: string; value: T; options: [T,
             type="button"
             aria-pressed={props.value === v}
             onClick={() => props.onChange(v)}
-            className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-3 text-[0.92rem] transition-colors ${
+            className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-3 text-sm transition-colors ${
               props.value === v ? "border-white bg-white font-semibold text-ink" : "border-desk-line text-white hover:border-desk-text"
             }`}
           >
@@ -103,7 +103,7 @@ function Browse() {
   const groups: [string, KnowledgeEntry[]][] = useMemo(() => {
     const g = new Map<string, KnowledgeEntry[]>();
     for (const e of entries ?? []) {
-      const key = e.kind === "playbook" ? `Usual terms · ${TYPE[e.contract_type ?? ""] ?? "All contracts"}` : `${PLACE[e.jurisdiction ?? ""] ?? "Other"} · ${e.kind === "case" ? "court cases" : "laws"}`;
+      const key = e.kind === "playbook" ? `Usual terms, ${TYPE[e.contract_type ?? ""] ?? "All contracts"}` : `${PLACE[e.jurisdiction ?? ""] ?? "Other"}, ${e.kind === "case" ? "court cases" : "laws"}`;
       g.set(key, [...(g.get(key) ?? []), e]);
     }
     return [...g.entries()];
@@ -111,9 +111,8 @@ function Browse() {
 
   return (
     <div className="mx-auto max-w-[1040px] px-5 pb-20 pt-10 sm:px-8 sm:pt-14">
-      <p className="tab text-desk-text">Knowledge</p>
-      <h1 className="display mt-3 text-[2.1rem] text-white sm:text-[2.9rem]">What every flag is checked against</h1>
-      <p className="mt-4 max-w-2xl text-[1.1rem] text-desk-text">
+      <h1 className="page-title !mt-0">Law and usual terms</h1>
+      <p className="mt-4 max-w-2xl text-lg text-desk-text">
         {all
           ? `${counts.law} sections of Malaysian and Singapore law, ${counts.case} court cases and ${counts.playbook} notes on usual terms. Every source chip on a finding opens one of these.`
           : "Malaysian and Singapore law, court cases and notes on usual terms. Every source chip on a finding opens one of these."}
@@ -130,7 +129,7 @@ function Browse() {
           onChange={(e) => setDraft(e.target.value)}
           placeholder="For example: penalty, restraint of trade, personal data"
           autoComplete="off"
-          className="min-h-[52px] flex-1 rounded-[3px] border-0 bg-white px-4 text-[1.05rem] text-ink placeholder:text-ink-mute"
+          className="min-h-[52px] flex-1 rounded-[3px] border-0 bg-white px-4 text-base text-ink placeholder:text-ink-mute"
         />
         <button type="submit" className="btn-go !min-h-[52px] sm:px-8">
           Search
@@ -140,7 +139,17 @@ function Browse() {
       <div className="mt-6 grid gap-5 md:grid-cols-[auto_auto_minmax(0,1fr)]">
         <Filter label="Where" value={jurisdiction} onChange={(v) => set("jurisdiction", v)} options={[["", "Both"], ["my", "Malaysia"], ["sg", "Singapore"]]} />
         <Filter label="Kind" value={kind} onChange={(v) => set("kind", v)} options={[["", "All"], ["law", "Law"], ["case", "Cases"], ["playbook", "Usual terms"]]} />
-        <Filter label="Contract" value={contractType} onChange={(v) => set("contract_type", v)} options={[["", "Any"], ["nda", "NDA"], ["service_agreement", "Service"], ["employment", "Employment"], ["tenancy", "Tenancy"], ["hire_purchase", "Hire purchase"]]} />
+        <div className="min-w-0">
+          <label htmlFor="k-contract" className="label mb-1.5 block text-desk-text">Contract</label>
+          <select id="k-contract" value={contractType} onChange={(e) => set("contract_type", e.target.value)} className="min-h-[44px] w-full rounded-[3px] border-0 bg-white px-3 text-sm text-ink md:w-56">
+            <option value="">Any contract</option>
+            <option value="nda">NDA</option>
+            <option value="service_agreement">Service agreement</option>
+            <option value="employment">Employment or freelance</option>
+            <option value="tenancy">Tenancy</option>
+            <option value="hire_purchase">Hire purchase</option>
+          </select>
+        </div>
       </div>
 
       <div aria-live="polite" className="mt-8">
@@ -149,47 +158,71 @@ function Browse() {
             The knowledge base could not be loaded. {error}
           </p>
         ) : entries === null ? (
-          <p className="text-desk-text" role="status">
-            Loading…
-          </p>
+          <div role="status" aria-live="polite">
+            <span className="sr-only">Loading the library…</span>
+            <div aria-hidden="true" className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-[76px] rounded-[3px] bg-white/10" />
+              ))}
+            </div>
+          </div>
         ) : entries.length === 0 ? (
           <p className="text-desk-text">Nothing matches. Clear a filter or try another word.</p>
         ) : (
           <>
-            <p className="tab text-desk-text">
+            <p className="meta text-desk-text">
               {entries.length} {entries.length === 1 ? "entry" : "entries"}
             </p>
             <div className="mt-3 space-y-8">
               {groups.map(([title, list]) => (
-                <section key={title} aria-label={title}>
-                  <h2 className="text-[1.15rem] font-bold text-white">{title}</h2>
-                  <ul className="sheet mt-3 divide-y divide-paper-line">
-                    {list.map((e) => (
-                      <li key={e.id}>
-                        <Link to={`/knowledge/${encodeURIComponent(e.id)}`} className="grid gap-1.5 px-5 py-4 hover:bg-paper-soft sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6">
-                          <span className="min-w-0">
-                            <span className="block font-semibold leading-snug text-ink">{e.title}</span>
-                            {e.plain && <span className="mt-1 line-clamp-2 block text-[0.95rem] text-ink-soft">{e.plain}</span>}
-                            {(e.clause_types ?? []).filter((c) => c !== "other").length > 0 && (
-                              <span className="tab mt-1.5 block text-ink-mute">
-                                {(e.clause_types ?? []).filter((c) => c !== "other").map(CLAUSE).join(" · ")}
-                              </span>
-                            )}
-                          </span>
-                          <span className="self-start">
-                            <SourceTab e={e} />
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+                <Group key={title} title={title} list={list} open={Boolean(q || kind || jurisdiction || contractType)} />
               ))}
             </div>
           </>
         )}
       </div>
     </div>
+  );
+}
+
+const SHOWN = 5;
+
+/** One group of the index: the first five entries, the rest one click away. A search or filter shows them all. */
+function Group({ title, list, open }: { title: string; list: KnowledgeEntry[]; open: boolean }) {
+  const [all, setAll] = useState(false);
+  const shown = open || all ? list : list.slice(0, SHOWN);
+  const id = `g-${title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+  return (
+    <section aria-labelledby={id}>
+      <h2 id={id} className="text-lg font-bold text-white">
+        {title} <span className="meta font-normal text-desk-text">{list.length}</span>
+      </h2>
+      <ul className="sheet mt-3 divide-y divide-paper-line">
+        {shown.map((e) => (
+          <li key={e.id}>
+              <Link to={`/knowledge/${encodeURIComponent(e.id)}`} className="grid gap-1.5 px-5 py-4 hover:bg-paper-soft sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6">
+                <span className="min-w-0">
+                  <span className="block font-semibold leading-snug text-ink">{e.title}</span>
+                  {e.plain && <span className="mt-1 line-clamp-2 block text-sm text-ink-soft">{e.plain}</span>}
+                  {(e.clause_types ?? []).filter((c) => c !== "other").length > 0 && (
+                    <span className="meta mt-1.5 block text-ink-mute">
+                      {(e.clause_types ?? []).filter((c) => c !== "other").map(CLAUSE).join(", ")}
+                    </span>
+                  )}
+                </span>
+                <span className="self-start">
+                  <SourceTab e={e} />
+                </span>
+              </Link>
+            </li>
+        ))}
+      </ul>
+      {shown.length < list.length && (
+        <button type="button" onClick={() => setAll(true)} className="mt-2 inline-flex min-h-[44px] items-center font-semibold text-white underline underline-offset-4">
+          Show all {list.length}
+        </button>
+      )}
+    </section>
   );
 }
 
@@ -254,12 +287,12 @@ function Entry({ id }: { id: string }) {
 
   return (
     <div className="mx-auto max-w-[860px] px-5 pb-20 pt-8 sm:px-8 sm:pt-12">
-      <Link to="/knowledge" className="tab inline-flex min-h-[44px] items-center gap-1 text-desk-text hover:text-white">
+      <Link to="/knowledge" className="meta inline-flex min-h-[44px] items-center gap-1 text-desk-text hover:text-white">
         <span aria-hidden="true">←</span> Knowledge
       </Link>
       {error ? (
         <div role="alert" className="mt-4 text-white">
-          <h1 className="display text-[2rem]">This entry could not be opened</h1>
+          <h1 className="display text-2xl">This entry could not be opened</h1>
           <p className="mt-2 text-desk-text">{error}</p>
         </div>
       ) : !e ? (
@@ -271,14 +304,14 @@ function Entry({ id }: { id: string }) {
           <span className="absolute right-3 top-3 sm:-right-3 sm:top-8">
             <SourceTab e={e} />
           </span>
-          <p className="tab pr-28 text-ink-mute sm:pr-24">
-            {[KIND[e.kind], PLACE[e.jurisdiction ?? ""], TYPE[e.contract_type ?? ""]].filter(Boolean).join(" · ")}
+          <p className="meta pr-28 text-ink-mute sm:pr-24">
+            {[KIND[e.kind], PLACE[e.jurisdiction ?? ""], TYPE[e.contract_type ?? ""]].filter(Boolean).join(", ")}
           </p>
-          <h1 className="display mt-2 text-[1.6rem] !leading-[1.12] text-ink sm:text-[2rem]">{e.title}</h1>
-          {e.citation && <p className="mt-2 font-doc text-[1.05rem] text-ink-soft">{e.citation}</p>}
+          <h1 className="display mt-2 text-xl !leading-[1.12] text-ink sm:text-2xl">{e.title}</h1>
+          {e.citation && <p className="mt-2 font-doc text-base text-ink-soft">{e.citation}</p>}
           {e.plain && (
-            <p className="mt-5 border-l-4 border-ink bg-paper-soft px-4 py-3 text-[1.02rem] leading-relaxed text-ink">
-              <span className="tab block text-ink">In plain words</span>
+            <p className="mt-5 border-l-4 border-ink bg-paper-soft px-4 py-3 text-base leading-relaxed text-ink">
+              <span className="label block text-ink">In plain words</span>
               {e.plain}
             </p>
           )}
@@ -289,11 +322,11 @@ function Entry({ id }: { id: string }) {
                 <>
                   {extract && (
                     <figure className="mt-4">
-                      <figcaption className="tab text-ink-mute">{e.kind === "case" ? "From the judgment" : e.kind === "law" ? "The provision" : "The note"}</figcaption>
-                      <blockquote className="mt-2 border-y-2 border-ink bg-paper-soft px-5 py-4 font-doc text-[1.06rem] leading-[1.7] text-ink [&_p]:mt-2 [&_p:first-child]:mt-0">
+                      <figcaption className="label text-ink-soft">{e.kind === "case" ? "From the judgment" : e.kind === "law" ? "The provision" : "The note"}</figcaption>
+                      <blockquote className="mt-2 border-y-2 border-ink bg-paper-soft px-5 py-4 font-doc text-base leading-[1.7] text-ink [&_p]:mt-2 [&_p:first-child]:mt-0">
                         <Markdown text={extract.replace(/^"|"$/gm, "")} />
                       </blockquote>
-                      {e.citation && <p className="mt-1.5 text-right font-doc text-[0.95rem] italic text-ink-soft">{e.citation}</p>}
+                      {e.citation && <p className="mt-1.5 text-right font-doc text-sm italic text-ink-soft">{e.citation}</p>}
                     </figure>
                   )}
                   <Markdown text={rest} />
@@ -314,14 +347,14 @@ function Entry({ id }: { id: string }) {
           )}
           {cited && (
             <div className="mt-6 border-t border-paper-line pt-4">
-              <p className="tab text-ink-mute">
+              <p className="meta text-ink-mute">
                 {cited.length === 0 ? "Not cited in any review in this workspace yet" : `Cited in ${cited.length} ${cited.length === 1 ? "review" : "reviews"} in this workspace`}
               </p>
               {cited.length > 0 && (
                 <ul className="mt-2 flex flex-wrap gap-2">
                   {cited.slice(0, 12).map((c) => (
                     <li key={c.id}>
-                      <Link to={`/reviews/${c.id}?finding=${encodeURIComponent(c.finding)}`} className="inline-flex min-h-[44px] items-center rounded-[3px] border border-paper-line px-3 text-[0.9rem] text-ink hover:border-ink">
+                      <Link to={`/reviews/${c.id}?finding=${encodeURIComponent(c.finding)}`} className="inline-flex min-h-[44px] items-center rounded-[3px] border border-paper-line px-3 text-sm text-ink hover:border-ink">
                         {c.filename}
                       </Link>
                     </li>
@@ -331,7 +364,7 @@ function Entry({ id }: { id: string }) {
             </div>
           )}
           {(e.clause_types ?? []).filter((c) => c !== "other").length > 0 && (
-            <p className="mt-6 text-[0.92rem] text-ink-mute">
+            <p className="mt-6 text-sm text-ink-mute">
               Used when a contract has clauses on {(e.clause_types ?? []).filter((c) => c !== "other").map(CLAUSE).join(", ")}.
             </p>
           )}

@@ -49,7 +49,7 @@ export function FlagTab({ n, risk, className = "" }: { n: number; risk: Risk; cl
   return (
     <span
       aria-hidden="true"
-      className={`tab inline-flex h-7 min-w-[2.6rem] items-center justify-center gap-1 rounded-r-[3px] pl-1.5 pr-2 !text-[0.9rem] ${tone} ${className}`}
+      className={`tab inline-flex h-7 min-w-[2.6rem] items-center justify-center gap-1 rounded-r-[3px] pl-1.5 pr-2 text-sm ${tone} ${className}`}
     >
       <RiskShape risk={risk} size={10} />
       {n}

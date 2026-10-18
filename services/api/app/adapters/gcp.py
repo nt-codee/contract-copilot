@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 import os
 import random
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -37,6 +38,11 @@ GENERATE_TIMEOUT_MS = 75_000  # review call, normal contract: 5-38 s (outputs 2-
 REVIEW_ATTEMPTS = 2
 AGENT_TIMEOUT_MS = 20_000  # tool-planning turn, normal contract: 3-4 s, so a stall retries quickly
 TRANSCRIBE_TIMEOUT_MS = 120_000  # a whole scanned PDF in one call legitimately takes longer
+# Short calls (a vendor reply, the highlight boxes on a scanned page): a small prompt, a small answer, normally 2-8 s.
+# A stall is abandoned at 20 s and retried (3 tries), instead of sharing the review budget: a reply once took 80 s
+# (one 504, then a 75 s try) for a 773-token prompt.
+SHORT_PURPOSES = ("negotiation", "boxes")
+SHORT_TIMEOUT_MS = 20_000
 EMBED_TIMEOUT_MS = 30_000
 FREE_TOKENS = {"agent": 4_000, "review": 6_000}  # input size the base budget already covers
 MS_PER_1K_TOKENS = {"agent": 2_500, "review": 2_000}
@@ -45,6 +51,14 @@ CHARS_PER_TOKEN = 3.5  # conservative for English and Bahasa Malaysia; the real 
 # 499 is what the server answers when our own deadline expires, so it is retried like a timeout.
 RETRY_STATUSES = [429, 499, 500, 503, 504]
 EMBED_WORKERS = 8
+# A stalled agent or review call is retried on the fallback model (LLM_FALLBACK_MODEL), not the same one: the
+# primary gets ONE try; on 504, 499, 429 or a client timeout the remaining tries (same request, same per-try
+# budget) go to the fallback. Total tries per call are unchanged, so the worst case stays within the budgets
+# above. 500 and 503 still retry on the primary.
+FALLBACK_PURPOSES = ("agent", "review")
+FALLBACK_STATUSES = (429, 499, 504)
+# A model accepts only its own thought signatures; this documented sentinel lets it take turns another model wrote.
+FOREIGN_SIGNATURE = b"skip_thought_signature_validator"
 QUOTA_BACKOFF_S = (6, 12, 24)  # extra waits after a 429 that survived the SDK retries (adds at most ~42 s)
 
 
@@ -62,10 +76,18 @@ def call_timeout_ms(purpose: str, size_chars: int) -> int:
     """The time budget of one generate call, from what it sends. Scanned-PDF transcription is fixed."""
     if purpose == "transcribe":
         return TRANSCRIBE_TIMEOUT_MS
+    if purpose in SHORT_PURPOSES:
+        return SHORT_TIMEOUT_MS
     kind = "agent" if purpose == "agent" else "review"
     base = AGENT_TIMEOUT_MS if kind == "agent" else GENERATE_TIMEOUT_MS
     extra_tokens = max(0.0, size_chars / CHARS_PER_TOKEN - FREE_TOKENS[kind])
     return int(min(base + extra_tokens / 1000 * MS_PER_1K_TOKENS[kind], MAX_TIMEOUT_MS[kind]))
+
+
+def call_attempts(purpose: str) -> int:
+    """Tries per generate call: three for the agent turn, transcription and the short calls (they are quick, so a stall
+    is retried fast); two for the review, which drafts one big answer (two long tries beat three that end alike)."""
+    return LLM_ATTEMPTS if purpose in ("agent", "transcribe", *SHORT_PURPOSES) else REVIEW_ATTEMPTS
 
 
 def _chars(system: str, contents) -> int:
@@ -80,6 +102,28 @@ def _chars(system: str, contents) -> int:
     return total
 
 
+def stalled(e: Exception) -> bool:
+    """A failure the fallback model should answer: the endpoint is stalled or out of quota, not refusing."""
+    if getattr(e, "code", None) in FALLBACK_STATUSES:
+        return True
+    name = type(e).__name__.lower()
+    return "timeout" in name or "timed out" in str(e).lower()
+
+
+def _foreign_turns(contents):
+    """The same contents with every thought signature replaced by FOREIGN_SIGNATURE (for another model)."""
+    out = []
+    for c in contents:
+        parts = getattr(c, "parts", None)
+        if not parts or not any(getattr(p, "thought_signature", None) for p in parts):
+            out.append(c)
+            continue
+        out.append(c.model_copy(update={"parts": [
+            p.model_copy(update={"thought_signature": FOREIGN_SIGNATURE}) if getattr(p, "thought_signature", None)
+            else p for p in parts]}))
+    return out
+
+
 def _upstream_failure(what: str, e: Exception, user_message: str) -> UpstreamError:
     """Log the upstream status and message for operators; the user only sees `user_message`."""
     status = getattr(e, "code", None)
@@ -90,10 +134,14 @@ def _upstream_failure(what: str, e: Exception, user_message: str) -> UpstreamErr
 
 
 class GeminiLLM:
+    fallback_model = ""  # set from LLM_FALLBACK_MODEL in __init__
+    _local = threading.local()  # which model answered the current thread's last call
+
     def __init__(self, settings: Settings):
         from google import genai
 
         self.model = settings.gemini_model
+        self.fallback_model = settings.llm_fallback_model if settings.llm_fallback_model != self.model else ""
         self._thinking = settings.gemini_thinking
         self.calls = 0
         self._client = genai.Client(vertexai=True, project=settings.gcp_project,
@@ -105,7 +153,7 @@ class GeminiLLM:
         from google.genai import types
 
         timeout = call_timeout_ms(purpose, size_chars)
-        attempts = LLM_ATTEMPTS if purpose in ("agent", "transcribe") else REVIEW_ATTEMPTS
+        attempts = call_attempts(purpose)
         return types.GenerateContentConfig(
             system_instruction=system,
             http_options=_retry_options(attempts, timeout),
@@ -117,9 +165,29 @@ class GeminiLLM:
         self.calls += 1
         t0 = time.monotonic()
         resp = None
-        for wait in (*QUOTA_BACKOFF_S, None):
+        model = self.model
+        self._local.answered = model
+        opts = getattr(config, "http_options", None)
+        tries = opts.retry_options.attempts if opts is not None and opts.retry_options else 1
+        if self.fallback_model and purpose in FALLBACK_PURPOSES and tries > 1:
+            first = config.model_copy(update={"http_options": _retry_options(1, opts.timeout)})
             try:
-                resp = self._client.models.generate_content(model=self.model, contents=contents, config=config)
+                resp = self._client.models.generate_content(model=model, contents=contents, config=first)
+            except Exception as e:
+                rest = config.model_copy(update={"http_options": _retry_options(tries - 1, opts.timeout)})
+                if stalled(e):
+                    log.warning("gemini %s on %s stalled (status=%s); retrying on fallback model %s", purpose, model,
+                                getattr(e, "code", None), self.fallback_model)
+                    model, contents = self.fallback_model, _foreign_turns(contents)
+                elif getattr(e, "code", None) not in RETRY_STATUSES:
+                    raise _upstream_failure(f"gemini {purpose} call", e,
+                                            "The AI service did not respond. Please try again in a minute.") from e
+                config = rest
+        for wait in (*QUOTA_BACKOFF_S, None):
+            if resp is not None:
+                break
+            try:
+                resp = self._client.models.generate_content(model=model, contents=contents, config=config)
                 break
             except Exception as e:
                 # The SDK has already retried (3 tries, 2 s and 4 s apart), which is too short for a quota
@@ -131,20 +199,23 @@ class GeminiLLM:
                     continue
                 raise _upstream_failure(f"gemini {purpose} call", e,
                                         "The AI service did not respond. Please try again in a minute.") from e
+        self._local.answered = model
         um = resp.usage_metadata
-        log.info("gemini %s: %.1fs (in %s, out %s, thinking %s tokens)", purpose, time.monotonic() - t0,
+        log.info("gemini %s on %s: %.1fs (in %s, out %s, thinking %s tokens)", purpose, model, time.monotonic() - t0,
                  um.prompt_token_count if um else "?", um.candidates_token_count if um else "?",
                  um.thoughts_token_count if um else "?")
         return resp
 
-    def _usage(self, resp) -> LLMUsage:
+    def _usage(self, resp, purpose: str = "") -> LLMUsage:
         um = resp.usage_metadata
-        return LLMUsage(
-            model=self.model,
-            input_tokens=(um.prompt_token_count or 0) if um else 0,
-            # thinking tokens are billed as output
-            output_tokens=((um.candidates_token_count or 0) + (um.thoughts_token_count or 0)) if um else 0,
-        )
+        tin = (um.prompt_token_count or 0) if um else 0
+        # thinking tokens are billed as output
+        tout = ((um.candidates_token_count or 0) + (um.thoughts_token_count or 0)) if um else 0
+        answered = getattr(self._local, "answered", self.model)
+        if answered != self.model:
+            return LLMUsage(model=self.model, fallback_model=answered, fallback_input_tokens=tin,
+                            fallback_output_tokens=tout, fallback_purposes=[purpose or "?"])
+        return LLMUsage(model=self.model, input_tokens=tin, output_tokens=tout)
 
     def chat(self, *, system: str, messages: list[ChatMessage], tools: list[ToolSpec],
              purpose: str, force_tools: bool = False) -> tuple[ChatMessage, LLMUsage]:
@@ -172,7 +243,7 @@ class GeminiLLM:
         calls = [ToolCall(name=p.function_call.name, args=dict(p.function_call.args or {}),
                           id=p.function_call.id) for p in parts if p.function_call]
         text = "".join(p.text for p in parts if p.text and not p.thought)
-        return ChatMessage(role="model", text=text, tool_calls=calls, raw=content), self._usage(resp)
+        return ChatMessage(role="model", text=text, tool_calls=calls, raw=content), self._usage(resp, purpose)
 
     @staticmethod
     def _content(m: ChatMessage):
@@ -215,7 +286,7 @@ class GeminiLLM:
             log.error("gemini %s returned an unexpected shape: %s", purpose,
                       "; ".join(f"{'.'.join(map(str, x['loc']))}:{x['type']}" for x in e.errors())[:500])
             raise UpstreamError("The AI service returned an unexpected answer. Please try again.") from e
-        return parsed, self._usage(resp)
+        return parsed, self._usage(resp, purpose)
 
 
 class GeminiEmbedder:
@@ -568,16 +639,27 @@ class FirestoreCompanyStore:
         self._docs.document(doc_id).delete()
         return True
 
-    def search(self, vector: list[float], limit: int, *, owner: str) -> list[tuple[CompanyChunk, float]]:
+    CHOSEN_OVERFETCH = 200  # passages fetched when the reader chose documents, then filtered to those documents
+
+    def search(self, vector: list[float], limit: int, *, owner: str,
+               doc_ids: frozenset[str] | None = None) -> list[tuple[CompanyChunk, float]]:
+        """With `doc_ids` the nearest passages of the workspace are over-fetched and filtered to those documents:
+        a vector prefilter on doc_id would need another composite index. A chosen document whose passages are all
+        far from the query can therefore be missed when the workspace holds many other policies."""
         from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
         from google.cloud.firestore_v1.vector import Vector
 
         q = self._chunks.where(filter=_eq("owner", owner)).find_nearest(
             vector_field=self.FIELD, query_vector=Vector(vector),
-            distance_measure=DistanceMeasure.COSINE, limit=limit, distance_result_field="vector_distance")
+            distance_measure=DistanceMeasure.COSINE, limit=max(limit, self.CHOSEN_OVERFETCH) if doc_ids else limit,
+            distance_result_field="vector_distance")
         out: list[tuple[CompanyChunk, float]] = []
         for s in q.stream():
             d = s.to_dict()
+            if doc_ids is not None and d["doc_id"] not in doc_ids:
+                continue
+            if len(out) >= limit:
+                break
             out.append((CompanyChunk(id=s.id, doc_id=d["doc_id"], title=d["title"], page=d["page"],
                                      text=d["text"]), 1.0 - float(d.get("vector_distance", 1.0))))
         return out
@@ -692,6 +774,40 @@ class FirestoreWorkspaceStore:
 
     def delete_invite(self, code: str) -> None:
         self._inv.document(code).delete()
+
+
+class FirestoreSpendCounter:
+    """Collection `spend_counters`, one document per key (`reviews-YYYY-MM-DD`, UTC). The check and the increment
+    happen in one Firestore transaction, so concurrent instances can never overshoot the cap. No index needed."""
+
+    COLLECTION = "spend_counters"
+
+    def __init__(self, settings: Settings):
+        self._db = _firestore_client(settings)
+        self._col = self._db.collection(self.COLLECTION)
+
+    def take(self, key: str, cap: int) -> bool:
+        from google.cloud import firestore
+
+        from app.spend import next_count
+
+        ref = self._col.document(key)
+
+        @firestore.transactional
+        def run(transaction) -> bool:
+            snap = ref.get(transaction=transaction)
+            current = int((snap.to_dict() or {}).get("count", 0)) if snap.exists else 0
+            new = next_count(current, cap)
+            if new is None:
+                return False
+            transaction.set(ref, {"count": new, "updated_at": datetime.now(timezone.utc).isoformat()})
+            return True
+
+        return run(self._db.transaction())
+
+    def used(self, key: str) -> int:
+        snap = self._col.document(key).get()
+        return int((snap.to_dict() or {}).get("count", 0)) if snap.exists else 0
 
 
 class FirestoreAuditLog:

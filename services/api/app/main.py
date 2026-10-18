@@ -14,12 +14,12 @@ from collections import defaultdict, deque
 from pathlib import Path
 
 from datetime import timedelta
-from typing import Literal
+from typing import Literal, get_args
 
-from fastapi import Depends, FastAPI, File, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Query, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -30,9 +30,11 @@ from app.audit import now as audit_now
 from app.auth import (SIGN_IN_MESSAGE, Actor, get_account_actor, get_actor, require_admin, require_policy_manager,
                       require_writer)
 from app.config import DEMO_OWNER, Settings
+from app import guest as guestmod
+from app import spend as spendmod
 from app.security import SecurityHeaders, UploadLimit, clean_filename, static_headers
 from app.models import (AuditEvent, CompanyDoc, Identity, Invite, Member, NegotiationDraft, ReviewResult,
-                        ReviewSummary, Sample, SearchHit, User, Workspace, WorkspaceRef)
+                        ReviewOptions, ReviewSummary, Sample, SearchHit, User, Workspace, WorkspaceRef)
 from app.pipeline import Services, UserError
 from app.ports import UpstreamError
 
@@ -97,10 +99,59 @@ class EarlySignIn:
 
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http" and scope["method"] == "POST" and scope["path"] in self.PATHS:
-            names = {k for k, _ in scope["headers"]}
-            if b"authorization" not in names and b"x-workspace-id" not in names:
-                return await _err(401, "sign_in_required", SIGN_IN_MESSAGE)(scope, receive, send)
+            headers = dict(scope["headers"])
+            if b"authorization" not in headers:
+                if headers.get(b"x-guest", b"").strip().lower() == b"demo":  # a guest is read-only
+                    return await _err(403, "guest_read_only", guestmod.GUEST_MESSAGE)(scope, receive, send)
+                if b"x-workspace-id" not in headers:
+                    return await _err(401, "sign_in_required", SIGN_IN_MESSAGE)(scope, receive, send)
         await self.app(scope, receive, send)
+
+
+_BOOLS = {"true": True, "1": True, "yes": True, "on": True, "false": False, "0": False, "no": False, "off": False}
+
+
+def parse_review_options(contract_type: str, jurisdiction: str, apply_company_rules: str, perspective: str) -> ReviewOptions:
+    """The optional multipart fields of POST /api/reviews. Empty means the default; case does not matter."""
+    def clean(v: str, default: str) -> str:
+        return (v or "").strip() or default
+
+    flag = clean(apply_company_rules, "true").lower()
+    if flag not in _BOOLS:
+        raise UserError(422, "invalid_option", "apply_company_rules must be true or false.")
+    raw = {"contract_type": clean(contract_type, "auto").lower(), "jurisdiction": clean(jurisdiction, "auto"),
+           "perspective": clean(perspective, "auto").lower()}
+    if raw["jurisdiction"].lower() == "auto":
+        raw["jurisdiction"] = "auto"
+    else:
+        raw["jurisdiction"] = raw["jurisdiction"].upper()
+    try:
+        return ReviewOptions(apply_company_rules=_BOOLS[flag], **raw)
+    except ValidationError as e:
+        field = str(e.errors()[0]["loc"][0])
+        allowed = [str(x) for x in get_args(ReviewOptions.model_fields[field].annotation)]
+        raise UserError(422, "invalid_option", f"{field} must be one of: {', '.join(allowed)}.") from None
+
+
+MAX_CHOSEN_POLICIES = 50
+
+
+def choose_policies(options: ReviewOptions, raw: str, workspace_doc_ids: list[str]) -> ReviewOptions:
+    """`company_doc_ids`: comma-separated policy document ids of the active workspace. Empty: every policy.
+    An unknown id, or one from another workspace (indistinguishable on purpose), is refused. Ignored, and recorded
+    as null, when company rules are switched off."""
+    ids = list(dict.fromkeys(x.strip() for x in (raw or "").split(",") if x.strip()))
+    if not ids or not options.apply_company_rules:
+        return options
+    if len(ids) > MAX_CHOSEN_POLICIES:
+        raise UserError(422, "invalid_option", f"company_doc_ids can name at most {MAX_CHOSEN_POLICIES} documents.")
+    known = set(workspace_doc_ids)
+    bad = [i for i in ids if i not in known]
+    if bad:
+        shown = ", ".join(i[:40] for i in bad[:3])
+        raise UserError(422, "invalid_option",
+                        f"company_doc_ids has a document that is not in this workspace: {shown}.")
+    return options.model_copy(update={"company_doc_ids": ids})
 
 
 def create_app(settings: Settings | None = None, services: Services | None = None) -> FastAPI:
@@ -198,6 +249,12 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         (that would be an unbounded public write path)."""
         return actor.signed_in or actor.seeding
 
+    def check_spend(actor: Actor) -> None:
+        """A fresh model review takes one from today's global allowance (503 daily_limit when it is spent). Platform
+        admins are exempt, like the rate limits."""
+        if not actor.admin:
+            spendmod.charge(svc.spend, settings.max_model_reviews_per_day)
+
     # Refuse an anonymous upload before reading its body (the route re-checks authoritatively).
     app.add_middleware(EarlySignIn)
     app.add_middleware(UploadLimit, paths=EarlySignIn.PATHS, max_bytes=settings.max_bytes)
@@ -242,6 +299,8 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     @app.post("/api/me/delete")
     def delete_me(actor: Actor = Depends(get_account_actor)):
         """Delete everything this user owns. Their own audit events go too; one `deleted_my_data` line stays."""
+        if actor.guest:
+            raise guestmod.guest_forbidden()
         if actor.user is None:
             raise UserError(401, "sign_in_required", SIGN_IN_MESSAGE)
         counts, review_ids = pipeline.delete_my_data(svc, actor.user.uid)
@@ -258,27 +317,39 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         return svc.audit.for_workspace(actor.owner, limit, actor=only)
 
     # ---- reviews -------------------------------------------------------------------------
-    async def read_pdf_upload(request: Request, file: UploadFile, actor: Actor) -> bytes:
-        """Read an uploaded PDF within the size cap, validate it, and spend one rate-limit slot."""
+    async def read_pdf_upload(request: Request, file: UploadFile, actor: Actor, *, images: bool = False) -> bytes:
+        """Read an uploaded PDF within the size cap, validate it, and spend one rate-limit slot. With
+        `images`, a JPEG or PNG (by magic bytes) is also accepted and returned as a one-page PDF."""
         declared = request.headers.get("content-length")
         if declared and declared.isdigit() and int(declared) > settings.max_bytes + 64 * 1024:
             raise UserError(413, "file_too_large",
                             f"That file is larger than {settings.max_bytes // (1024 * 1024)} MB. "
                             "Please upload a smaller PDF.")
         data = await file.read(settings.max_bytes + 1)
+        if images:
+            data, kind = await run_in_threadpool(pipeline.contract_pdf, data, settings)
+            request.state.upload_kind = kind
         # validate before spending a rate-limit slot on a file we would reject anyway
         pipeline.validate_pdf(data, settings).close()
         check_rate(request, actor)
         return data
 
     @app.post("/api/reviews", response_model=ReviewResult)
-    async def create_review(request: Request, file: UploadFile = File(...), actor: Actor = Depends(get_actor)):
+    async def create_review(request: Request, file: UploadFile = File(...),
+                            contract_type: str = Form("auto"), jurisdiction: str = Form("auto"),
+                            apply_company_rules: str = Form("true"), perspective: str = Form("auto"),
+                            company_doc_ids: str = Form(""), actor: Actor = Depends(get_actor)):
         require_writer(actor)
-        data = await read_pdf_upload(request, file, actor)
+        options = parse_review_options(contract_type, jurisdiction, apply_company_rules, perspective)  # before a slot is spent
+        options = choose_policies(options, company_doc_ids, [d.id for d in svc.company.list(owner=actor.owner)])
+        data = await read_pdf_upload(request, file, actor, images=True)
+        check_spend(actor)
         name = clean_filename(file.filename, "contract.pdf")
-        result = await run_in_threadpool(pipeline.review, svc, data, name, None, actor.owner, actor.uid)
+        result = await run_in_threadpool(pipeline.review, svc, data, name, None, actor.owner, actor.uid,
+                                       options)
         note(actor, "uploaded_contract", result.id, name,
-                         {"bytes": len(data), "pages": result.pages})
+                         {"bytes": len(data), "pages": result.pages,
+                          "type": getattr(request.state, "upload_kind", "pdf")})
         pipeline.audit_review(svc, actor.audit_actor, result)
         return result
 
@@ -309,8 +380,19 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     def list_samples():
         return [Sample.model_validate(s) for s in load_samples()]
 
+    @app.get("/api/samples/{sample_id}/pdf")
+    def sample_pdf(sample_id: str):
+        """Public preview of an indexed synthetic contract; never interpret an id as a path."""
+        entry = next((s for s in load_samples() if s.get("id") == sample_id), None)
+        path = sample_pdf_path(entry) if entry is not None else None
+        if path is None:
+            raise UserError(404, "sample_not_found", "We could not find that sample contract.")
+        return FileResponse(path, media_type="application/pdf", filename=path.name,
+                            content_disposition_type="inline")
+
     @app.post("/api/reviews/sample/{sample_id}", response_model=ReviewResult)
-    def review_sample(sample_id: str, request: Request, refresh: bool = False, actor: Actor = Depends(get_actor)):
+    def review_sample(sample_id: str, request: Request, response: Response, refresh: bool = False,
+                      actor: Actor = Depends(get_actor)):
         """Open a bundled sample in the caller's workspace. A demo visitor gets the shared demo copy.
         A signed-in user gets their own copy (copied from the demo one when it exists, no model call).
 
@@ -319,13 +401,21 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         entry = next((s for s in load_samples() if s.get("id") == sample_id), None)
         if entry is None:
             raise UserError(404, "sample_not_found", "We could not find that sample contract.")
+        if actor.guest:  # read-only: the shared demo copy if it exists; never a model call
+            cached = svc.store.find_by_sample(sample_id, owner=DEMO_OWNER)
+            if cached is None:
+                raise guestmod.guest_forbidden()
+            response.headers["X-Review-Source"] = "cached"
+            return cached
         with sample_locks[(actor.owner, sample_id)]:
             can_refresh = refresh and (actor.signed_in or actor.seeding)
             cached = None if can_refresh else svc.store.find_by_sample(sample_id, owner=actor.owner)
             if cached is not None:
                 if audits_views(actor):
                     svc.audit.record_view(actor.audit_actor, cached.id, cached.filename, workspace_id=actor.owner)
+                response.headers["X-Review-Source"] = "cached"
                 return cached
+            require_writer(actor)  # cached sample browsing is public; a fresh model run needs sign-in
             path = sample_pdf_path(entry)
             if path is None:
                 raise UserError(404, "sample_not_found", "That sample contract file is missing.")
@@ -335,11 +425,14 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
                 if shared is not None:
                     result = pipeline.copy_review(svc, shared, pdf, actor.owner, actor.uid)
                     pipeline.audit_review(svc, actor.audit_actor, result, copied_from_sample=sample_id)
+                    response.headers["X-Review-Source"] = "copied"
                     return result
             check_rate(request, actor)
+            check_spend(actor)
             result = pipeline.review(svc, pdf, path.name, sample_id=sample_id, owner=actor.owner,
                                     created_by=actor.uid)
             pipeline.audit_review(svc, actor.audit_actor, result, sample_id=sample_id)
+            response.headers["X-Review-Source"] = "fresh"
             return result
 
     @app.get("/api/reviews", response_model=list[ReviewSummary])
@@ -384,6 +477,8 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     def negotiate(review_id: str, actor: Actor = Depends(get_actor)):
         r = get_review_or_404(review_id, actor)
         if review_id not in negotiation_cache:  # one LLM call per review per instance
+            if actor.guest:
+                raise guestmod.guest_forbidden()
             negotiation_cache[review_id] = pipeline.negotiation(svc, r)
             note(actor, "drafted_reply", r.id, r.filename,
                              {"asks": len(negotiation_cache[review_id].asks)})
@@ -421,16 +516,31 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
             raise UserError(404, "workspace_not_found", "We could not find that workspace.")
         return workspaces.with_count(svc, ws), member
 
+    @app.get("/api/guest")
+    def guest_info(request: Request, actor: Actor = Depends(get_actor)):
+        """The guest view: send `X-Guest: demo` with no token. Returns the demo company and the viewer role."""
+        if not actor.guest:
+            raise UserError(404, "not_found", "Not found.")
+        return {"workspace": guestmod.DEMO_WORKSPACE.model_dump(mode="json"), "role": guestmod.GUEST_ROLE,
+                "read_only": True, "message": guestmod.GUEST_MESSAGE}
+
     @app.get("/api/workspaces", response_model=list[WorkspaceRef])
     def list_workspaces(actor: Actor = Depends(get_account_actor)):
+        if actor.guest:
+            return []  # a guest has no workspaces of its own; see GET /api/guest
         return workspaces.refs_for(svc, need_user(actor).uid)
 
     @app.get("/api/workspaces/{workspace_id}", response_model=Workspace)
     def get_workspace(workspace_id: str, actor: Actor = Depends(get_actor)):
+        if actor.guest:
+            guestmod.gate(workspace_id)
+            return guestmod.DEMO_WORKSPACE
         return membership(actor, workspace_id)[0]
 
     @app.patch("/api/workspaces/{workspace_id}", response_model=Workspace)
     def patch_workspace(workspace_id: str, body: WorkspacePatch, actor: Actor = Depends(get_actor)):
+        if actor.guest:
+            guestmod.block_write(workspace_id)
         """Owners and admins rename. Only an owner sets the auto-join domain, and only to the domain their own
         Google sign-in proves (`hd`): otherwise anyone could claim a company's domain and have its staff
         join their workspace."""
@@ -461,11 +571,16 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
 
     @app.get("/api/workspaces/{workspace_id}/members", response_model=list[Member])
     def list_members(workspace_id: str, actor: Actor = Depends(get_actor)):
+        if actor.guest:
+            guestmod.gate(workspace_id)
+            return list(guestmod.DEMO_MEMBERS)  # invented people, never real users
         membership(actor, workspace_id)
         return svc.workspaces.members(workspace_id)
 
     @app.patch("/api/workspaces/{workspace_id}/members/{uid}", response_model=Member)
     def change_role(workspace_id: str, uid: str, body: RoleBody, actor: Actor = Depends(get_actor)):
+        if actor.guest:
+            guestmod.block_write(workspace_id)
         """An owner sets any role. An admin may only move a plain member up to admin or back down."""
         _ws, me_ = membership(actor, workspace_id)
         workspaces.require_role(me_.role, "owner", "admin", message="Only owners and admins can change roles.")
@@ -482,6 +597,8 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
 
     @app.delete("/api/workspaces/{workspace_id}/members/{uid}", status_code=204)
     def remove_member(workspace_id: str, uid: str, actor: Actor = Depends(get_actor)):
+        if actor.guest:
+            guestmod.block_write(workspace_id)
         """An owner removes anyone; an admin removes plain members; anyone may leave. The last owner cannot go."""
         _ws, me_ = membership(actor, workspace_id)
         target = svc.workspaces.get_member(workspace_id, uid)
@@ -498,6 +615,8 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
 
     @app.post("/api/workspaces/{workspace_id}/invites", response_model=Invite)
     def create_invite(workspace_id: str, body: InviteBody | None = None, actor: Actor = Depends(get_actor)):
+        if actor.guest:
+            guestmod.block_write(workspace_id)
         """An invite code, valid 7 days, single use. Owners and admins invite; only an owner invites an admin."""
         _ws, me_ = membership(actor, workspace_id)
         workspaces.require_role(me_.role, "owner", "admin", message="Only owners and admins can invite people.")
@@ -508,11 +627,16 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
 
     @app.post("/api/invites/{code}/accept", response_model=WorkspaceRef)
     def accept_invite(code: str, actor: Actor = Depends(get_account_actor)):
+        if actor.guest:
+            guestmod.block_write()
         return workspaces.accept_invite(svc, code, need_user(actor))
 
     @app.get("/api/workspaces/{workspace_id}/overview")
     def workspace_overview(workspace_id: str, days: int = Query(30, ge=1, le=365), actor: Actor = Depends(get_actor)):
         """The dashboard for one workspace (same shape as the platform one). Owners and admins only."""
+        if actor.guest:  # the demo company's dashboard, read-only; its member count is the invented list
+            guestmod.gate(workspace_id)
+            return {**admin.overview(svc, days, owner=DEMO_OWNER), "users": len(guestmod.DEMO_MEMBERS)}
         _ws, me_ = membership(actor, workspace_id)
         workspaces.require_role(me_.role, "owner", "admin", message="Only owners and admins can see the dashboard.")
         return admin.overview(svc, days, owner=workspace_id)

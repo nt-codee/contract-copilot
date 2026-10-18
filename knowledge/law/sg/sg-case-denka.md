@@ -5,6 +5,7 @@ kind: case
 title: "Denka Advantech Pte Ltd v Seraya Energy Pte Ltd: Singapore keeps the Dunlop penalty test"
 citation: "[2020] SGCA 119 (Court of Appeal, Civil Appeals Nos 37, 38, 100 and 101 of 2019; judgment 15 December 2020)"
 clause_types: [liability, payment, termination]
+supports: [liability, payment, termination, *=compensation|liquidated|penalt|forfeit|shall pay|must pay|will pay|pay the|pay a|sum of|amount of|pampasan|ganti rugi|dilucuthak|lucut hak|hendaklah membayar|bayaran]
 source_url: "https://www.elitigation.sg/gd/s/2020_SGCA_119"
 retrieved: 2026-10-18
 licence_note: "Verified against the full judgment on eLitigation (Supreme Court of Singapore). Coram: Sundaresh Menon CJ, Andrew Phang Boon Leong JA (delivering the judgment), Judith Prakash JA, Tay Yong Kwang JA, Steven Chong JA. Judgment (c) Government of Singapore; judiciary.gov.sg Terms of Use cl 6 permit fair dealing for private study, research, criticism or review and bar reproduction for commercial purposes without prior written permission. Only short passages are quoted. Reported in the SLR; the SLR citation was not verified and is not given."

@@ -6,6 +6,8 @@ import type { Marked } from "./Reader";
 import { FlagTab } from "./Risk";
 
 interface Props {
+  /** Who the reply goes to: "employer", "landlord", "lender", "vendor" or "other party" (see counterparty.ts). */
+  other?: string;
   draft: NegotiationDraft | null;
   open: boolean;
   items: Marked[];
@@ -77,7 +79,7 @@ function toBlocks(body: string, draft: NegotiationDraft, items: Marked[]): Block
   });
 }
 
-export default function DraftDialog({ draft, open, items, onClose, onShow }: Props) {
+export default function DraftDialog({ draft, open, items, onClose, onShow, other = "vendor" }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const headRef = useRef<HTMLHeadingElement>(null);
   const subjectRef = useRef<HTMLTextAreaElement>(null);
@@ -153,17 +155,17 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
       {asks.map((a) => {
         const m = byId.get(a.finding_id);
         return (
-          <li key={a.finding_id + a.ask} className="flex gap-3 text-[0.95rem] leading-snug">
+          <li key={a.finding_id + a.ask} className="flex gap-3 text-sm leading-snug">
             {m ? (
               <FlagTab n={m.n} risk={m.f.risk} className="!rounded-[3px]" />
             ) : (
-              <span aria-hidden="true" className="inline-flex h-7 min-w-[2.6rem] shrink-0 items-center justify-center rounded-[3px] border-2 border-dashed border-ink-mute text-[1.1rem] font-bold leading-none text-ink">
+              <span aria-hidden="true" className="inline-flex h-7 min-w-[2.6rem] shrink-0 items-center justify-center rounded-[3px] border-2 border-dashed border-ink-mute text-lg font-bold leading-none text-ink">
                 +
               </span>
             )}
             <span>
               {a.ask}
-              <span className="tab mt-0.5 block text-ink-mute">{m ? `Page ${m.f.page}` : "New clause"}</span>
+              <span className="meta mt-0.5 block text-ink-mute">{m ? `Page ${m.f.page}` : "New clause"}</span>
             </span>
           </li>
         );
@@ -181,8 +183,8 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
       {draft && open && (
         <div className="flex h-full max-h-[100dvh] flex-col bg-paper sm:max-h-[calc(100vh-48px)] sm:rounded-[3px] sm:shadow-lift">
           <header className="flex shrink-0 items-center justify-between gap-4 bg-ink px-5 py-3 text-white sm:px-7">
-            <h2 id="draft-title" ref={headRef} tabIndex={-1} className="tab !text-[0.95rem]">
-              Your reply to the vendor
+            <h2 id="draft-title" ref={headRef} tabIndex={-1} className="label text-white">
+              Your reply to the {other}
             </h2>
             <button type="button" onClick={onClose} className="btn -mr-3 min-w-[44px] !px-3 text-white hover:bg-white/10">
               Close
@@ -198,7 +200,7 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
                       <FlagTab key={m.f.id} n={m.n} risk={m.f.risk} className="!h-6 !min-w-[2rem] !rounded-[3px] ring-2 ring-paper-soft" />
                     ))}
                   </span>
-                  <span className="flex-1 text-[0.92rem] font-semibold leading-snug text-ink">
+                  <span className="flex-1 text-sm font-semibold leading-snug text-ink">
                     {asks.length} {asks.length === 1 ? "ask" : "asks"} from {pageRange(linked.map((m) => m.f.page))}
                     {extra > 0 && `, plus ${extra} new ${extra === 1 ? "clause" : "clauses"}`}
                   </span>
@@ -208,14 +210,14 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
               </details>
 
               <div className="flex items-end justify-between gap-3">
-                <label htmlFor="draft-subject" className="tab text-ink-mute">
+                <label htmlFor="draft-subject" className="label text-ink-soft">
                   Subject
                 </label>
                 <button
                   type="button"
                   onClick={() => setEditing((e) => !e)}
                   aria-pressed={editing}
-                  className="-mb-2 -mr-2 inline-flex min-h-[44px] items-center px-2 text-[0.92rem] font-semibold text-desk underline underline-offset-4 hover:text-ink"
+                  className="-mb-2 -mr-2 inline-flex min-h-[44px] items-center px-2 text-sm font-semibold text-desk underline underline-offset-4 hover:text-ink"
                 >
                   {editing ? "Done editing" : "Edit the letter"}
                 </button>
@@ -226,12 +228,12 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
                 rows={1}
                 value={subject}
                 onChange={(e) => setSubject(e.target.value.replace(/\n/g, " "))}
-                className="mt-1 block w-full resize-none overflow-hidden border-0 border-b-2 border-paper-line bg-transparent p-0 pb-2 text-[1.15rem] font-semibold leading-snug text-ink focus:border-ink sm:text-[1.25rem]"
+                className="mt-1 block w-full resize-none overflow-hidden border-0 border-b-2 border-paper-line bg-transparent p-0 pb-2 text-lg font-semibold leading-snug text-ink focus:border-ink sm:text-xl"
               />
 
               {editing ? (
                 <>
-                  <label htmlFor="draft-body" className="tab mt-6 block text-ink-mute">
+                  <label htmlFor="draft-body" className="label mt-6 block text-ink-soft">
                     Letter
                   </label>
                   <textarea
@@ -239,11 +241,11 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
                     ref={bodyRef}
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
-                    className="mt-2 block w-full resize-none overflow-hidden border-0 bg-transparent p-0 font-doc text-[1.06rem] leading-[1.6] text-ink"
+                    className="mt-2 block w-full resize-none overflow-hidden border-0 bg-transparent p-0 font-doc text-base leading-[1.6] text-ink"
                   />
                 </>
               ) : (
-                <div ref={letterRef} aria-label="Letter" role="document" data-user-content="" className="mt-6 font-doc text-[1.06rem] leading-[1.6] text-ink">
+                <div ref={letterRef} aria-label="Letter" role="document" data-user-content="" className="mt-6 font-doc text-base leading-[1.6] text-ink">
                   {blocks.map((b, i) => (
                     <div key={i} data-part={b.m ? "ask" : "text"} className={`relative ${i ? "mt-4" : ""}`}>
                       {b.m && (
@@ -255,7 +257,7 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
                           className="mb-1 inline-flex min-h-[44px] items-center gap-2 sm:absolute sm:-left-12 sm:top-[-0.55rem] sm:mb-0"
                         >
                           <FlagTab n={b.m.n} risk={b.m.f.risk} className="!h-6 !min-w-[2rem] !rounded-[3px]" />
-                          <span className="tab font-sans text-ink-mute sm:sr-only">Finding {b.m.n} · page {b.m.f.page}</span>
+                          <span className="meta font-sans text-ink-mute sm:sr-only">Finding {b.m.n}, page {b.m.f.page}</span>
                         </button>
                       )}
                       <p className="whitespace-pre-line">{b.text}</p>
@@ -264,15 +266,15 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
                 </div>
               )}
               {leftBlank && (
-                <p className="mt-3 text-[0.92rem] font-medium text-medium">Fill in the parts in [square brackets] before you send it.</p>
+                <p className="mt-3 text-sm font-medium text-medium">Fill in the parts in [square brackets] before you send it.</p>
               )}
             </div>
 
             <aside aria-labelledby="asks-title" className="hidden border-l border-paper-line bg-paper-soft px-6 py-7 md:block">
-              <h3 id="asks-title" className="tab text-ink">
+              <h3 id="asks-title" className="label text-ink">
                 This letter asks for
               </h3>
-              <p className="mt-1 text-[0.88rem] text-ink-mute">Numbers match the flags on the contract.</p>
+              <p className="mt-1 text-sm text-ink-mute">Numbers match the flags on the contract.</p>
               <div className="mt-4">{askList}</div>
             </aside>
           </div>
@@ -284,7 +286,7 @@ export default function DraftDialog({ draft, open, items, onClose, onShow }: Pro
             <a href={mailto} className="btn-line flex-1 whitespace-nowrap !px-3 sm:flex-none sm:!px-5">
               Open in my email
             </a>
-            <span role="status" className="w-full text-[0.95rem] font-semibold text-low sm:w-auto">
+            <span role="status" className="w-full text-sm font-semibold text-low sm:w-auto">
               {copied === "ok" && "Copied. Paste it into your email."}
               {copied === "fail" && <span className="text-high">Copy did not work. Select the letter and copy it by hand.</span>}
             </span>

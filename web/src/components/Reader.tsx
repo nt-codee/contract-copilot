@@ -152,7 +152,7 @@ export default function Reader({ url, items, selected, focus, onSelect, onLocate
     <div ref={paneRef} tabIndex={compact ? undefined : 0} role={compact ? undefined : "region"} aria-label={compact ? undefined : "Document pages"} className={`relative flex gap-5 outline-offset-[-4px] ${compact ? "" : "h-full overflow-y-auto px-5 py-6"}`}>
       {!compact && (
         <nav aria-label="Pages" className="sticky top-0 hidden w-14 shrink-0 self-start lg:block">
-          <p className="tab mb-2 text-center !text-[0.75rem] text-desk-text">Page</p>
+          <p className="meta mb-2 text-center text-xs text-desk-text">Page</p>
           <ol className="space-y-1.5">
             {sizes.map((_, i) => {
               const p = i + 1;
@@ -168,7 +168,7 @@ export default function Reader({ url, items, selected, focus, onSelect, onLocate
                       current === p ? "border-white bg-white text-ink" : "border-desk-line text-white hover:border-desk-text"
                     }`}
                   >
-                    <span className="tab !text-[0.95rem]">{p}</span>
+                    <span className="tab text-sm">{p}</span>
                     {marks.length > 0 && (
                       <span className="flex flex-wrap justify-center gap-[3px] px-1">
                         {marks.slice(0, 4).map((m) => (
@@ -379,7 +379,7 @@ function Page(props: {
           </div>
         );
       })}
-      <span aria-hidden="true" className="tab absolute bottom-2 right-3 !text-[0.7rem] text-ink-mute">
+      <span aria-hidden="true" className="tab absolute bottom-2 right-3 text-xs text-ink-mute">
         {pageNo} / {total}
       </span>
     </div>

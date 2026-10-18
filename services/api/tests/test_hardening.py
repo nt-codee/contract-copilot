@@ -192,7 +192,7 @@ def test_a_sample_copy_costs_no_rate_slot(services):
     import dataclasses
 
     api = create_app(dataclasses.replace(services.settings, rate_limit_per_hour=1, rate_limit_user_per_hour=1), services)
-    TestClient(api).post("/api/reviews/sample/demo-01")  # seeds the shared demo copy (one real run)
+    TestClient(api).post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})  # seeds the shared demo copy (one real run)
     me = TestClient(api, headers=bearer(tok("dee")))
     assert me.post("/api/reviews/sample/demo-01").status_code == 200  # a free copy, no model call
 
@@ -228,6 +228,14 @@ def test_every_id_route_hides_other_workspaces_with_404(api):
             continue
         if path == "/api/invites/{code}/accept" or path == "/api/reviews/sample/{sample_id}":
             continue  # an invite code is a bearer secret by design; samples are public
+        if path == "/api/samples/{sample_id}/pdf":
+            # Public synthetic source, accessible equally from both workspaces. Private id routes below
+            # still require 404; a preview must never serve either workspace's uploaded contract.
+            for caller in (a, b):
+                preview = caller.get("/api/samples/demo-01/pdf")
+                assert preview.status_code == 200 and preview.content.startswith(b"%PDF-")
+                assert caller.get(f"/api/samples/{rid}/pdf").status_code == 404
+            continue
         url = path
         for p in params:
             assert p in fills, f"authz test has no fixture for {{{p}}} in {path}: add one"

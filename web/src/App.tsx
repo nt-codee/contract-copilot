@@ -10,6 +10,8 @@ import { lazy, Suspense } from "react";
 import Activity from "./pages/Activity";
 import { AcceptInvite, WorkspaceSettings } from "./pages/Workspace";
 import Positions from "./pages/Positions";
+import Upload from "./pages/Upload";
+import SamplePreview from "./pages/SamplePreview";
 
 const Admin = lazy(() => import("./pages/Admin"));
 import NotFound from "./pages/NotFound";
@@ -19,12 +21,14 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/sample/:id" element={<SamplePreview />} />
         <Route path="/reviews/:id" element={<Review />} />
         <Route path="/library" element={<Library />} />
         <Route path="/rules" element={<Company />} />
         <Route path="/knowledge" element={<Knowledge />} />
         <Route path="/knowledge/:id" element={<Knowledge />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/review" element={<Upload />} />
         <Route path="/activity" element={<Activity />} />
         <Route path="/workspace" element={<WorkspaceSettings />} />
         <Route path="/invite/:code" element={<AcceptInvite />} />

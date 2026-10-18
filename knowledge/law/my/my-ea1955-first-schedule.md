@@ -5,6 +5,7 @@ kind: statute
 title: "Employment Act 1955, First Schedule: who is covered, and the RM4,000 wage line"
 citation: "Employment Act 1955 (Act 265), First Schedule, paras 1, 1a, 2(1), 3, as in the Reprint (see also P.U.(A) 262/2022 and 273/2022)"
 clause_types: [working_hours, leave, other]
+applies_to: employee
 source_url: "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf"
 retrieved: 2026-10-18
 licence_note: "Quoted from the Laws of Malaysia Reprint of Act 265 'as at 1 August 2023' (published by the Commissioner of Law Revision under the Revision of Laws Act 1968; its cover records Act A1651 in operation on 1 January 2023 as the latest amendment), fetched on 2026-10-18 from a copy hosted by the Malaysian Investment Development Authority, because lom.agc.gov.my resets plain HTTP connections. Amendments after 1 August 2023, if any, were not checked. LOM T&C cl 5: copyright AGC Malaysia, all rights reserved; short quotation for reference only. The Schedule was reshaped by the Employment (Amendment of First Schedule) Order 2022 [P.U.(A) 262/2022], whose start date was moved from 1 September 2022 to 1 January 2023 by P.U.(A) 273/2022 (fetched from jtksm.gov.my, 'Made 29 August 2022'). The text of P.U.(A) 262/2022 itself could not be fetched; the quotes are from the Reprint. Paragraph 2 also lists operators of vehicles, supervisors of manual workers, vessel crew and domestic employees; only 2(1) is quoted. The Schedule is a table: which provisions are 'not applicable' to which row was read from the page layout."

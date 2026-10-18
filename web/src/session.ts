@@ -23,9 +23,14 @@ export interface Session {
   available: boolean;
   /** still finding out who this is */
   loading: boolean;
+  /** browsing the read-only demo company */
+  guest: boolean;
+  /** the server's read-only message for guests */
+  guestMessage?: string;
 }
 
-let state: Session = { user: null, workspace: null, available: MOCK, loading: true };
+let state: Session = { user: null, workspace: null, available: MOCK, loading: true, guest: false };
+const GUEST_KEY = "cc.guest";
 let client: Promise<Client | null> | null = null;
 const listeners = new Set<(s: Session) => void>();
 
@@ -70,6 +75,10 @@ export async function authHeaders(): Promise<Record<string, string>> {
   let token: string | null = null;
   // Offline mode talks to the real server only for public files (sample PDFs): send nothing.
   if (MOCK) return h;
+  if (state.guest && !state.user) {
+    h["X-Guest"] = "demo";
+    return h;
+  }
   if (state.user) {
     const c = await loadClient();
     token = (await c?.auth.currentUser?.getIdToken()) ?? null;
@@ -93,7 +102,45 @@ async function loadMe(): Promise<void> {
 }
 
 /** On page load: restore a previous sign-in without loading the sign-in client for first-time visitors. */
+interface GuestInfo {
+  workspace: WorkspaceRef["workspace"];
+  role: string;
+  read_only: boolean;
+  message: string;
+}
+
+/** Enter the read-only demo company. Kept for this browser tab only. */
+export async function enterGuest(): Promise<void> {
+  let info: GuestInfo;
+  if (MOCK) {
+    info = { workspace: { id: "demo", name: "Kopi Kita Sdn Bhd", kind: "demo", member_count: 4 }, role: "viewer", read_only: true, message: "This is a read-only demo. Sign in with Google to use your own workspace." };
+  } else {
+    const res = await fetch("/api/guest", { headers: { "X-Guest": "demo" } });
+    if (!res.ok) throw new Error("The demo company is not available right now. Try again later.");
+    info = (await res.json()) as GuestInfo;
+  }
+  sessionStorage.setItem(GUEST_KEY, "1");
+  // "viewer" is not a member role: treat the guest as a member who cannot write.
+  set({ guest: true, guestMessage: info.message, workspace: { workspace: info.workspace, role: "member" }, loading: false });
+}
+
+export function exitGuest(): void {
+  sessionStorage.removeItem(GUEST_KEY);
+  set({ guest: false, guestMessage: undefined, workspace: null });
+}
+
 export async function start(): Promise<void> {
+  if (sessionStorage.getItem(GUEST_KEY) && !localStorage.getItem(HINT_KEY)) {
+    if (!MOCK) {
+      const cfgRes = await fetch("/api/auth/config").catch(() => null);
+      set({ available: !!cfgRes?.ok });
+    }
+    await enterGuest().catch(() => {
+      sessionStorage.removeItem(GUEST_KEY);
+      set({ loading: false });
+    });
+    return;
+  }
   if (MOCK) {
     if (localStorage.getItem(HINT_KEY)) {
       await loadMe().catch(() => set({ loading: false }));
@@ -120,7 +167,9 @@ export async function start(): Promise<void> {
 
 export async function signIn(): Promise<void> {
   if (MOCK) {
-    set({ loading: true });
+    sessionStorage.removeItem(GUEST_KEY);
+    set({ loading: true, guest: false, guestMessage: undefined });
+    localStorage.setItem(HINT_KEY, "1");
     return loadMe();
   }
   const c = await loadClient();
@@ -128,6 +177,8 @@ export async function signIn(): Promise<void> {
   const provider = new c.mod.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   const cred = await c.mod.signInWithPopup(c.auth, provider);
+  sessionStorage.removeItem(GUEST_KEY);
+  set({ guest: false, guestMessage: undefined });
   set({ user: { uid: cred.user.uid, email: cred.user.email ?? "", name: cred.user.displayName, photo_url: cred.user.photoURL }, loading: true });
   await loadMe();
 }
@@ -155,3 +206,6 @@ export async function refresh(): Promise<void> {
 }
 
 export const canManage = (s: Session) => s.workspace?.role === "owner" || s.workspace?.role === "admin";
+
+/** Writes are closed to guests; this is the reason to show. */
+export const readOnlyReason = (s: Session): string | null => (s.guest && !s.user ? s.guestMessage ?? "This is a read-only demo. Sign in with Google to use your own workspace." : null);

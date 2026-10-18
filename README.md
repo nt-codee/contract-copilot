@@ -41,19 +41,33 @@ One click turns the findings into a reply to the vendor, with one ask per issue,
 
 | | |
 |---|---|
-| **A reader, not a report.** Boxes are drawn on the real PDF, on the exact words, so you can check every claim yourself. | <img src="docs/public/screens/reader.png" alt="Contract page with highlighted clauses and the finding panel" width="520"> |
+| **A reader, not a report.** Boxes are drawn on the real PDF, on the exact words, so you can check every claim yourself. Each finding is a short title, a one-line summary and the contract's own clause number and page; the detail opens when you want it. | <img src="docs/public/screens/reader.png" alt="Contract page with highlighted clauses and the finding panel" width="520"> |
 | **Citations that are real.** Each finding links Malaysian or Singapore law, or a case, taken from a library where every entry keeps its source URL and the quoted text. | <img src="docs/public/screens/citation.png" alt="A Contracts Act 1950 entry with its text and a link to the official source" width="520"> |
 | **Your own rules, applied.** Upload your company's contracting policy once (owners and admins do this). Reviews flag the clauses that break it and quote the rule. | <img src="docs/public/screens/rules.png" alt="The company rules page: each rule with the contracts that break it" width="520"> |
 | **Dates that matter.** The last day to cancel before an auto-renewal, and other deadlines, collected across your contracts. | <img src="docs/public/screens/dates.png" alt="The summary of a reviewed contract: overall risk, the headline, and the key date, the end of the initial term" width="520"> |
 | **Search every contract your company has reviewed.** Describe the situation in your own words and get the clause and its page. Results blend meaning (vector) with exact words and phrases (keyword). | <img src="docs/public/screens/library.png" alt="Library search results for the phrase cancel early" width="520"> |
 | **A reply ready to send.** One ask per issue, numbered to match the flags on the contract. Edit it, copy it, or open it in your email. | <img src="docs/public/screens/reply.png" alt="The drafted reply to the vendor" width="520"> |
 
-Also: it reads scanned, image-only PDFs and contracts written in Bahasa Malaysia, and explains them in English.
+Also:
+
+- It reads scanned, image-only PDFs and contracts written in Bahasa Malaysia, and explains them in English.
+- **Review options.** Before a review you can set the contract type, the governing law (Malaysia or Singapore), which of your
+  company's policies to check, and whose side you are on (your business, or you personally). Each is automatic unless you choose.
+- **Several contracts at once.** Add or drop several PDFs; they are reviewed one after another, each with the options set when
+  it was added.
+- **Real PDFs.** Quote matching copes with what real PDFs do to text: ligatures, words hyphenated across lines, running headers
+  and footers, curly quotes, two-column layouts, and a quote that runs onto the next page.
 
 ### Teams, accounts and trust
 
 The public demo needs no login: anyone can open the sample reviews, draft a reply, search and browse the law library. Uploading
 a contract or a policy, and deleting anything, needs sign-in.
+
+**View the demo company.** One button, no sign-in, opens a read-only view of a made-up company, Kopi Kita Sdn Bhd: its
+contracts, company rules, dashboard, activity and people. A guest can read all of it and can change nothing and cannot start
+a model call; the people shown are invented. The company is the showcase workspace: 30 synthetic contracts in
+[`samples/showcase`](samples/showcase) (8 service agreements, 6 NDAs, 6 employment and freelance, 5 tenancy and 5 hire purchase,
+7 of them in Bahasa Malaysia), loaded with [`scripts/seed_showcase.py`](scripts/seed_showcase.py).
 
 The screens below show a signed-in workspace, with sample data: a made-up company ("Kopi Kita Sdn Bhd"), invented people and invented contracts.
 
@@ -70,12 +84,14 @@ The screens below show a signed-in workspace, with sample data: a made-up compan
 
 | | |
 |---|---|
+| **A read-only guest view.** Send `X-Guest: demo` with no token and you get the demo company as a viewer. Writes return 403; any other workspace is a 404. | `GET /api/guest` |
 | **Google sign-in.** Google Cloud Identity Platform; the API checks every ID token against the project. | `GET /api/me`, `GET /api/auth/config` |
 | **A workspace per company.** The first person from a Google Workspace domain creates the company workspace; later colleagues from that domain join it. A Gmail user gets a personal workspace. Reviews, policies and search never cross workspaces. | `/api/workspaces` |
 | **Roles and invites.** Owner, admin and member. Owners and admins invite (a code valid for 7 days), change roles, remove people and manage company policies and standard positions; members review, search, draft and upload contracts. | `/api/workspaces/{id}/invites`, `/api/invites/{code}/accept` |
 | **Your standard positions.** Edit what a balanced clause means for your company, per contract type and clause. The review checks against your version and says so. | `/api/playbook` |
 | **An audit trail.** Every upload, review, re-review, reply, view, export and delete is recorded (who, what, when, which model and knowledge-base version). It holds metadata, never contract text. Owners and admins see the whole workspace; a member sees their own. | `/api/activity` |
 | **Review provenance and history.** Each review records the model, the knowledge-base version, the prompt version and the app version, and a hash of the PDF. Reviewing the same document again links to the earlier run. | `/api/reviews/{id}/history` |
+| **Hardened by default.** Security headers on every response (`X-Content-Type-Options`, `X-Frame-Options: DENY`, referrer and permissions policies, a cross-origin-opener policy that keeps the sign-in popup working, and a Content-Security-Policy that is report-only until it is switched to enforce). The upload size is checked before the file is parsed, filenames are cleaned, and tokens and model output are kept out of the logs. | `app/security.py` |
 | **Your data, deletable.** Delete a review, or everything you own. | `DELETE /api/reviews/{id}`, `POST /api/me/delete` |
 | **Dashboards, aggregates only.** Owners and admins see their workspace's usage, risk mix, citations, cost and deadlines. Platform administrators see the same across all workspaces, plus the audit metadata, and never any contract text. | `/api/workspaces/{id}/overview`, `/api/admin/*` |
 
@@ -106,6 +122,11 @@ if it comes from the knowledge library, with its text copied from the source and
 is that of the contract's governing jurisdiction: it is fixed once, early in the review, and a citation from the other
 jurisdiction is removed. Anything that fails a check is removed from the result and recorded with the review as a "removed
 claim" with the reason, so you can see what the model said and why it was not shown.
+
+Matching a quote is tolerant of how PDFs store text, not of what the contract says. Both sides are reduced to letters and digits,
+ligatures and curly quotes are folded, hyphenated line breaks are rejoined and page furniture (page numbers, running headers and
+footers) is ignored. A close-but-not-exact match is accepted only if it has the same numbers and the same negations as the quote,
+so a changed figure or a dropped "not" is removed.
 
 ## Measured results
 
@@ -207,7 +228,10 @@ pipeline runs offline in tests.
 | Operations | Cloud Monitoring alerts (5xx rate, latency, uptime check), a Cloud Billing budget, labels on every resource |
 | Infrastructure as code | Pulumi (Python) in [`infrastructure/gcp`](infrastructure/gcp): bootstrap script, `foundation` stack, `app` stack |
 
-Limits on the public URL: PDFs up to 10 MB and 40 pages, 10 reviews per hour per address.
+Limits on the public URL: PDFs up to 10 MB and 40 pages; 10 reviews per hour per address and 30 per signed-in user; and a daily
+cap on fresh model reviews across the whole service (300 by default, counted in Firestore, platform administrators exempt), so a
+public link cannot run up the bill. A guest, copies of a sample that was already reviewed, and reply drafts do not count towards
+the cap. If the counter cannot be reached, the review is refused rather than allowed.
 
 ## Repository layout
 
@@ -218,6 +242,7 @@ shared/contracts/    JSON Schema for the API, the single source of truth for api
 knowledge/law/       Malaysian and Singapore statutes and cases, each with its source URL
 knowledge/playbook/  standard terms per clause type, for each contract type
 samples/             synthetic contracts with answer keys, plus a sample company policy
+samples/showcase/    30 synthetic contracts for the demo company
 eval/results/        measured evaluation runs
 infrastructure/gcp/  Pulumi stacks
 scripts/             review, eval, seed, deploy, teardown

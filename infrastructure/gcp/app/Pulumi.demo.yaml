@@ -2,10 +2,10 @@ encryptionsalt: v1:+uX5HsGGjRo=:v1:I3uyTRtXsD8qLmKT:/wQrShWDmw4wS0lMpYwArIwXfcUl
 config:
   gcp:project: contract-copilot-abc26
   gcp:region: asia-southeast1
-  cc-app:image: asia-southeast1-docker.pkg.dev/contract-copilot-abc26/contract-copilot/contract-copilot:dirty-20261018-171104
+  cc-app:image: asia-southeast1-docker.pkg.dev/contract-copilot-abc26/contract-copilot/contract-copilot:060c891
   cc-app:adminEmails:
     secure: v1:466CbeetFbMsAcQO:UjI80RXOh6ImpyLWxCtUkWswXwHYmeAXLwRaMbvPbzemzKGYxYKd+k7AlZpH7yx5b5N9Itz/3nXu3FjyF04AczG2NTtvxR7XggGAyiuY9ES65nwJ+Qxwgvtnu15dW1GaD5PxvN/x2Gj+otyDeeCUAhJCYA==
-  cc-app:appVersion: "dirty-20261018-171104"
+  cc-app:appVersion: "060c891"
   cc-app:googleClientId: 566666969455-bi2krnsoa1coma812t6ta3lrpo92q54v.apps.googleusercontent.com
   cc-app:googleClientSecret:
     secure: v1:cR8yvC09AGj9r44Q:j9+wJvpyeZ3EAe+enEo/Iq0mHH44RaH+Jq72ADlX5eLie4zhRt9KwsMDZXYzGe3IAV9e

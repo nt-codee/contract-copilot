@@ -19,7 +19,7 @@ ClauseType = Literal[
 ]
 
 CitationKind = Literal["law", "case", "playbook", "company"]
-TraceAction = Literal["read_contract", "search_law", "search_playbook", "search_company", "read_page",
+TraceAction = Literal["read_contract", "plan_research", "search_law", "search_playbook", "search_company", "read_page",
                       "draft_findings", "verify"]
 
 RISK_ORDER = {"high": 0, "medium": 1, "low": 2}
@@ -47,8 +47,11 @@ class Verification(BaseModel):
 
 
 class RemovedClaim(BaseModel):
-    kind: Literal["finding", "citation", "policy_breach"]
-    reason: Literal["quote_not_found", "source_not_retrieved", "no_company_citation", "wrong_jurisdiction"]
+    kind: Literal["finding", "citation", "policy_breach", "statement"]  # statement: a sentence or part of an ask
+    # ungrounded: states a contract fact the contract does not contain; citation_scope: the source does not
+    # back that kind of claim; remedy_scope: proposes a fix the governing law does not support
+    reason: Literal["quote_not_found", "source_not_retrieved", "no_company_citation", "wrong_jurisdiction",
+                    "ungrounded", "citation_scope", "remedy_scope", "unsupported_severity"]
     text: str
     page: int | None = None
     finding_title: str | None = None
@@ -60,6 +63,9 @@ class TraceStep(BaseModel):
     summary: str
     detail: str | None = None
     ms: int | None = None
+    start_ms: int | None = None
+    turn: int | None = None
+    batch: int | None = None
 
 
 KeyDateKind = Literal["start", "end", "renewal", "notice_deadline", "payment", "price_change", "other"]
@@ -104,6 +110,7 @@ class Finding(BaseModel):
     risk: Risk
     quote: str
     page: int = Field(ge=1)
+    clause_ref: str | None = None  # the contract's own clause number, e.g. "3.3"; None if it numbers none
     why_risky: str
     standard: str
     suggested_ask: str
@@ -139,11 +146,22 @@ class Metrics(BaseModel):
     dropped_unverified_citations: int = 0
 
 
+class ReviewOptions(BaseModel):
+    """What the reader chose for one review (optional multipart fields of POST /api/reviews)."""
+
+    contract_type: Literal["auto", "nda", "service_agreement", "employment", "tenancy", "hire_purchase"] = "auto"
+    jurisdiction: Literal["auto", "MY", "SG"] = "auto"
+    apply_company_rules: bool = True
+    perspective: Literal["auto", "business", "individual"] = "auto"
+    company_doc_ids: list[str] | None = None  # null: every company policy. Otherwise only these documents are searched.
+
+
 class Provenance(BaseModel):
     model: str
     kb_version: str
     prompt_version: str
     app_version: str | None = None
+    options: ReviewOptions | None = None  # null on reviews made before options existed
 
 
 class ReviewResult(BaseModel):
@@ -319,11 +337,19 @@ class LLMCitation(BaseModel):
 
 class LLMFinding(BaseModel):
     clause_type: ClauseType
-    title: str
+    title: str = Field(description="At most 8 words, a noun phrase naming the risk, e.g. 'Auto-renewal with "
+                                   "90-day notice'; never a sentence, no full stop")
     risk: Risk
     quote: str = Field(description="Copied character for character from the contract page, original language")
     page: int = Field(description="The [PAGE n] number the quote is on")
-    why_risky: str
+    clause_ref: str = Field(default="", description="The contract's own number for the quoted clause, e.g. '3.3' or "
+                                        "'5.1(b)'; empty string if the contract does not number its clauses")
+    why_risky: str = Field(description="First sentence: a stand-alone one-line summary of the risk, at most 25 "
+                                       "words; then the detail")
+    consequence: str = Field(default="", description=(
+        "Only when risk is high: one sentence naming the concrete consequence for the reader under THIS contract's "
+        "terms (an amount, a lock-in period, a right lost), with the clause number. Empty for medium and low. A "
+        "high finding without it is rated medium."))
     standard: str
     suggested_ask: str
     baseline_ref: str = Field(description="Playbook file name used, e.g. nda/liability.md, or empty")

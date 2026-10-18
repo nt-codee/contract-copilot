@@ -28,5 +28,7 @@ instead of notice.
 - **Low:** no mention of written notice or the start date of the notice period.
 
 ## Suggested ask
-"Please make the notice period the same for both sides, for example 1 month in writing, with
+Employee: "Please make the notice period the same for both sides, for example 1 month in writing, with
 either side able to pay salary in lieu of notice."
+Freelancer or contractor (paid fees, not a salary): "Please make the notice period the same for both
+sides, for example 30 days in writing, and pay for all work done up to the end of the notice period."

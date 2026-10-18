@@ -1,0 +1,197 @@
+{
+ "nda-01-fair.pdf": {
+  "title": "Mutual NDA: software integration talks (KL / Singapore)"
+ },
+ "nda-02-oneway.pdf": {
+  "title": "One-way NDA: supplier talks with a food platform"
+ },
+ "nda-03-predatory.pdf": {
+  "title": "NDA: distribution talks with an overseas group"
+ },
+ "nda-04-bm.pdf": {
+  "title": "Perjanjian Kerahsiaan (NDA in Bahasa Malaysia)"
+ },
+ "msa-01-fair.pdf": {
+  "title": "Software services agreement: inventory platform"
+ },
+ "msa-02-autorenew.pdf": {
+  "title": "Fleet tracking subscription agreement"
+ },
+ "msa-03-liability.pdf": {
+  "title": "App development and support agreement"
+ },
+ "msa-04-scanned.pdf": {
+  "title": "Facilities services agreement (scanned copy)"
+ },
+ "msa-05-saas.pdf": {
+  "title": "POS software subscription agreement"
+ },
+ "msa-06-cloud-hosting.pdf": {
+  "title": "Hosting and managed services agreement"
+ },
+ "msa-07-marketing-agency.pdf": {
+  "title": "Digital marketing services agreement"
+ },
+ "msa-08-logistics.pdf": {
+  "title": "Last-mile delivery services agreement"
+ },
+ "msa-09-bm-cleaning.pdf": {
+  "title": "Perjanjian Perkhidmatan Pembersihan Pejabat (cleaning, in Bahasa Malaysia)"
+ },
+ "msa-10-long-fair.pdf": {
+  "title": "IT services agreement with schedules (long, balanced)"
+ },
+ "nda-05-investor.pdf": {
+  "title": "Confidentiality agreement: investor discussions"
+ },
+ "nda-06-employee-style.pdf": {
+  "title": "Confidentiality, non-compete and invention assignment agreement"
+ },
+ "emp-01-fair.pdf": {
+  "title": "Employment offer letter: operations executive (KL)"
+ },
+ "emp-02-startup.pdf": {
+  "title": "Employment contract: startup sales executive"
+ },
+ "emp-03-freelance-bm.pdf": {
+  "title": "Perjanjian Perkhidmatan Freelance (freelance contract, in Bahasa Malaysia)"
+ },
+ "hp-01-fair.pdf": {
+  "title": "Car hire-purchase agreement (balanced, Malaysia)"
+ },
+ "hp-02-used-car.pdf": {
+  "title": "Used-car hire-purchase agreement arranged by a dealer"
+ },
+ "hp-03-personal-loan.pdf": {
+  "title": "Personal loan agreement with a guarantor"
+ },
+ "ten-01-fair.pdf": {
+  "title": "Residential tenancy agreement: condominium apartment (Singapore, balanced)"
+ },
+ "ten-02-shoplot.pdf": {
+  "title": "Tenancy agreement: cafe shop lot (Petaling Jaya)"
+ },
+ "ten-03-bm-rumah.pdf": {
+  "title": "Perjanjian Sewa Bilik (room rental, in Bahasa Malaysia)"
+ },
+ "svc-01-loyalty-saas.pdf": {
+  "title": "Loyalty app subscription agreement (SaaS)",
+  "with": "Pelita Loyalty Technologies Pte. Ltd."
+ },
+ "svc-02-outlet-cleaning.pdf": {
+  "title": "Outlet cleaning services agreement",
+  "with": "Bersih Jaya Servis Sdn. Bhd."
+ },
+ "svc-03-bean-logistics.pdf": {
+  "title": "Green bean import and logistics agreement",
+  "with": "Straits Meridian Freight Pte. Ltd."
+ },
+ "svc-04-marketing-retainer.pdf": {
+  "title": "Marketing and social media retainer agreement",
+  "with": "Warna Digital Sdn. Bhd."
+ },
+ "svc-05-it-support.pdf": {
+  "title": "Managed IT support agreement",
+  "with": "Lighthouse IT Services Pte. Ltd."
+ },
+ "svc-06-katering-bm.pdf": {
+  "title": "Perjanjian Perkhidmatan Katering Acara (event catering, in Bahasa Malaysia)",
+  "with": "Dapur Mesra Katering Sdn. Bhd."
+ },
+ "svc-07-pengawal-keselamatan-bm.pdf": {
+  "title": "Perjanjian Perkhidmatan Pengawal Keselamatan (security guards, in Bahasa Malaysia)",
+  "with": "Perisai Utama Sekuriti Sdn. Bhd."
+ },
+ "svc-08-software-dev.pdf": {
+  "title": "Custom ordering app development agreement",
+  "with": "Pixelhaus Studio Pte. Ltd."
+ },
+ "nda-01-mutual-pos.pdf": {
+  "title": "Mutual NDA: point-of-sale integration talks",
+  "with": "Kedai Sistem Tech Sdn. Bhd."
+ },
+ "nda-02-oneway-franchise.pdf": {
+  "title": "One-way NDA: franchise enquiry",
+  "with": "Hasrat Food Ventures Sdn. Bhd."
+ },
+ "nda-03-investor.pdf": {
+  "title": "Confidentiality agreement: investor due diligence",
+  "with": "Merlion Growth Capital Pte. Ltd."
+ },
+ "nda-04-supplier-sg.pdf": {
+  "title": "NDA: green coffee supplier price lists",
+  "with": "Equator Beans Trading Pte. Ltd."
+ },
+ "nda-05-employee-style.pdf": {
+  "title": "Confidentiality, non-compete and invention assignment: head roaster",
+  "with": "Individual: Mr. Rizal Contoh"
+ },
+ "nda-06-perjanjian-bm.pdf": {
+  "title": "Perjanjian Kerahsiaan Bersama (mutual NDA in Bahasa Malaysia)",
+  "with": "Hantar Pantas Platform Sdn. Bhd."
+ },
+ "emp-01-fulltime-manager.pdf": {
+  "title": "Employment contract: outlet manager (full-time)",
+  "with": "Individual: Ms. Tan Contoh"
+ },
+ "emp-02-parttime-bm.pdf": {
+  "title": "Kontrak Pekerjaan Sambilan: barista (part-time, in Bahasa Malaysia)",
+  "with": "Individual: Cik Aina Contoh"
+ },
+ "emp-03-intern.pdf": {
+  "title": "Internship agreement: marketing intern",
+  "with": "Individual: Mr. Daniel Contoh (intern) with Politeknik Contoh"
+ },
+ "emp-04-freelance-designer.pdf": {
+  "title": "Freelance design services agreement",
+  "with": "Individual: Ms. Priya Contoh"
+ },
+ "emp-05-jurugambar-bm.pdf": {
+  "title": "Perjanjian Pekerja Bebas: jurugambar (freelance photographer, in Bahasa Malaysia)",
+  "with": "Individual: Encik Hafiz Contoh"
+ },
+ "emp-06-fixed-term-teamlead.pdf": {
+  "title": "Fixed-term employment contract: roastery team lead",
+  "with": "Individual: Mr. Kamal Contoh"
+ },
+ "ten-01-bangsar-shoplot.pdf": {
+  "title": "Tenancy agreement: Bangsar shop lot (outlet)",
+  "with": "Bukit Aman Contoh Hartanah Sdn. Bhd."
+ },
+ "ten-02-singapore-office.pdf": {
+  "title": "Office tenancy: Singapore representative office",
+  "with": "Tanjong Contoh Properties Pte. Ltd."
+ },
+ "ten-03-staff-room.pdf": {
+  "title": "Room rental agreement: staff trainee accommodation",
+  "with": "Individual: Puan Zainab Contoh"
+ },
+ "ten-04-warehouse.pdf": {
+  "title": "Warehouse tenancy: roastery storage",
+  "with": "Klang Selatan Logistik Hab Sdn. Bhd."
+ },
+ "ten-05-kedai-bm.pdf": {
+  "title": "Perjanjian Sewa Kedai (shop tenancy, in Bahasa Malaysia)",
+  "with": "Hartanah Seri Contoh Sdn. Bhd."
+ },
+ "hp-01-delivery-van.pdf": {
+  "title": "Hire purchase agreement: delivery van",
+  "with": "Auto Dana Contoh Berhad"
+ },
+ "hp-02-forklift.pdf": {
+  "title": "Hire purchase: warehouse forklift",
+  "with": "Berat Mesin Pembiayaan Sdn. Bhd."
+ },
+ "hp-03-pos-terminals.pdf": {
+  "title": "Equipment finance and lease: POS terminals",
+  "with": "Orchard Contoh Leasing Pte. Ltd."
+ },
+ "hp-04-laptop-lease.pdf": {
+  "title": "Laptop lease agreement",
+  "with": "Kenanga Contoh Tech Leasing Pte. Ltd."
+ },
+ "hp-05-pembiayaan-bm.pdf": {
+  "title": "Perjanjian Pembiayaan Perniagaan (business financing, in Bahasa Malaysia)",
+  "with": "Dana Usahawan Contoh Berhad"
+ }
+}

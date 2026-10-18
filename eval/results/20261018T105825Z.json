@@ -1,0 +1,2232 @@
+{
+  "model": "gemini-3.8-flash",
+  "scores": [
+    {
+      "id": "nda-01-fair",
+      "must_flag": [],
+      "false_high": [],
+      "expected_overall_risk": "low",
+      "overall_risk": "low",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 50248,
+      "cost_usd_est": 0.028409,
+      "findings": 0,
+      "dropped_unverified": 0,
+      "verification": {
+        "finding": {
+          "made": 0,
+          "removed": 0
+        },
+        "citation": {
+          "made": 0,
+          "removed": 0
+        },
+        "policy_breach": {
+          "made": 0,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "id": "msa-01-fair",
+      "must_flag": [],
+      "false_high": [],
+      "expected_overall_risk": "low",
+      "overall_risk": "low",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 33995,
+      "cost_usd_est": 0.030881,
+      "findings": 0,
+      "dropped_unverified": 0,
+      "verification": {
+        "finding": {
+          "made": 0,
+          "removed": 0
+        },
+        "citation": {
+          "made": 0,
+          "removed": 0
+        },
+        "policy_breach": {
+          "made": 0,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "id": "msa-08-logistics",
+      "must_flag": [
+        {
+          "clause_type": "liability",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "limited to RM 50 per Parcel, regardless of the Declared Value",
+          "found": "f1"
+        },
+        {
+          "clause_type": "payment",
+          "risk": "medium",
+          "page": 2,
+          "quote_contains": "set by the Carrier from time to time at its sole discretion",
+          "found": "f2"
+        },
+        {
+          "clause_type": "governing_law",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "governed by the laws of the Hong Kong Special Administrative Region",
+          "found": "f3"
+        },
+        {
+          "clause_type": "dispute_resolution",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "exclusive jurisdiction of the courts of Hong Kong",
+          "found": null
+        }
+      ],
+      "false_high": [],
+      "expected_overall_risk": "high",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 95738,
+      "cost_usd_est": 0.036629,
+      "findings": 3,
+      "dropped_unverified": 0,
+      "verification": {
+        "finding": {
+          "made": 3,
+          "removed": 0
+        },
+        "citation": {
+          "made": 3,
+          "removed": 0
+        },
+        "policy_breach": {
+          "made": 0,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "id": "emp-02-startup",
+      "must_flag": [
+        {
+          "clause_type": "probation",
+          "risk": "medium",
+          "page": 2,
+          "quote_contains": "at its sole discretion for such further period or periods",
+          "found": "f1"
+        },
+        {
+          "clause_type": "working_hours",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "all overtime is deemed included in the salary and is unpaid",
+          "found": "f2"
+        },
+        {
+          "clause_type": "non_compete",
+          "risk": "high",
+          "page": 4,
+          "quote_contains": "anywhere in Southeast Asia",
+          "found": "f6"
+        },
+        {
+          "clause_type": "salary_deductions",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "deduct training costs and any unrecovered bonus",
+          "found": "f4"
+        },
+        {
+          "clause_type": "notice_period",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "not less than three (3) months' written notice",
+          "found": "f3"
+        }
+      ],
+      "false_high": [],
+      "expected_overall_risk": "high",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 56046,
+      "cost_usd_est": 0.040926,
+      "findings": 7,
+      "dropped_unverified": 0,
+      "verification": {
+        "finding": {
+          "made": 7,
+          "removed": 0
+        },
+        "citation": {
+          "made": 13,
+          "removed": 0
+        },
+        "policy_breach": {
+          "made": 0,
+          "removed": 0
+        }
+      }
+    },
+    {
+      "id": "hp-03-personal-loan",
+      "must_flag": [
+        {
+          "clause_type": "fees_charges",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "so that the late fee compounds daily",
+          "found": "f1"
+        },
+        {
+          "clause_type": "interest_rate",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "increase the rate of interest in Clause 2.1 to 24% a year",
+          "found": "f2"
+        },
+        {
+          "clause_type": "guarantor",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "liable for all costs, charges and expenses of every kind",
+          "found": "f3"
+        },
+        {
+          "clause_type": "guarantor",
+          "risk": "medium",
+          "page": 2,
+          "quote_contains": "Lender may demand payment from the Guarantor first",
+          "found": "f3"
+        }
+      ],
+      "false_high": [],
+      "expected_overall_risk": "high",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 44511,
+      "cost_usd_est": 0.032608,
+      "findings": 7,
+      "dropped_unverified": 0,
+      "verification": {
+        "finding": {
+          "made": 7,
+          "removed": 0
+        },
+        "citation": {
+          "made": 10,
+          "removed": 0
+        },
+        "policy_breach": {
+          "made": 0,
+          "removed": 0
+        }
+      }
+    }
+  ],
+  "errors": {},
+  "results": {
+    "nda-01-fair": {
+      "id": "49b45ab2c74d",
+      "created_at": "2026-10-18T10:54:34.858696Z",
+      "filename": "nda-01-fair.pdf",
+      "sample_id": "nda-01-fair",
+      "contract_type": "nda",
+      "language": "en",
+      "pages": 4,
+      "parties": [
+        "KENARI BIRU SYSTEMS SDN. BHD.",
+        "ORCHIDWAVE LABS PTE. LTD."
+      ],
+      "verdict": {
+        "overall_risk": "low",
+        "headline": "This mutual non-disclosure agreement is balanced, reciprocal, and standard for commercial discussions.",
+        "summary": [
+          "The agreement applies standard mutual confidentiality terms with typical exceptions and balanced liability provisions.",
+          "The term is set at two years with a three-year confidentiality duration, and indefinite protection limited strictly to trade secrets.",
+          "Dispute resolution and governing law follow standard regional practice with Malaysian law, mediation, and non-exclusive court jurisdiction."
+        ]
+      },
+      "findings": [],
+      "missing_clauses": [],
+      "metrics": {
+        "latency_ms": 50248,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 17904,
+        "output_tokens": 1438,
+        "cost_usd_est": 0.028409,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "my",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (4 pages)",
+          "detail": "governing law: the laws of Malaysia -> my | answered by fallback model gemini-3.5-flash (agent): gemini-3.8-flash did not respond",
+          "ms": 22
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for how long the contract runs in an NDA",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"nda\", \"clause_type\": \"term\"}, \"results\": [{\"ref\": \"nda/term\", \"title\": \"Term: how long the NDA and the secrecy duty last (NDA)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for confidentiality in an NDA",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"confidentiality\", \"contract_type\": \"nda\"}, \"results\": [{\"ref\": \"nda/confidentiality\", \"title\": \"Confidentiality: what counts as secret, and the exceptions (NDA)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for non-solicitation clauses in an NDA",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"non_solicit\", \"contract_type\": \"nda\"}, \"results\": [{\"ref\": \"nda/non_solicit\", \"title\": \"Non-solicitation of staff (NDA)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in an NDA",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"nda\", \"clause_type\": \"liability\"}, \"results\": [{\"ref\": \"nda/liability\", \"title\": \"Liability and remedies, including fixed damages (NDA)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for transferring the contract in an NDA",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"assignment\", \"contract_type\": \"nda\"}, \"results\": [{\"ref\": \"nda/assignment\", \"title\": \"Assignment: passing the contract to someone else (NDA)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for resolving disputes in an NDA",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"dispute_resolution\", \"contract_type\": \"nda\"}, \"results\": [{\"ref\": \"nda/dispute_resolution\", \"title\": \"Dispute resolution: courts, mediation or arbitration (NDA)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for governing law in an NDA",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"governing_law\", \"contract_type\": \"nda\"}, \"results\": [{\"ref\": \"nda/governing_law\", \"title\": \"Governing law: which country's law applies (NDA)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on non-compete clauses",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"clause_type\": \"non_solicit\", \"jurisdiction\": \"my\", \"query\": \"restraint of trade section 28 non solicit employee\"}, \"results\": [{\"ref\": \"my-ca1950-s28\", \"title\": \"Contracts Act 1950, s 28: agreements in restraint of trade are void\", \"kind\": \"law\", \"score\": 29.0685}, {\"ref\": \"my-da1951-s8\", \"title\": \"Distress Act 1951, s 8: goods that cannot be seized, including the tenant's necessary clothing, bedding and trade goods\", \"kind\": \"law\", \"score\": 5.539}, {\"ref\": \"my-ca1950-s29\", \"title\": \"Contracts Act 1950, s 29: agreements in restraint of legal proceedings are void\", \"kind\": \"law\", \"score\": 5.0361}, {\"ref\": \"my-ira1967-s20\", \"title\": \"Industrial Relations Act 1967, s 20: a dismissed worker can ask to be reinstated, within 60 days\", \"kind\": \"law\", \"score\": 4.0516}], \"cited\": []}",
+          "ms": 1083
+        },
+        {
+          "step": 10,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on liability caps",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"jurisdiction\": \"my\", \"query\": \"exclusion of liability consequential loss damages\", \"clause_type\": \"liability\"}, \"results\": [{\"ref\": \"my-case-cimb-v-bourke\", \"title\": \"CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29\", \"kind\": \"case\", \"score\": 35.4592}, {\"ref\": \"my-case-cubic-electronics\", \"title\": \"Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75\", \"kind\": \"case\", \"score\": 14.9267}, {\"ref\": \"my-ca1950-s75\", \"title\": \"Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach\", \"kind\": \"law\", \"score\": 11.4504}, {\"ref\": \"my-ca1950-s74\", \"title\": \"Contracts Act 1950, s 74: compensation for loss caused by breach of contract\", \"kind\": \"law\", \"score\": 7.742}], \"cited\": []}",
+          "ms": 1090
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on personal data protection",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"clause_type\": \"data_protection\", \"jurisdiction\": \"my\", \"query\": \"personal data protection act pdpa compliance requirements\"}, \"results\": [{\"ref\": \"my-pdpa2010-s12a\", \"title\": \"Personal Data Protection Act 2010, s 12A: appointing a data protection officer\", \"kind\": \"law\", \"score\": 36.267}, {\"ref\": \"my-pdpa2010-s129\", \"title\": \"Personal Data Protection Act 2010, s 129: transferring personal data outside Malaysia\", \"kind\": \"law\", \"score\": 34.2509}, {\"ref\": \"my-pdpa2010-s5\", \"title\": \"Personal Data Protection Act 2010, s 5: the seven principles, and what a data processor must follow\", \"kind\": \"law\", \"score\": 31.4497}, {\"ref\": \"my-pdpa2010-s9\", \"title\": \"Personal Data Protection Act 2010, s 9: the Security Principle for controllers and processors\", \"kind\": \"law\", \"score\": 31.4101}], \"cited\": []}",
+          "ms": 1077
+        },
+        {
+          "step": 12,
+          "action": "search_company",
+          "summary": "Checked your company's rules on non-solicitation clauses",
+          "detail": "{\"tool\": \"search_company\", \"args\": {\"query\": \"NDA confidentiality non-disclosure non-solicit\"}, \"results\": [], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 13,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "0 candidate findings",
+          "ms": 18611
+        },
+        {
+          "step": 14,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 0 findings and 0 sources; dropped 0 unsupported findings and 0 unverified sources; removed 0 statements not found in the contract",
+          "ms": 41
+        }
+      ],
+      "key_dates": [
+        {
+          "label": "Agreement start date",
+          "kind": "start",
+          "date": "2026-10-06",
+          "rule": "Effective Date stated in the preamble on page 1",
+          "page": 1,
+          "finding_id": null
+        },
+        {
+          "label": "Expiry of two-year agreement term",
+          "kind": "end",
+          "date": "2028-10-06",
+          "rule": "Clause 4.1 sets the term for two (2) years from the Effective Date",
+          "page": 2,
+          "finding_id": null
+        }
+      ],
+      "removed": [],
+      "owner": "demo",
+      "created_by": null,
+      "provenance": {
+        "model": "gemini-3.8-flash",
+        "kb_version": "94646af2e674",
+        "prompt_version": "eafce4463f6f",
+        "app_version": "dev",
+        "options": {
+          "contract_type": "auto",
+          "jurisdiction": "auto",
+          "apply_company_rules": true,
+          "perspective": "auto",
+          "company_doc_ids": null
+        }
+      },
+      "previous_review_id": "3d7fb14c5378",
+      "content_hash": "4007ff3e3055dbca454e5b61f57a624513b373b13a9a6aa6164a8fb6af4214d2"
+    },
+    "msa-01-fair": {
+      "id": "1888aec0afc8",
+      "created_at": "2026-10-18T10:55:08.856005Z",
+      "filename": "msa-01-fair.pdf",
+      "sample_id": "msa-01-fair",
+      "contract_type": "service_agreement",
+      "language": "en",
+      "pages": 5,
+      "parties": [
+        "AWANBIRU SOFTWARE SDN. BHD.",
+        "PANTAI TIMUR HOME LIVING SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "low",
+        "headline": "A balanced SaaS agreement with fair commercial terms and strong customer protections.",
+        "summary": [
+          "The contract adheres closely to standard market positions with mutual liability caps, clear IP ownership, and customer termination for convenience.",
+          "Data protection, service credits, and warranty provisions provide reasonable coverage under Malaysian law.",
+          "The terms are balanced and ready for execution subject to verifying specific operational details in the attached schedules."
+        ]
+      },
+      "findings": [],
+      "missing_clauses": [],
+      "metrics": {
+        "latency_ms": 33995,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 20057,
+        "output_tokens": 1613,
+        "cost_usd_est": 0.030881,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "my",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (5 pages)",
+          "detail": "governing law: the laws of Malaysia -> my | answered by fallback model gemini-3.5-flash (agent): gemini-3.8-flash did not respond",
+          "ms": 14
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for automatic renewal in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"auto_renewal\"}, \"results\": [{\"ref\": \"service_agreement/auto_renewal\", \"title\": \"Auto-renewal and price increases on renewal (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for confidentiality in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"confidentiality\"}, \"results\": [{\"ref\": \"service_agreement/confidentiality\", \"title\": \"Confidentiality (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for personal data protection in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"data_protection\", \"contract_type\": \"service_agreement\"}, \"results\": [{\"ref\": \"service_agreement/data_protection\", \"title\": \"Personal data protection (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for resolving disputes in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"dispute_resolution\", \"contract_type\": \"service_agreement\"}, \"results\": [{\"ref\": \"service_agreement/dispute_resolution\", \"title\": \"Dispute resolution (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for governing law in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"governing_law\"}, \"results\": [{\"ref\": \"service_agreement/governing_law\", \"title\": \"Governing law: which country's law applies (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for indemnities in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"indemnity\"}, \"results\": [{\"ref\": \"service_agreement/indemnity\", \"title\": \"Indemnity: promising to cover the other side's losses (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ownership of work and IP in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"ip_ownership\"}, \"results\": [{\"ref\": \"service_agreement/ip_ownership\", \"title\": \"Ownership of work product and IP (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"liability\"}, \"results\": [{\"ref\": \"service_agreement/liability\", \"title\": \"Limitation of liability: the most either side can be made to pay (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for payment terms in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"payment\", \"contract_type\": \"service_agreement\"}, \"results\": [{\"ref\": \"service_agreement/payment\", \"title\": \"Payment, late interest and price increases (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for how long the contract runs in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"term\"}, \"results\": [{\"ref\": \"service_agreement/term\", \"title\": \"Term: how long the agreement runs (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 12,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending the contract in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"termination\"}, \"results\": [{\"ref\": \"service_agreement/termination\", \"title\": \"Termination: how either side can end the agreement (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 13,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for warranties in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"warranty\"}, \"results\": [{\"ref\": \"service_agreement/warranty\", \"title\": \"Warranties: what the vendor promises about the service (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 14,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on liability caps",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"jurisdiction\": \"my\", \"clause_type\": \"liability\", \"query\": \"limitation of liability clause enforceability malaysia\"}, \"results\": [{\"ref\": \"my-case-cimb-v-bourke\", \"title\": \"CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29\", \"kind\": \"case\", \"score\": 18.268}, {\"ref\": \"my-case-cubic-electronics\", \"title\": \"Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75\", \"kind\": \"case\", \"score\": 11.2352}, {\"ref\": \"my-la1953-s6\", \"title\": \"Limitation Act 1953, s 6(1): six years to sue on a contract\", \"kind\": \"law\", \"score\": 8.4405}, {\"ref\": \"my-pdpa2010-s129\", \"title\": \"Personal Data Protection Act 2010, s 129: transferring personal data outside Malaysia\", \"kind\": \"law\", \"score\": 3.4829}], \"cited\": []}",
+          "ms": 402
+        },
+        {
+          "step": 15,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on penalty clauses",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"clause_type\": \"payment\", \"jurisdiction\": \"my\", \"query\": \"interest rate penalty liquidated damages section 75\"}, \"results\": [{\"ref\": \"my-ca1950-s75\", \"title\": \"Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach\", \"kind\": \"law\", \"score\": 35.4938}, {\"ref\": \"my-case-cubic-electronics\", \"title\": \"Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75\", \"kind\": \"case\", \"score\": 32.5438}, {\"ref\": \"my-ea1955-s24\", \"title\": \"Employment Act 1955, s 24: an employer may deduct from wages only what the Act allows\", \"kind\": \"law\", \"score\": 8.034}, {\"ref\": \"my-mwo2024\", \"title\": \"Minimum Wages Order 2024 (P.U.(A) 376/2024): RM1,700 a month from 1 February 2025, for all employers from 1 August 2025\", \"kind\": \"law\", \"score\": 7.5009}], \"cited\": []}",
+          "ms": 499
+        },
+        {
+          "step": 16,
+          "action": "search_company",
+          "summary": "Checked your company's rules on \u201ccontract policy guidelines\u201d",
+          "detail": "{\"tool\": \"search_company\", \"args\": {\"query\": \"contract policy guidelines\"}, \"results\": [], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 17,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "0 candidate findings",
+          "ms": 4605
+        },
+        {
+          "step": 18,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 0 findings and 0 sources; dropped 0 unsupported findings and 0 unverified sources; removed 0 statements not found in the contract",
+          "ms": 50
+        }
+      ],
+      "key_dates": [
+        {
+          "label": "Initial subscription term ends 12 months after go-live",
+          "kind": "end",
+          "date": null,
+          "rule": "Clause 3.1 states the initial subscription term runs for 12 months from the Go-Live Date, which is determined later in writing.",
+          "page": 2,
+          "finding_id": null
+        },
+        {
+          "label": "Notice deadline to stop auto-renewal 30 days before term end",
+          "kind": "notice_deadline",
+          "date": null,
+          "rule": "Clause 3.2 requires written notice of non-renewal at least 30 days before the end of the then-current term.",
+          "page": 2,
+          "finding_id": null
+        },
+        {
+          "label": "Vendor reminder notice before renewal date",
+          "kind": "other",
+          "date": null,
+          "rule": "Clause 3.2 requires the vendor to send a written reminder of the renewal date not less than 60 days before it.",
+          "page": 2,
+          "finding_id": null
+        },
+        {
+          "label": "Payment due date within 30 days of invoice receipt",
+          "kind": "payment",
+          "date": null,
+          "rule": "Clause 4.2 requires payment of each correct invoice within 30 days of receipt.",
+          "page": 2,
+          "finding_id": null
+        }
+      ],
+      "removed": [],
+      "owner": "demo",
+      "created_by": null,
+      "provenance": {
+        "model": "gemini-3.8-flash",
+        "kb_version": "94646af2e674",
+        "prompt_version": "eafce4463f6f",
+        "app_version": "dev",
+        "options": {
+          "contract_type": "auto",
+          "jurisdiction": "auto",
+          "apply_company_rules": true,
+          "perspective": "auto",
+          "company_doc_ids": null
+        }
+      },
+      "previous_review_id": "3d4a83450a4e",
+      "content_hash": "690ceb5ed0b49abf0e39ed3b1d8b1619f972542ea0f1829dd44e828702c63e3e"
+    },
+    "msa-08-logistics": {
+      "id": "1c2af3c75927",
+      "created_at": "2026-10-18T10:56:44.596956Z",
+      "filename": "msa-08-logistics.pdf",
+      "sample_id": "msa-08-logistics",
+      "contract_type": "service_agreement",
+      "language": "en",
+      "pages": 3,
+      "parties": [
+        "PANTAS ANTAR EXPRESS LIMITED",
+        "KEDAI BUNGA RIA SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "This logistics contract has critical risks regarding exclusive foreign court jurisdiction and highly unbalanced commercial terms.",
+        "summary": [
+          "The agreement is governed by Hong Kong law with exclusive jurisdiction in Hong Kong courts, meaning you must travel and pay high legal fees abroad to resolve any dispute.",
+          "The carrier's liability is capped at a tiny RM 50 per parcel and excludes perishable items like fresh flowers entirely, while they can unilaterally set fuel surcharges.",
+          "This contract is governed by the laws of the Hong Kong Special Administrative Region; we check it against Malaysian law only as a fallback."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "liability",
+          "title": "Tiny fixed liability cap",
+          "risk": "high",
+          "quote": "The Carrier's liability for any loss of or damage to a Parcel, for delay, or for any other claim connected with that Parcel is limited to RM 50 per Parcel, regardless of the Declared Value of the Parcel and regardless of the cause of the loss.",
+          "page": 2,
+          "clause_ref": "4.2",
+          "why_risky": "The RM 50 limit is extremely low and does not reflect the actual value of your parcels. If a high-value parcel is lost, you will bear almost the entire loss.",
+          "standard": "A balanced liability cap should cover the actual declared value of the parcel up to a reasonable commercial limit, or be based on multiple months' fees.",
+          "suggested_ask": "Please increase the liability cap per parcel to match the Declared Value up to a limit of RM 500.",
+          "baseline_ref": "service_agreement/liability",
+          "boxes": [
+            [
+              0.1542,
+              0.2977,
+              0.8762,
+              0.3149
+            ],
+            [
+              0.1238,
+              0.3159,
+              0.8762,
+              0.3331
+            ],
+            [
+              0.1238,
+              0.3341,
+              0.516,
+              0.3512
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/liability",
+              "title": "Limitation of liability: the most either side can be made to pay (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual cap**: the same cap for both sides, usually **the fees paid or payable in the 12 months** before the claim. - **Mutual exclusion** of indirect losses (lost profits, lost business, loss of reputation) for both sides. - **Carve-outs from the cap** (amounts that stay uncapped or have a higher cap) apply to both sides equally: fraud, death or personal injury caused by negligence, breach...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f2",
+          "clause_type": "payment",
+          "title": "Discretionary fuel surcharge",
+          "risk": "high",
+          "quote": "fuel surcharge is set by the Carrier from time to time at its sole discretion and is notified on the Carrier's website. The Carrier is not required to link the fuel surcharge to any published fuel price.",
+          "page": 2,
+          "clause_ref": "3.2",
+          "why_risky": "The carrier can increase your shipping costs arbitrarily without any reference to actual fuel price movements. This creates absolute pricing uncertainty for your business.",
+          "standard": "Surcharges should be linked directly to a recognized public index, such as official retail fuel prices, using a transparent formula.",
+          "suggested_ask": "Please link the fuel surcharge to the Malaysian retail fuel price index using a transparent, published formula.",
+          "baseline_ref": "service_agreement/payment",
+          "boxes": [
+            [
+              0.1238,
+              0.0735,
+              0.8762,
+              0.0906
+            ],
+            [
+              0.1238,
+              0.0917,
+              0.8762,
+              0.1088
+            ],
+            [
+              0.1238,
+              0.1099,
+              0.1669,
+              0.127
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/payment",
+              "title": "Payment, late interest and price increases (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **Payment within 30 days** of a correct invoice (30-60 days is common in Malaysia and Singapore). - Prices stated **excluding tax**, with Malaysian service tax (SST) or Singapore GST added where it applies. - **Disputed invoices:** the customer may hold back the disputed part in good faith while paying the rest, and both sides try to resolve it quickly. - **Late interest** at a modest rate, r...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "fuzzy",
+            "score": 99.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f3",
+          "clause_type": "governing_law",
+          "title": "Exclusive Hong Kong jurisdiction",
+          "risk": "high",
+          "quote": "Any dispute arising out of or in connection with this Agreement shall be submitted to the exclusive jurisdiction of the courts of Hong Kong. The Customer shall bear its own travel and legal costs.",
+          "page": 3,
+          "clause_ref": "10.2",
+          "why_risky": "You must travel and sue the carrier in Hong Kong for any local delivery dispute. This is highly impractical and cost-prohibitive for a Malaysian SME shipping local parcels.",
+          "standard": "The contract should be subject to the law and courts where the service is actually performed and where both parties operate.",
+          "suggested_ask": "Please make the agreement subject to Malaysian law and the courts of Kuala Lumpur, where both parties operate.",
+          "baseline_ref": "service_agreement/governing_law",
+          "boxes": [
+            [
+              0.1649,
+              0.2183,
+              0.8762,
+              0.2354
+            ],
+            [
+              0.1238,
+              0.2365,
+              0.8762,
+              0.2536
+            ],
+            [
+              0.1238,
+              0.2546,
+              0.212,
+              0.2718
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/governing_law",
+              "title": "Governing law: which country's law applies (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- The law of the country where the **customer** receives the service, or where both sides are based. - Malaysian law with Kuala Lumpur courts, or Singapore law with Singapore courts, for a contract between companies in these two countries. - The courts named match the law chosen. - Non-exclusive jurisdiction, or arbitration in the region (see `dispute_resolution.md`).",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        }
+      ],
+      "missing_clauses": [
+        {
+          "clause_type": "warranty",
+          "title": "Service performance warranty",
+          "why_it_matters": "The contract does not promise any minimum standard of care or skill for delivery, leaving you with little recourse if delivery is repeatedly delayed or handled poorly.",
+          "suggested_ask": "Please add a warranty that the Services will be performed with reasonable care, skill, and diligence in accordance with industry standards."
+        }
+      ],
+      "metrics": {
+        "latency_ms": 95738,
+        "model": "gemini-3.5-flash",
+        "input_tokens": 17123,
+        "output_tokens": 1855,
+        "cost_usd_est": 0.036629,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "other",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (3 pages)",
+          "detail": "governing law: the laws of the Hong Kong Special Administrative Region -> other | answered by fallback model gemini-3.5-flash (review): gemini-3.8-flash did not respond",
+          "ms": 8
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for governing law in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"governing_law\"}, \"results\": [{\"ref\": \"service_agreement/governing_law\", \"title\": \"Governing law: which country's law applies (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"service_agreement/governing_law\"]}",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for resolving disputes in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"dispute_resolution\", \"contract_type\": \"service_agreement\"}, \"results\": [{\"ref\": \"service_agreement/dispute_resolution\", \"title\": \"Dispute resolution (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"liability\"}, \"results\": [{\"ref\": \"service_agreement/liability\", \"title\": \"Limitation of liability: the most either side can be made to pay (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"service_agreement/liability\"]}",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for indemnities in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"indemnity\"}, \"results\": [{\"ref\": \"service_agreement/indemnity\", \"title\": \"Indemnity: promising to cover the other side's losses (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for payment terms in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"payment\", \"contract_type\": \"service_agreement\"}, \"results\": [{\"ref\": \"service_agreement/payment\", \"title\": \"Payment, late interest and price increases (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"service_agreement/payment\"]}",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for how long the contract runs in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"service_agreement\", \"clause_type\": \"term\"}, \"results\": [{\"ref\": \"service_agreement/term\", \"title\": \"Term: how long the agreement runs (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending the contract in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"termination\", \"contract_type\": \"service_agreement\"}, \"results\": [{\"ref\": \"service_agreement/termination\", \"title\": \"Termination: how either side can end the agreement (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for personal data protection in a service agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"data_protection\", \"contract_type\": \"service_agreement\"}, \"results\": [{\"ref\": \"service_agreement/data_protection\", \"title\": \"Personal data protection (service agreement)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_company",
+          "summary": "Checked your company's rules on indemnities",
+          "detail": "{\"tool\": \"search_company\", \"args\": {\"query\": \"carrier delivery liability indemnity jurisdiction fuel surcharge\"}, \"results\": [], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on governing law",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"clause_type\": \"governing_law\", \"query\": \"foreign governing law jurisdiction courts\"}, \"results\": [{\"ref\": \"my-pdpa2010-s9\", \"title\": \"Personal Data Protection Act 2010, s 9: the Security Principle for controllers and processors\", \"kind\": \"law\", \"score\": 3.9579}, {\"ref\": \"my-ea1950-s92\", \"title\": \"Evidence Act 1950, s 92: oral statements cannot vary a written contract (with exceptions)\", \"kind\": \"law\", \"score\": 2.5373}, {\"ref\": \"my-ca1950-s24\", \"title\": \"Contracts Act 1950, s 24: when the object or consideration of an agreement is unlawful\", \"kind\": \"law\", \"score\": 2.3766}, {\"ref\": \"my-pdpa2010-s129\", \"title\": \"Personal Data Protection Act 2010, s 129: transferring personal data outside Malaysia\", \"kind\": \"law\", \"score\": 2.2079}], \"cited\": []}",
+          "ms": 550
+        },
+        {
+          "step": 12,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on liability caps",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"clause_type\": \"liability\", \"query\": \"limitation of liability exclusion consequential loss perishable\"}, \"results\": [{\"ref\": \"my-case-cimb-v-bourke\", \"title\": \"CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29\", \"kind\": \"case\", \"score\": 30.8316}, {\"ref\": \"my-ca1950-s74\", \"title\": \"Contracts Act 1950, s 74: compensation for loss caused by breach of contract\", \"kind\": \"law\", \"score\": 7.742}, {\"ref\": \"my-case-cubic-electronics\", \"title\": \"Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75\", \"kind\": \"case\", \"score\": 6.7443}, {\"ref\": \"my-ca1950-s75\", \"title\": \"Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach\", \"kind\": \"law\", \"score\": 6.3941}], \"cited\": []}",
+          "ms": 371
+        },
+        {
+          "step": 13,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on payment terms",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"clause_type\": \"payment\", \"query\": \"unilateral variation price discretion fuel surcharge\"}, \"results\": [{\"ref\": \"my-hpa1967-s16\", \"title\": \"Hire-Purchase Act 1967, s 16: notice before repossession for missed instalments\", \"kind\": \"law\", \"score\": 4.2852}, {\"ref\": \"my-hpa1967-s33\", \"title\": \"Hire-Purchase Act 1967, s 33: the court can reopen a harsh and unconscionable hire-purchase\", \"kind\": \"law\", \"score\": 3.2251}, {\"ref\": \"my-ca1950-s30\", \"title\": \"Contracts Act 1950, s 30: agreements void for uncertainty\", \"kind\": \"law\", \"score\": 0.02}, {\"ref\": \"my-ca1950-s75\", \"title\": \"Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach\", \"kind\": \"law\", \"score\": 0.02}], \"cited\": []}",
+          "ms": 389
+        },
+        {
+          "step": 14,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "3 candidate findings",
+          "ms": 91185
+        },
+        {
+          "step": 15,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 3 findings and 3 sources; dropped 0 unsupported findings and 0 unverified sources; removed 0 statements not found in the contract",
+          "ms": 93
+        }
+      ],
+      "key_dates": [
+        {
+          "label": "Contract start date",
+          "kind": "start",
+          "date": "2026-08-27",
+          "rule": "The Effective Date of the Agreement is 27 August 2026",
+          "page": 1,
+          "finding_id": null
+        },
+        {
+          "label": "Initial 12-month term end date",
+          "kind": "end",
+          "date": "2027-08-26",
+          "rule": "12 months from the Effective Date",
+          "page": 2,
+          "finding_id": null
+        }
+      ],
+      "removed": [],
+      "owner": "demo",
+      "created_by": null,
+      "provenance": {
+        "model": "gemini-3.5-flash",
+        "kb_version": "94646af2e674",
+        "prompt_version": "eafce4463f6f",
+        "app_version": "dev",
+        "options": {
+          "contract_type": "auto",
+          "jurisdiction": "auto",
+          "apply_company_rules": true,
+          "perspective": "auto",
+          "company_doc_ids": null
+        }
+      },
+      "previous_review_id": "3cb0bf018325",
+      "content_hash": "32fd7d30e9299c819ca28a6746fd8692840e1513dc2323b1a4d7cd8c3bb681d5"
+    },
+    "emp-02-startup": {
+      "id": "e60f366e1821",
+      "created_at": "2026-10-18T10:57:40.642995Z",
+      "filename": "emp-02-startup.pdf",
+      "sample_id": "emp-02-startup",
+      "contract_type": "employment",
+      "language": "en",
+      "pages": 5,
+      "parties": [
+        "KILATPAY TECHNOLOGIES SDN. BHD.",
+        "DANIEL LIM SAMPLE"
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "High-risk employment contract with excessive hours, unfair notice disparity, full training bond clawback, and void non-compete.",
+        "summary": [
+          "The contract sets working hours above statutory limits without overtime pay, creates severe notice period imbalances, and imposes an un-prorated RM 15,000 training bond with broad wage deductions.",
+          "Clause 12.1 imposes a two-year post-employment non-compete across Southeast Asia, which under Malaysian law is generally void under section 28 of the Contracts Act 1950.",
+          "Several terms conflict with standard statutory protections under the Employment Act 1955, including notice equality and permitted wage deductions."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "probation",
+          "title": "Discretionary probation extension and notice disparity",
+          "risk": "high",
+          "quote": "The Company may extend the Probation Period at its sole discretion for such further period or periods as it thinks fit, by written notice to the Employee given at any time before the Probation Period (as extended) ends.",
+          "page": 2,
+          "clause_ref": "3.2",
+          "why_risky": "The company can prolong your probation indefinitely at its sole discretion without any fixed limit. Furthermore, clause 3.3 requires you to give 1 month's notice to resign during probation while the company can dismiss you on only 1 week's notice.",
+          "standard": "Probation should be for a fixed term (typically 3 to 6 months), extendable at most once for a defined duration with written reasons, with equal notice periods for both sides.",
+          "suggested_ask": "Please set probation at 3 months, allow one extension of up to 3 months only with written reasons and a fixed end date, and give both sides the same notice period during probation.",
+          "baseline_ref": "employment/probation",
+          "boxes": [
+            [
+              0.1541,
+              0.3705,
+              0.8762,
+              0.3876
+            ],
+            [
+              0.1238,
+              0.3887,
+              0.8762,
+              0.4058
+            ],
+            [
+              0.1238,
+              0.4068,
+              0.4303,
+              0.424
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "employment/probation",
+              "title": "Probation (employment)",
+              "jurisdiction": null,
+              "excerpt": "- **3 months is typical**; up to **6 months** for senior or specialist roles. - A fixed start and end date, and a written confirmation (or not) at the end. - **Extension at most once**, in writing, with the reasons given and a new fixed end date. - The **same pay and benefits** as a confirmed employee, apart from items that clearly start on confirmation. - Notice during probation is **the same...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-ea1955-s12",
+              "title": "Employment Act 1955, s 12: notice of termination must be the same length for employer and employee",
+              "jurisdiction": "my",
+              "excerpt": "Section 12(1), (2) and (4), read in the Reprint: \"(1) Either party to a contract of service may at any time give to the other party notice of his intention to terminate such contract of service.\" \"(2) The length of such notice shall be the same for both employer and employee and shall be determined by a provision made in writing for such notice in the terms of the contract of service, or, in th...",
+              "url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "page": null,
+              "source_url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 2,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f2",
+          "clause_type": "working_hours",
+          "title": "Normal hours exceed statutory limit without overtime",
+          "risk": "high",
+          "quote": "Accordingly, all overtime is deemed included in the salary and is unpaid, and the Employee shall not be entitled to any additional payment or time off in lieu for work performed outside normal working hours.",
+          "page": 3,
+          "clause_ref": "6.2",
+          "why_risky": "Mandatory unpaid overtime for 54-hour normal work weeks deprives you of statutory compensation and limits. Clause 6.1 sets hours at 9.00 a.m. to 7.00 p.m. Monday to Saturday with a 1-hour lunch, totaling 54 hours weekly, which exceeds the statutory 45-hour limit, while clause 6.2 excludes overtime pay or time off in lieu entirely.",
+          "standard": "Under standard practice, normal hours do not exceed 45 hours per week, and overtime work is compensated with statutory overtime pay rates or agreed time off in lieu.",
+          "suggested_ask": "Please state my normal hours within 45 hours per week and confirm that any overtime is paid at statutory rates or compensated with time off, rather than deemed included in my salary.",
+          "baseline_ref": "employment/working_hours",
+          "boxes": [
+            [
+              0.5035,
+              0.4068,
+              0.8762,
+              0.424
+            ],
+            [
+              0.1238,
+              0.425,
+              0.8762,
+              0.4421
+            ],
+            [
+              0.1238,
+              0.4432,
+              0.6257,
+              0.4603
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "employment/working_hours",
+              "title": "Working hours and overtime (employment)",
+              "jurisdiction": null,
+              "excerpt": "- Normal hours stated clearly (days, start and end times, breaks), within legal norms. - **Overtime is paid**, or given back as time off at an agreed rate, and only when asked for. - Rest days and public holidays stated; work on them is paid at a higher rate or compensated. - For senior or managerial staff not covered by overtime rules, hours stated as \"reasonable\" with some flexibility both ways.",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-ea1955-s60a",
+              "title": "Employment Act 1955, s 60A: working hours (45 a week) and overtime at not less than 1.5 times",
+              "jurisdiction": "my",
+              "excerpt": "Section 60A(1) and (3) (the reprint writes the section number as 60a): \"(1) Except as hereinafter provided, an employee shall not be required under his contract of service to work\u2014\" \"(a) more than five consecutive hours without a period of leisure of not less than thirty minutes duration;\" \"(b) more than eight hours in one day;\" \"(c) in excess of a spread over period of ten hours in one day;\" \"...",
+              "url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "page": null,
+              "source_url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-ea2022-a1651",
+              "title": "Employment (Amendment) Act 2022 (Act A1651): what changed in the Employment Act 1955, and when",
+              "jurisdiction": "my",
+              "excerpt": "This entry records the amending Act rather than a section. What the fetched sources say: - Cover of the Reprint: \"Latest amendment made by Act A1651 which came into operation on \u2026 \u2026 1 January 2023\" - Note printed in the Reprint: \"*NOTE\u2014see paragraph 46(1), (2) and (3) of the Employment (Amendment) Act 2022 [Act A1651] which comes into operation on 1 January 2023\" - Gazette notice P.U.(B) 368 (d...",
+              "url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "page": null,
+              "source_url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 3,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f3",
+          "clause_type": "notice_period",
+          "title": "Unequal notice period after confirmation",
+          "risk": "high",
+          "quote": "After confirmation, the Employee may terminate the employment by giving the Company not less than three (3) months' written notice.",
+          "page": 3,
+          "clause_ref": "8.1",
+          "why_risky": "You must give three months' notice while the employer can terminate you with only one week's notice. Under clause 8.2, the Company needs only one week's notice or salary in lieu to dismiss you after confirmation, while binding you to 3 months and reserving the right under clause 8.1 to refuse salary in lieu from you.",
+          "standard": "Notice periods should be equal for both parties, typically 1 to 2 months for staff roles, with reciprocal rights to pay salary in lieu.",
+          "suggested_ask": "Please make the notice period the same for both sides, for example 1 month in writing, with either side able to pay salary in lieu of notice.",
+          "baseline_ref": "employment/notice_period",
+          "boxes": [
+            [
+              0.1537,
+              0.7988,
+              0.8762,
+              0.8159
+            ],
+            [
+              0.1238,
+              0.8169,
+              0.4513,
+              0.8341
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "employment/notice_period",
+              "title": "Notice period (employment)",
+              "jurisdiction": null,
+              "excerpt": "- **The same notice length for both sides.** - A length that suits the role: often 1 month for junior staff, 2-3 months for senior staff. - Notice in writing; either side may pay salary instead of working the notice. - One notice clause that matches the rest of the contract (probation notice can be shorter, but stated).",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-ea1955-s12",
+              "title": "Employment Act 1955, s 12: notice of termination must be the same length for employer and employee",
+              "jurisdiction": "my",
+              "excerpt": "Section 12(1), (2) and (4), read in the Reprint: \"(1) Either party to a contract of service may at any time give to the other party notice of his intention to terminate such contract of service.\" \"(2) The length of such notice shall be the same for both employer and employee and shall be determined by a provision made in writing for such notice in the terms of the contract of service, or, in th...",
+              "url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "page": null,
+              "source_url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 2,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f4",
+          "clause_type": "salary_deductions",
+          "title": "Full training bond repayment without pro-rating",
+          "risk": "high",
+          "quote": "In consideration of the Company bearing the Training Costs, the Employee agrees that if the employment ends for any reason within twenty-four (24) months after the Commencement Date, the Employee shall repay the Company the full Training Costs, without any reduction for the period served.",
+          "page": 3,
+          "clause_ref": "5.2",
+          "why_risky": "You are forced to repay the full RM 15,000 training fee even if you leave near the end of the 24 months. The clause applies if employment ends for any reason without pro-rating down the amount for time served, effectively locking you in or penalising departure.",
+          "standard": "Training bonds should be pro-rated monthly over a reasonable duration and reflect verifiable third-party course fees.",
+          "suggested_ask": "Please reduce the training bond amount pro-rata based on months served over the 24 months, and confirm repayment applies only if I resign voluntarily without cause.",
+          "baseline_ref": "employment/salary_deductions",
+          "boxes": [
+            [
+              0.1535,
+              0.1166,
+              0.8762,
+              0.1337
+            ],
+            [
+              0.1238,
+              0.1348,
+              0.8762,
+              0.1519
+            ],
+            [
+              0.1238,
+              0.153,
+              0.8762,
+              0.1701
+            ],
+            [
+              0.1238,
+              0.1711,
+              0.2356,
+              0.1883
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "employment/salary_deductions",
+              "title": "Salary deductions and training bonds (employment)",
+              "jurisdiction": null,
+              "excerpt": "- **Only lawful deductions**: tax, statutory contributions, and items you agreed to in writing. - No deduction for damage, shortages or \"losses\" without your written consent for each case. - **Training costs are not taken from wages.** If there is a bond, it covers only a real, costly course, is a **reasonable** amount, is **pro-rated** down over the bond period, and the cost is shown to you.",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f5",
+          "clause_type": "salary_deductions",
+          "title": "Broad salary deductions for training and debts",
+          "risk": "high",
+          "quote": "The Employee authorises the Company to deduct training costs and any unrecovered bonus, together with any other sums the Employee owes to the Company, from the Employee's monthly Salary, commission and final salary.",
+          "page": 3,
+          "clause_ref": "5.3",
+          "why_risky": "The employer takes automatic deductions from your wages for training costs and unspecified debts. Under section 24 of the Employment Act 1955, wage deductions are strictly limited by law and generally require statutory authorisation or specific approval.",
+          "standard": "Wage deductions should be strictly restricted to those required or permitted by written law, and disputed claims or bond recoveries should not be automatically deducted from monthly wages.",
+          "suggested_ask": "Please limit deductions to those allowed by law or agreed by me in writing each time, and make any training cost recovery subject to separate agreement rather than deduction from my wages.",
+          "baseline_ref": "employment/salary_deductions",
+          "boxes": [
+            [
+              0.1579,
+              0.1961,
+              0.8762,
+              0.2132
+            ],
+            [
+              0.1238,
+              0.2142,
+              0.8762,
+              0.2314
+            ],
+            [
+              0.1238,
+              0.2324,
+              0.4762,
+              0.2496
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "employment/salary_deductions",
+              "title": "Salary deductions and training bonds (employment)",
+              "jurisdiction": null,
+              "excerpt": "- **Only lawful deductions**: tax, statutory contributions, and items you agreed to in writing. - No deduction for damage, shortages or \"losses\" without your written consent for each case. - **Training costs are not taken from wages.** If there is a bond, it covers only a real, costly course, is a **reasonable** amount, is **pro-rated** down over the bond period, and the cost is shown to you.",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-ea1955-s24",
+              "title": "Employment Act 1955, s 24: an employer may deduct from wages only what the Act allows",
+              "jurisdiction": "my",
+              "excerpt": "Section 24(1) and (2): \"(1) No deductions shall be made by an employer from the wages of an employee otherwise than in accordance with this Act.\" \"(2) It shall be lawful for an employer to make the following deductions:\" \"(a) deductions to the extent of any overpayment of wages made during the immediately preceding three months from the month in which deductions are to be made, by the employer...",
+              "url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "page": null,
+              "source_url": "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf",
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 2,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f6",
+          "clause_type": "non_compete",
+          "title": "Post-employment non-compete across Southeast Asia",
+          "risk": "high",
+          "quote": "In view of the Confidential Information and merchant relationships to which the Employee will have access, the Employee undertakes that for a period of two (2) years after the employment ends, the Employee shall not, anywhere in Southeast Asia, directly or indirectly, whether as employee, consultant, director, shareholder, partner or otherwise, be engaged or interested in any business which competes or intends to compete with the Business.",
+          "page": 4,
+          "clause_ref": "12.1",
+          "why_risky": "A 2-year post-employment non-compete across Southeast Asia restrains you from earning a livelihood in your sector. Under section 28 of the Contracts Act 1950, agreements restraining anyone from exercising a lawful profession, trade, or business are void in Malaysia. Section 28 has no general 'reasonable restraint' exception (only sale of goodwill and partnerships), so a shorter or paid restraint after the contract ends is not made valid; whether it reaches a non-solicitation clause is not settled.",
+          "standard": "In Malaysia, post-employment non-compete clauses are void; employers protect legitimate interests via non-solicitation and confidentiality clauses.",
+          "suggested_ask": "Please delete the restriction on working for others after the agreement ends; the confidentiality clause already protects your information.",
+          "baseline_ref": "employment/non_compete",
+          "boxes": [
+            [
+              0.1645,
+              0.7711,
+              0.8762,
+              0.7883
+            ],
+            [
+              0.1238,
+              0.7893,
+              0.8762,
+              0.8065
+            ],
+            [
+              0.1238,
+              0.8075,
+              0.8762,
+              0.8246
+            ],
+            [
+              0.1238,
+              0.8257,
+              0.8762,
+              0.8428
+            ],
+            [
+              0.1238,
+              0.8439,
+              0.7807,
+              0.861
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "employment/non_compete",
+              "title": "Non-compete after you leave (employment)",
+              "jurisdiction": null,
+              "excerpt": "- **Best: no post-employment non-compete.** Confidentiality and non-solicitation clauses already protect the employer's secrets and clients. - **Malaysia:** no restraint after the contract ends. Section 28 of the Contracts Act 1950 makes it void with no general reasonableness exception (my-ca1950-s28), so narrowing it or paying for it does not make it valid. Ask to delete it and keep the confid...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-ca1950-s28",
+              "title": "Contracts Act 1950, s 28: agreements in restraint of trade are void",
+              "jurisdiction": "my",
+              "excerpt": "\"28. Every agreement by which anyone is restrained from exercising a lawful profession, trade, or business of any kind, is to that extent void.\" \"Exception 1\u2014One who sells the goodwill of a business may agree with the buyer to refrain carrying on a similar business, within specified local limits, so long as the buyer, or any person deriving title to the goodwill from him, carries on a like busi...",
+              "url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20136.pdf",
+              "page": null,
+              "source_url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20136.pdf#page=27",
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 2,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f7",
+          "clause_type": "termination",
+          "title": "Commission forfeited after notice of termination",
+          "risk": "medium",
+          "quote": "Commission is paid only on merchant fees actually received by the Company and only while the Employee remains employed and has not given or received notice of termination.",
+          "page": 2,
+          "clause_ref": "4.2",
+          "why_risky": "Serving or receiving termination notice immediately forfeits commission on merchant fees collected by the company. You lose commission earned from sales you generated even if you work through your notice period properly.",
+          "standard": "Commission earned on deals secured should be paid out up to the final termination date, regardless of whether notice has been served.",
+          "suggested_ask": "Please confirm that earned commission on merchant fees received up to my last day of employment will be paid in full, even if notice of termination has been served.",
+          "baseline_ref": "employment/termination",
+          "boxes": [
+            [
+              0.5413,
+              0.6243,
+              0.8762,
+              0.6415
+            ],
+            [
+              0.1238,
+              0.6425,
+              0.8762,
+              0.6597
+            ],
+            [
+              0.1238,
+              0.6607,
+              0.4267,
+              0.6778
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "employment/termination",
+              "title": "Termination (employment)",
+              "jurisdiction": null,
+              "excerpt": "- **Without cause:** either side may end the job by giving the agreed notice, or pay instead. - **For cause:** dismissal without notice only for serious misconduct, after a fair process, with **written reasons**. - **Pay owed on exit:** salary to the last day, unused annual leave, and any earned bonus or commission, paid promptly. - No termination for being pregnant or on maternity leave.",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        }
+      ],
+      "missing_clauses": [
+        {
+          "clause_type": "salary_deductions",
+          "title": "Itemised training bond breakdown",
+          "why_it_matters": "Clause 5.1 specifies an estimated RM 15,000 without showing an itemised breakdown of direct third-party expenses versus internal overheads.",
+          "suggested_ask": "Please provide an itemised breakdown of actual third-party costs for the regional sales academy and certifications before any repayment obligation applies."
+        }
+      ],
+      "metrics": {
+        "latency_ms": 56046,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 20551,
+        "output_tokens": 4391,
+        "cost_usd_est": 0.040926,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "my",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (5 pages)",
+          "detail": "governing law: the laws of Malaysia -> my | answered by fallback model gemini-3.5-flash (agent): gemini-3.8-flash did not respond",
+          "ms": 16
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for probation in an employment or freelance contract",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"employment\", \"clause_type\": \"probation\"}, \"results\": [{\"ref\": \"employment/probation\", \"title\": \"Probation (employment)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"employment/probation\"]}",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for deductions from pay in an employment or freelance contract",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"salary_deductions\", \"contract_type\": \"employment\"}, \"results\": [{\"ref\": \"employment/salary_deductions\", \"title\": \"Salary deductions and training bonds (employment)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"employment/salary_deductions\"]}",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for working hours in an employment or freelance contract",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"employment\", \"clause_type\": \"working_hours\"}, \"results\": [{\"ref\": \"employment/working_hours\", \"title\": \"Working hours and overtime (employment)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"employment/working_hours\"]}",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for leave in an employment or freelance contract",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"employment\", \"clause_type\": \"leave\"}, \"results\": [{\"ref\": \"employment/leave\", \"title\": \"Leave (employment)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for notice periods in an employment or freelance contract",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"employment\", \"clause_type\": \"notice_period\"}, \"results\": [{\"ref\": \"employment/notice_period\", \"title\": \"Notice period (employment)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"employment/notice_period\"]}",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending the contract in an employment or freelance contract",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"termination\", \"contract_type\": \"employment\"}, \"results\": [{\"ref\": \"employment/termination\", \"title\": \"Termination (employment)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"employment/termination\"]}",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for non-compete clauses in an employment or freelance contract",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"employment\", \"clause_type\": \"non_compete\"}, \"results\": [{\"ref\": \"employment/non_compete\", \"title\": \"Non-compete after you leave (employment)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"employment/non_compete\"]}",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for non-solicitation clauses in an employment or freelance contract",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"non_solicit\", \"contract_type\": \"employment\"}, \"results\": [{\"ref\": \"employment/non_solicit\", \"title\": \"Non-solicitation of clients and staff (employment)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on non-compete clauses",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"clause_type\": \"non_compete\", \"query\": \"restraint of trade section 28 contracts act\", \"jurisdiction\": \"my\"}, \"results\": [{\"ref\": \"my-ca1950-s28\", \"title\": \"Contracts Act 1950, s 28: agreements in restraint of trade are void\", \"kind\": \"law\", \"score\": 36.6943}, {\"ref\": \"my-ca1950-s29\", \"title\": \"Contracts Act 1950, s 29: agreements in restraint of legal proceedings are void\", \"kind\": \"law\", \"score\": 8.9087}, {\"ref\": \"my-da1951-s8\", \"title\": \"Distress Act 1951, s 8: goods that cannot be seized, including the tenant's necessary clothing, bedding and trade goods\", \"kind\": \"law\", \"score\": 5.8137}, {\"ref\": \"my-ca1950-s30\", \"title\": \"Contracts Act 1950, s 30: agreements void for uncertainty\", \"kind\": \"law\", \"score\": 4.0678}], \"cited\": [\"my-ca1950-s28\"]}",
+          "ms": 1573
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on penalty clauses",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"query\": \"training bond penalty liquidated damages deduction\", \"jurisdiction\": \"my\", \"clause_type\": \"salary_deductions\"}, \"results\": [{\"ref\": \"my-ea1955-s24\", \"title\": \"Employment Act 1955, s 24: an employer may deduct from wages only what the Act allows\", \"kind\": \"law\", \"score\": 25.2513}, {\"ref\": \"my-ca1950-s75\", \"title\": \"Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach\", \"kind\": \"law\", \"score\": 10.5363}, {\"ref\": \"my-case-cubic-electronics\", \"title\": \"Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75\", \"kind\": \"case\", \"score\": 9.0992}, {\"ref\": \"my-la1953-s6\", \"title\": \"Limitation Act 1953, s 6(1): six years to sue on a contract\", \"kind\": \"law\", \"score\": 4.0379}], \"cited\": [\"my-ea1955-s24\"]}",
+          "ms": 1565
+        },
+        {
+          "step": 12,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on working hours",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"query\": \"overtime hours of work employment act limit\", \"jurisdiction\": \"my\", \"clause_type\": \"working_hours\"}, \"results\": [{\"ref\": \"my-ea1955-s60a\", \"title\": \"Employment Act 1955, s 60A: working hours (45 a week) and overtime at not less than 1.5 times\", \"kind\": \"law\", \"score\": 33.7249}, {\"ref\": \"my-ea1955-first-schedule\", \"title\": \"Employment Act 1955, First Schedule: who is covered, and the RM4,000 wage line\", \"kind\": \"law\", \"score\": 19.2851}, {\"ref\": \"my-ea2022-a1651\", \"title\": \"Employment (Amendment) Act 2022 (Act A1651): what changed in the Employment Act 1955, and when\", \"kind\": \"law\", \"score\": 10.8334}, {\"ref\": \"my-ea1955-s101c\", \"title\": \"Employment Act 1955, s 101C: when a 'freelancer' is presumed to be an employee\", \"kind\": \"law\", \"score\": 9.7202}], \"cited\": [\"my-ea1955-s60a\", \"my-ea2022-a1651\"]}",
+          "ms": 1559
+        },
+        {
+          "step": 13,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on notice periods",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"jurisdiction\": \"my\", \"query\": \"notice period employment act section 12\", \"clause_type\": \"notice_period\"}, \"results\": [{\"ref\": \"my-ea1955-s12\", \"title\": \"Employment Act 1955, s 12: notice of termination must be the same length for employer and employee\", \"kind\": \"law\", \"score\": 21.2577}, {\"ref\": \"my-ea1955-s37-s41a\", \"title\": \"Employment Act 1955, ss 37 and 41A: 98 days' maternity leave, and limits on ending a pregnant employee's job\", \"kind\": \"law\", \"score\": 7.7001}, {\"ref\": \"my-ea2022-a1651\", \"title\": \"Employment (Amendment) Act 2022 (Act A1651): what changed in the Employment Act 1955, and when\", \"kind\": \"law\", \"score\": 7.0882}, {\"ref\": \"my-ira1967-s20\", \"title\": \"Industrial Relations Act 1967, s 20: a dismissed worker can ask to be reinstated, within 60 days\", \"kind\": \"law\", \"score\": 6.9334}], \"cited\": [\"my-ea1955-s12\", \"my-ea2022-a1651\"]}",
+          "ms": 1590
+        },
+        {
+          "step": 14,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "7 candidate findings",
+          "ms": 25130
+        },
+        {
+          "step": 15,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 7 findings and 13 sources; dropped 0 unsupported findings and 0 unverified sources; removed 0 statements not found in the contract",
+          "ms": 203
+        }
+      ],
+      "key_dates": [
+        {
+          "label": "Commencement Date of employment",
+          "kind": "start",
+          "date": "2026-11-02",
+          "rule": "Commencement date stated in clause 1.1",
+          "page": 1,
+          "finding_id": null
+        },
+        {
+          "label": "Scheduled end of initial 6-month probation period",
+          "kind": "other",
+          "date": "2027-05-01",
+          "rule": "Clause 3.1 sets a probationary period of 6 months from the Commencement Date",
+          "page": 2,
+          "finding_id": "f1"
+        },
+        {
+          "label": "Expiry of 24-month training bond repayment obligation",
+          "kind": "end",
+          "date": "2028-11-02",
+          "rule": "Clause 5.2 requires full repayment if employment ends within 24 months after the Commencement Date",
+          "page": 3,
+          "finding_id": "f4"
+        },
+        {
+          "label": "Monthly salary payment deadline",
+          "kind": "payment",
+          "date": null,
+          "rule": "Clause 4.1 requires basic monthly salary to be paid on or before the 7th day of the following month",
+          "page": 2,
+          "finding_id": null
+        }
+      ],
+      "removed": [],
+      "owner": "demo",
+      "created_by": null,
+      "provenance": {
+        "model": "gemini-3.8-flash",
+        "kb_version": "94646af2e674",
+        "prompt_version": "eafce4463f6f",
+        "app_version": "dev",
+        "options": {
+          "contract_type": "auto",
+          "jurisdiction": "auto",
+          "apply_company_rules": true,
+          "perspective": "auto",
+          "company_doc_ids": null
+        }
+      },
+      "previous_review_id": "6f5cf51a74f8",
+      "content_hash": "94722d8306cdc7ee7002a73b8d0dab568ad692ec7abf616ca3d9f9ebc36d8233"
+    },
+    "hp-03-personal-loan": {
+      "id": "ef996e8e15d7",
+      "created_at": "2026-10-18T10:58:25.158349Z",
+      "filename": "hp-03-personal-loan.pdf",
+      "sample_id": "hp-03-personal-loan",
+      "contract_type": "hire_purchase",
+      "language": "en",
+      "pages": 3,
+      "parties": [
+        "KILAT KREDIT SDN. BHD.",
+        "TAN WEI LING",
+        "TAN KOK HENG"
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "High-risk loan contract with daily compounding late fees, an illegal default interest hike, and unlimited guarantor liability.",
+        "summary": [
+          "The contract imposes compounding late charges and raises interest to 24% on default, which conflicts with statutory limits under Malaysian moneylending rules.",
+          "The guarantee makes the guarantor liable for unlimited costs and future debts without notice or consent.",
+          "Upfront deduction of processing fees reduces proceeds while interest is charged on the gross principal."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "fees_charges",
+          "title": "Daily compounding late fee",
+          "risk": "high",
+          "quote": "If an instalment is not paid when due, a late fee of 0.5% of the overdue amount is charged for each day it remains unpaid. The late fee for each day is added to the overdue amount at the end of that day, and the late fee for the following day is calculated on the new total, so that the late fee compounds daily until the overdue amount and all late fees are paid in full.",
+          "page": 2,
+          "clause_ref": "4.1",
+          "why_risky": "Compounding daily late charges can rapidly multiply the debt and conflict with statutory moneylending limits. Malaysian law generally prohibits compound interest on loans from licensed moneylenders.",
+          "standard": "Late fees should be modest, non-compounding simple charges on the overdue instalment only.",
+          "suggested_ask": "Please replace the daily compounding late fee in clause 4.1 with a simple, non-compounding late charge on the overdue instalment.",
+          "baseline_ref": "hire_purchase/fees_charges",
+          "boxes": [
+            [
+              0.1544,
+              0.2338,
+              0.8762,
+              0.2509
+            ],
+            [
+              0.1238,
+              0.2519,
+              0.8762,
+              0.2691
+            ],
+            [
+              0.1238,
+              0.2701,
+              0.8762,
+              0.2873
+            ],
+            [
+              0.1238,
+              0.2883,
+              0.766,
+              0.3055
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "hire_purchase/fees_charges",
+              "title": "Fees, charges and costs (hire purchase and personal loans)",
+              "jurisdiction": null,
+              "excerpt": "- **One list of all fees** with amounts, so the total cost is known before signing. - **Only fees the law allows.** In Malaysia, a hire-purchase owner or dealer may collect only the payments the Act permits. - **Late fees are modest and not stacked**: one late charge per late instalment, not a daily fee on top of interest on top of a penalty. - **Legal and recovery costs** only if actually and...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-mla1951-s17",
+              "title": "Moneylenders Act 1951, s 17: no compound interest and no higher rate because of default",
+              "jurisdiction": "my",
+              "excerpt": "\"17. (1) Any moneylending agreement made on or after the commencement of this Act, for the loan of money by a moneylender shall be illegal in so far as it provides, directly or indirectly, for the payment of compound interest, or for the rate or amount of interest to be increased by reason of any default in the payment of sums due under the moneylending agreement:\" \"Provided that provision may...",
+              "url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20400.pdf",
+              "page": null,
+              "source_url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20400.pdf#page=33",
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 2,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f2",
+          "clause_type": "interest_rate",
+          "title": "Default interest rate hike to 24%",
+          "risk": "high",
+          "quote": "The Lender may also charge a collection fee of RM 150.00 for each reminder letter or call and may increase the rate of interest in Clause 2.1 to 24% a year on the whole of the Loan still owed from the date of the first default.",
+          "page": 2,
+          "clause_ref": "4.2",
+          "why_risky": "Increasing the interest rate to 24% a year on the whole balance upon default exposes you to severe escalation of debt. Under s 17 and s 17A of the Moneylenders Act 1951, raising the interest rate because of default is restricted and unsecured loan interest is capped at 18% per annum.",
+          "standard": "Default interest should not increase the underlying contract rate, and should only apply as permitted simple interest on overdue sums.",
+          "suggested_ask": "Please delete the increase to 24% interest and the collection fee in clause 4.2, and confirm that late payment attracts only simple interest on the overdue amount.",
+          "baseline_ref": "hire_purchase/interest_rate",
+          "boxes": [
+            [
+              0.1548,
+              0.3132,
+              0.8762,
+              0.3304
+            ],
+            [
+              0.1238,
+              0.3314,
+              0.8762,
+              0.3485
+            ],
+            [
+              0.1238,
+              0.3496,
+              0.4199,
+              0.3667
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "hire_purchase/interest_rate",
+              "title": "Interest rate and the true cost of financing (hire purchase and personal loans)",
+              "jurisdiction": null,
+              "excerpt": "- **The effective interest rate (EIR) is stated**, worked out on the reducing balance (interest charged on what you still owe), not only a 'flat' rate on the original amount. - **The total interest and the total amount payable are shown in ringgit or dollars**, so you can check them against the rate. - **Variable rate:** tied to a published reference, with notice before any change and a right t...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-mla1951-s17",
+              "title": "Moneylenders Act 1951, s 17: no compound interest and no higher rate because of default",
+              "jurisdiction": "my",
+              "excerpt": "\"17. (1) Any moneylending agreement made on or after the commencement of this Act, for the loan of money by a moneylender shall be illegal in so far as it provides, directly or indirectly, for the payment of compound interest, or for the rate or amount of interest to be increased by reason of any default in the payment of sums due under the moneylending agreement:\" \"Provided that provision may...",
+              "url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20400.pdf",
+              "page": null,
+              "source_url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20400.pdf#page=33",
+              "boxes": [],
+              "doc_id": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-mla1951-s17a",
+              "title": "Moneylenders Act 1951, s 17A: interest caps of 12% (secured) and 18% (unsecured)",
+              "jurisdiction": "my",
+              "excerpt": "\"17A. (1) For the purposes of this Act, the interest for a secured loan shall not exceed twelve per centum per annum and the interest for an unsecured loan shall not exceed eighteen per centum per annum.\" \"(2) Notwithstanding subsection (1), interest shall not at any time be recoverable by a moneylender of an amount in excess of the sum then due as principal unless a Court, having regard to all...",
+              "url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20400.pdf",
+              "page": null,
+              "source_url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20400.pdf#page=34",
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 3,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f3",
+          "clause_type": "guarantor",
+          "title": "Guarantee covering all present and future debts",
+          "risk": "high",
+          "quote": "In consideration of the Lender making the Loan, the Guarantor guarantees to the Lender the payment of everything the Borrower owes under this Agreement and any other debt the Borrower may owe the Lender now or in future.",
+          "page": 2,
+          "clause_ref": "7.1",
+          "why_risky": "The guarantee binds the guarantor to any other current or future debts the borrower incurs, creating unpredictable open-ended liability. A guarantee should be tied strictly to the specific loan agreement.",
+          "standard": "The guarantee is limited to the balance of the specific agreement, not all present and future debts.",
+          "suggested_ask": "Please amend clause 7.1 to limit the guarantee solely to the Borrower's outstanding balance under this Agreement.",
+          "baseline_ref": "hire_purchase/guarantor",
+          "boxes": [
+            [
+              0.1535,
+              0.6594,
+              0.8762,
+              0.6765
+            ],
+            [
+              0.1238,
+              0.6775,
+              0.8762,
+              0.6947
+            ],
+            [
+              0.1238,
+              0.6957,
+              0.4914,
+              0.7129
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "hire_purchase/guarantor",
+              "title": "Guarantor's liability (hire purchase and personal loans)",
+              "jurisdiction": null,
+              "excerpt": "- **The guarantor owes no more than the borrower does.** In Malaysia a hire-purchase guarantor cannot be made liable beyond the hirer (s 21). - **A stated cap**: the guarantee is limited to the balance of this agreement, not 'all sums, present and future'. - **Notice**: the lender tells the guarantor when the borrower is in arrears and before it takes steps against the guarantor. - **The right...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f4",
+          "clause_type": "guarantor",
+          "title": "Uncapped guarantor liability and full indemnity costs",
+          "risk": "high",
+          "quote": "The Guarantor shall be liable for all costs, charges and expenses of every kind that the Lender incurs in connection with the Loan, this Agreement or the guarantee, including legal costs on a full indemnity basis, collection costs and the cost of tracing the Borrower, whether or not they relate to the Loan still owed. The Guarantor's liability is not limited to the amount of the Loan.",
+          "page": 2,
+          "clause_ref": "7.2",
+          "why_risky": "Making the guarantor liable for uncapped expenses and full indemnity legal costs means the guarantor could owe far more than the original loan. A guarantor should not be subjected to limitless collection costs.",
+          "standard": "A guarantor's liability is capped at the borrower's loan balance, and recoverable legal costs are limited to reasonable expenses actually incurred.",
+          "suggested_ask": "Please cap the Guarantor's liability in clause 7.2 to the amount of the Loan still owed and limit legal costs to those reasonably incurred.",
+          "baseline_ref": "hire_purchase/guarantor",
+          "boxes": [
+            [
+              0.1561,
+              0.7206,
+              0.8762,
+              0.7378
+            ],
+            [
+              0.1238,
+              0.7388,
+              0.8762,
+              0.756
+            ],
+            [
+              0.1238,
+              0.757,
+              0.8762,
+              0.7741
+            ],
+            [
+              0.1238,
+              0.7752,
+              0.8762,
+              0.7923
+            ],
+            [
+              0.1238,
+              0.7934,
+              0.1679,
+              0.8105
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "hire_purchase/guarantor",
+              "title": "Guarantor's liability (hire purchase and personal loans)",
+              "jurisdiction": null,
+              "excerpt": "- **The guarantor owes no more than the borrower does.** In Malaysia a hire-purchase guarantor cannot be made liable beyond the hirer (s 21). - **A stated cap**: the guarantee is limited to the balance of this agreement, not 'all sums, present and future'. - **Notice**: the lender tells the guarantor when the borrower is in arrears and before it takes steps against the guarantor. - **The right...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f5",
+          "clause_type": "guarantor",
+          "title": "Liability persists despite unapproved loan variations",
+          "risk": "high",
+          "quote": "The Guarantor's liability continues even if the Lender gives the Borrower more time, changes the terms of the Loan or increases the amount of the Loan, with or without telling the Guarantor. The Lender may demand payment from the Guarantor first, without first asking the Borrower for payment or suing the Borrower.",
+          "page": 2,
+          "clause_ref": "7.3",
+          "why_risky": "The guarantor remains bound even if the loan amount is increased or terms are altered without their knowledge or agreement. This allows the lender to expand the guarantor's liability unilaterally.",
+          "standard": "Any material variation or loan increase should require the guarantor's prior written consent, failing which the guarantee terminates.",
+          "suggested_ask": "Please confirm in clause 7.3 that the guarantee ends if the loan amount or terms are varied without the Guarantor's prior written consent.",
+          "baseline_ref": "hire_purchase/guarantor",
+          "boxes": [
+            [
+              0.1532,
+              0.8183,
+              0.8762,
+              0.8354
+            ],
+            [
+              0.1238,
+              0.8365,
+              0.8762,
+              0.8536
+            ],
+            [
+              0.1238,
+              0.8546,
+              0.8762,
+              0.8718
+            ],
+            [
+              0.1238,
+              0.8728,
+              0.3699,
+              0.89
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "hire_purchase/guarantor",
+              "title": "Guarantor's liability (hire purchase and personal loans)",
+              "jurisdiction": null,
+              "excerpt": "- **The guarantor owes no more than the borrower does.** In Malaysia a hire-purchase guarantor cannot be made liable beyond the hirer (s 21). - **A stated cap**: the guarantee is limited to the balance of this agreement, not 'all sums, present and future'. - **Notice**: the lender tells the guarantor when the borrower is in arrears and before it takes steps against the guarantor. - **The right...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f6",
+          "clause_type": "guarantor",
+          "title": "No default notice to guarantor",
+          "risk": "medium",
+          "quote": "The Lender need not tell the Guarantor when the Borrower is in default. The Guarantor waives any right to receive a copy of the statements of the Borrower's account.",
+          "page": 2,
+          "clause_ref": "7.4",
+          "why_risky": "The guarantor is denied notice of default and account statements, preventing them from stepping in before fees and legal costs accumulate. Prompt notice allows a guarantor to mitigate exposure.",
+          "standard": "The lender provides prompt written notice to the guarantor upon borrower default along with account statements.",
+          "suggested_ask": "Please amend clause 7.4 to require the Lender to give written notice of default and copies of account statements to the Guarantor.",
+          "baseline_ref": "hire_purchase/guarantor",
+          "boxes": [
+            [
+              0.1563,
+              0.8977,
+              0.8762,
+              0.9149
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "hire_purchase/guarantor",
+              "title": "Guarantor's liability (hire purchase and personal loans)",
+              "jurisdiction": null,
+              "excerpt": "- **The guarantor owes no more than the borrower does.** In Malaysia a hire-purchase guarantor cannot be made liable beyond the hirer (s 21). - **A stated cap**: the guarantee is limited to the balance of this agreement, not 'all sums, present and future'. - **Notice**: the lender tells the guarantor when the borrower is in arrears and before it takes steps against the guarantor. - **The right...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        },
+        {
+          "id": "f7",
+          "clause_type": "fees_charges",
+          "title": "Upfront deduction of processing fee",
+          "risk": "medium",
+          "quote": "The Lender shall deduct from the Loan before payment a processing fee of RM 400.00 and stamp duty. The Borrower acknowledges that interest is charged on the full RM 20,000.00.",
+          "page": 2,
+          "clause_ref": "3.1",
+          "why_risky": "Deducting fees upfront forces you to pay interest on money you never actually received into your bank account. This inflates the effective borrowing cost.",
+          "standard": "Interest is charged only on net funds disbursed, or fees are paid separately without being financed under the interest-bearing principal.",
+          "suggested_ask": "Please allow the RM 400.00 processing fee and stamp duty to be paid separately, or charge interest only on the net amount disbursed.",
+          "baseline_ref": "hire_purchase/fees_charges",
+          "boxes": [
+            [
+              0.154,
+              0.1321,
+              0.8762,
+              0.1492
+            ],
+            [
+              0.1238,
+              0.1503,
+              0.8287,
+              0.1674
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "hire_purchase/fees_charges",
+              "title": "Fees, charges and costs (hire purchase and personal loans)",
+              "jurisdiction": null,
+              "excerpt": "- **One list of all fees** with amounts, so the total cost is known before signing. - **Only fees the law allows.** In Malaysia, a hire-purchase owner or dealer may collect only the payments the Act permits. - **Late fees are modest and not stacked**: one late charge per late instalment, not a daily fee on top of interest on top of a penalty. - **Legal and recovery costs** only if actually and...",
+              "url": null,
+              "page": null,
+              "source_url": null,
+              "boxes": [],
+              "doc_id": null
+            }
+          ],
+          "policy_breach": null,
+          "verification": {
+            "quote_match": "normalised",
+            "score": 100.0,
+            "page_corrected_from": null,
+            "citations_checked": 1,
+            "kb_version": "94646af2e674"
+          }
+        }
+      ],
+      "missing_clauses": [],
+      "metrics": {
+        "latency_ms": 44511,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 15935,
+        "output_tokens": 3750,
+        "cost_usd_est": 0.032608,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "my",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (3 pages)",
+          "detail": "governing law: the laws of Malaysia -> my | answered by fallback model gemini-3.5-flash (agent): gemini-3.8-flash did not respond",
+          "ms": 9
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for interest rates in a hire purchase or loan agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"interest_rate\", \"contract_type\": \"hire_purchase\"}, \"results\": [{\"ref\": \"hire_purchase/interest_rate\", \"title\": \"Interest rate and the true cost of financing (hire purchase and personal loans)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"hire_purchase/interest_rate\"]}",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for fees and charges in a hire purchase or loan agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"hire_purchase\", \"clause_type\": \"fees_charges\"}, \"results\": [{\"ref\": \"hire_purchase/fees_charges\", \"title\": \"Fees, charges and costs (hire purchase and personal loans)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"hire_purchase/fees_charges\"]}",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for guarantors in a hire purchase or loan agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"hire_purchase\", \"clause_type\": \"guarantor\"}, \"results\": [{\"ref\": \"hire_purchase/guarantor\", \"title\": \"Guarantor's liability (hire purchase and personal loans)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": [\"hire_purchase/guarantor\"]}",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending early in a hire purchase or loan agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"clause_type\": \"early_termination\", \"contract_type\": \"hire_purchase\"}, \"results\": [{\"ref\": \"hire_purchase/early_termination\", \"title\": \"Early settlement and early termination (hire purchase and personal loans)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for payment terms in a hire purchase or loan agreement",
+          "detail": "{\"tool\": \"search_playbook\", \"args\": {\"contract_type\": \"hire_purchase\", \"clause_type\": \"payment\"}, \"results\": [{\"ref\": \"hire_purchase/payment\", \"title\": \"Payment, deposit and how payments are applied (hire purchase)\", \"kind\": \"playbook\", \"score\": 1.0}], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on payment terms",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"clause_type\": \"interest_rate\", \"jurisdiction\": \"my\", \"query\": \"Moneylenders Act interest rate late payment interest limit\"}, \"results\": [{\"ref\": \"my-mla1951-s17\", \"title\": \"Moneylenders Act 1951, s 17: no compound interest and no higher rate because of default\", \"kind\": \"law\", \"score\": 36.7759}, {\"ref\": \"my-hpa1967-s34\", \"title\": \"Hire-Purchase Act 1967, s 34: terms that the Act makes ineffective\", \"kind\": \"law\", \"score\": 23.5607}, {\"ref\": \"my-mla1951-s17a\", \"title\": \"Moneylenders Act 1951, s 17A: interest caps of 12% (secured) and 18% (unsecured)\", \"kind\": \"law\", \"score\": 15.812}, {\"ref\": \"my-hpa1967-s33\", \"title\": \"Hire-Purchase Act 1967, s 33: the court can reopen a harsh and unconscionable hire-purchase\", \"kind\": \"law\", \"score\": 6.6515}], \"cited\": [\"my-mla1951-s17\", \"my-mla1951-s17a\"]}",
+          "ms": 325
+        },
+        {
+          "step": 8,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on liability caps",
+          "detail": "{\"tool\": \"search_law\", \"args\": {\"query\": \"guarantor liability moneylender notice default\", \"clause_type\": \"guarantor\", \"jurisdiction\": \"my\"}, \"results\": [{\"ref\": \"my-hpa1967-s21\", \"title\": \"Hire-Purchase Act 1967, s 21: a guarantor is not liable for more than the hirer\", \"kind\": \"law\", \"score\": 16.0908}, {\"ref\": \"my-mla1951-s17\", \"title\": \"Moneylenders Act 1951, s 17: no compound interest and no higher rate because of default\", \"kind\": \"law\", \"score\": 10.8134}, {\"ref\": \"my-hpa1967-s22-s23\", \"title\": \"Hire-Purchase Act 1967, ss 22 and 23: guarantees above the hire-purchase balance, and the guarantor's right to settle\", \"kind\": \"law\", \"score\": 9.9134}, {\"ref\": \"my-hpa1967-s16\", \"title\": \"Hire-Purchase Act 1967, s 16: notice before repossession for missed instalments\", \"kind\": \"law\", \"score\": 5.437}], \"cited\": [\"my-mla1951-s17\"]}",
+          "ms": 404
+        },
+        {
+          "step": 9,
+          "action": "search_company",
+          "summary": "Checked your company's rules on \u201cloan agreement guarantee licensed moneylender\u201d",
+          "detail": "{\"tool\": \"search_company\", \"args\": {\"query\": \"loan agreement guarantee licensed moneylender\"}, \"results\": [], \"cited\": []}",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "7 candidate findings",
+          "ms": 19644
+        },
+        {
+          "step": 11,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 7 findings and 10 sources; dropped 0 unsupported findings and 0 unverified sources; removed 0 statements not found in the contract",
+          "ms": 189
+        }
+      ],
+      "key_dates": [
+        {
+          "label": "Agreement execution date",
+          "kind": "start",
+          "date": "2026-09-20",
+          "rule": "The Agreement Date stated on page 1 is 20 September 2026.",
+          "page": 1,
+          "finding_id": null
+        },
+        {
+          "label": "First monthly instalment due date",
+          "kind": "payment",
+          "date": "2026-10-20",
+          "rule": "Clause 1.3 states the first monthly instalment of RM 703.14 is due on 20 October 2026.",
+          "page": 1,
+          "finding_id": null
+        },
+        {
+          "label": "Final instalment due date (36th instalment)",
+          "kind": "end",
+          "date": "2029-09-20",
+          "rule": "Clause 1.3 provides for 36 equal monthly instalments starting 20 October 2026, ending 35 months later on 20 September 2029.",
+          "page": 1,
+          "finding_id": null
+        }
+      ],
+      "removed": [],
+      "owner": "demo",
+      "created_by": null,
+      "provenance": {
+        "model": "gemini-3.8-flash",
+        "kb_version": "94646af2e674",
+        "prompt_version": "eafce4463f6f",
+        "app_version": "dev",
+        "options": {
+          "contract_type": "auto",
+          "jurisdiction": "auto",
+          "apply_company_rules": true,
+          "perspective": "auto",
+          "company_doc_ids": null
+        }
+      },
+      "previous_review_id": "97fd42b5f623",
+      "content_hash": "5925023ea68a51c19419ac8bc7a6ce7973e9cae00621ef753a3f3adc3f49e3c8"
+    }
+  }
+}

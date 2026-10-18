@@ -148,6 +148,29 @@ def check_entry(path: Path, clause_enum: set[str], errors: list[str]) -> dict | 
     if len(set(meta["clause_types"])) != len(meta["clause_types"]):
         err("clause_types has duplicates")
 
+    # optional: supports: [clause_type, clause_type=stem|stem, *=stem|stem]: what a citation of the entry
+    # may back (a clause type, optionally only when the finding's quote contains a stem; * = any type)
+    if "supports" in meta:
+        sup = meta["supports"]
+        if not isinstance(sup, list) or not sup:
+            err("'supports' must be a non-empty list")
+        else:
+            for item in sup:
+                clause, eq, stems = str(item).partition("=")
+                if clause.strip() == "*":
+                    if not eq:
+                        err("supports: '*' needs word stems ('*=stem|stem')")
+                elif clause.strip() not in clause_enum:
+                    err(f"supports: clause type '{clause.strip()}' not in ClauseType enum")
+                elif clause.strip() not in meta["clause_types"]:
+                    err(f"supports: '{clause.strip()}' is not one of this entry's clause_types")
+                if eq and not [s for s in stems.split("|") if s.strip()]:
+                    err(f"supports: '{item}' has '=' but no word stems")
+    if "applies_to" in meta and meta["applies_to"] not in ("employee",):
+        err(f"applies_to '{meta['applies_to']}' must be 'employee'")
+    if "caveat" in meta and (not isinstance(meta["caveat"], str) or not meta["caveat"].strip()):
+        err("'caveat' must be a non-empty string")
+
     url = str(meta["source_url"]).strip()
     if not re.match(r"^https://[^\s/]+\.[^\s/]+/\S*$", url):
         err(f"source_url must be an https URL with a host and no spaces: '{url}'")

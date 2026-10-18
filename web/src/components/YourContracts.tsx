@@ -3,6 +3,7 @@ import { daysUntil, parseDay } from "../dates";
 import { formatDate } from "../format";
 import type { ReviewSummary, Risk } from "../types";
 import { DeadlineLink } from "./KeyDates";
+import { reviewTitle } from "../titles";
 import { RISK_TEXT, RiskLabel, RiskShape } from "./Risk";
 
 /** For a returning user: what is on file, what is due next, what was reviewed lately. */
@@ -20,15 +21,15 @@ export default function YourContracts({ reviews, label }: { reviews: ReviewSumma
     <section aria-labelledby="yours-title" className="border-b border-white/5 bg-desk-deep/70">
       <div className="mx-auto grid max-w-[1240px] gap-6 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)_minmax(0,4fr)] lg:gap-8">
         <div className="text-white">
-          <h2 id="yours-title" className="tab text-desk-text">
+          <h2 id="yours-title" className="label text-desk-text">
             {label ?? "Your contracts"}
           </h2>
-          <p className="mt-1 text-[1.6rem] font-bold leading-tight [font-stretch:110%]">
+          <p className="mt-1 text-xl font-bold leading-tight [font-stretch:110%]">
             {reviews.length} reviewed
           </p>
           <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1" aria-label="By overall risk">
             {(["high", "medium", "low"] as Risk[]).map((r) => (
-              <li key={r} className="tab inline-flex items-center gap-1.5 !text-[0.9rem] text-white">
+              <li key={r} className="tab inline-flex items-center gap-1.5 text-sm text-white">
                 <span className={r === "high" ? "text-[#FF8A7E]" : r === "medium" ? "text-medium-box" : "text-[#6FD3A4]"}>
                   <RiskShape risk={r} size={10} />
                 </span>
@@ -36,23 +37,21 @@ export default function YourContracts({ reviews, label }: { reviews: ReviewSumma
               </li>
             ))}
           </ul>
-          <Link to="/library" className="mt-2 inline-flex min-h-[44px] items-center gap-1 text-[0.95rem] font-semibold text-white underline underline-offset-4">
-            All contracts <span aria-hidden="true">→</span>
+          <Link to="/library" className="mt-2 inline-flex min-h-[44px] items-center gap-1 text-sm font-semibold text-white underline underline-offset-4">
+            All contracts
           </Link>
         </div>
 
         <div className="sheet px-4 py-3">
-          <h3 className="tab text-ink-mute">Coming up</h3>
+          <h3 className="label text-ink-soft">Coming up</h3>
           {upcoming.length === 0 ? (
-            <p className="mt-2 text-[0.95rem] text-ink-soft">No deadlines in the contracts you have reviewed.</p>
+            <p className="mt-2 text-sm text-ink-soft">No deadlines in the contracts you have reviewed.</p>
           ) : (
             <ol className="mt-1 divide-y divide-paper-line">
               {upcoming.map((r) => (
-                <li key={r.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 py-2">
+                <li key={r.id} className="py-2">
+                  <p className="meta line-clamp-2 text-ink-mute">{reviewTitle(r)}</p>
                   <DeadlineLink d={r.next_deadline!} reviewId={r.id} />
-                  <span className="tab max-w-[9rem] truncate pt-0.5 text-right text-ink-mute" title={r.filename}>
-                    {r.filename.replace(/\.pdf$/i, "")}
-                  </span>
                 </li>
               ))}
             </ol>
@@ -60,16 +59,16 @@ export default function YourContracts({ reviews, label }: { reviews: ReviewSumma
         </div>
 
         <div className="sheet px-4 py-3">
-          <h3 className="tab text-ink-mute">Reviewed lately</h3>
+          <h3 className="label text-ink-soft">Reviewed lately</h3>
           <ul className="mt-1 divide-y divide-paper-line">
             {recent.map((r) => (
               <li key={r.id}>
                 <Link to={`/reviews/${r.id}`} className="flex min-h-[44px] items-center justify-between gap-3 py-2 hover:underline">
                   <span className="min-w-0">
-                    <span className="block truncate text-[0.95rem] font-semibold text-ink">{r.filename}</span>
-                    <span className="tab block text-ink-mute">{formatDate(r.created_at)}</span>
+                    <span className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{reviewTitle(r)}</span>
+                    <span className="meta block text-ink-mute">{formatDate(r.created_at)}</span>
                   </span>
-                  <span className={RISK_TEXT[r.overall_risk]}>
+                  <span className={`shrink-0 whitespace-nowrap ${RISK_TEXT[r.overall_risk]}`}>
                     <RiskLabel risk={r.overall_risk} />
                   </span>
                 </Link>

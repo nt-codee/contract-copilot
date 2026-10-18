@@ -1,0 +1,26 @@
+[
+  {
+    "id": "kopi-kita-contracting-policy",
+    "title": "Contracting policy",
+    "scope": "all vendor contracts and NDAs",
+    "filename": "kopi-kita-contracting-policy.pdf"
+  },
+  {
+    "id": "kopi-kita-people-and-hiring-policy",
+    "title": "People and hiring policy",
+    "scope": "employment, internship and freelance agreements",
+    "filename": "kopi-kita-people-and-hiring-policy.pdf"
+  },
+  {
+    "id": "kopi-kita-premises-and-leasing-policy",
+    "title": "Premises and leasing policy",
+    "scope": "tenancies: shop lots, offices, warehouses and rooms",
+    "filename": "kopi-kita-premises-and-leasing-policy.pdf"
+  },
+  {
+    "id": "kopi-kita-equipment-and-financing-policy",
+    "title": "Equipment and financing policy",
+    "scope": "hire purchase, leases, equipment finance and loans",
+    "filename": "kopi-kita-equipment-and-financing-policy.pdf"
+  }
+]

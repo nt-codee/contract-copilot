@@ -18,9 +18,9 @@ export default function OverviewPanels({ o, days, admin }: { o: Overview; days: 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label={`Reviews · last ${days} days`} value={String(o.reviews)} note={`${o.by_risk.high} high risk`} />
+        <Stat label={`Reviews, last ${days} days`} value={String(o.reviews)} note={`${o.by_risk.high} high risk`} />
         <Stat label={admin ? "People" : "Members"} value={String(o.users)} />
-        <Stat label="Time per review" value={secs(o.latency_ms.p50)} note={`typical · slowest 1 in 20: ${secs(o.latency_ms.p95)}`} />
+        <Stat label="Time per review" value={secs(o.latency_ms.p50)} note={`typical, slowest 1 in 20: ${secs(o.latency_ms.p95)}`} />
         <Stat label="Cost" value={money(o.cost_usd.total)} note={`${money(o.cost_usd.per_review_mean)} per review`} />
       </div>
 
@@ -61,10 +61,10 @@ export default function OverviewPanels({ o, days, admin }: { o: Overview; days: 
           <ol className="divide-y divide-paper-line">
             {o.top_cited_sources.map((s) => (
               <li key={s.ref} className="flex items-start justify-between gap-3 py-2">
-                <Link to={`/knowledge/${encodeURIComponent(s.ref)}`} className="min-w-0 text-[0.95rem] leading-snug text-ink underline-offset-4 hover:underline">
+                <Link to={`/knowledge/${encodeURIComponent(s.ref)}`} className="min-w-0 text-sm leading-snug text-ink underline-offset-4 hover:underline">
                   {s.title}
                 </Link>
-                <span className="tab shrink-0 text-ink-mute">{s.count}×</span>
+                <span className="meta shrink-0 text-ink-mute">{s.count}×</span>
               </li>
             ))}
           </ol>
@@ -74,8 +74,8 @@ export default function OverviewPanels({ o, days, admin }: { o: Overview; days: 
       <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
         <Panel title="Verification: points removed because they could not be confirmed" summary={`${o.dropped_unverified.quotes} quotes and ${o.dropped_unverified.citations} sources removed.`}>
           <Bars data={[{ reason: "Words not in the contract", count: o.dropped_unverified.quotes }, { reason: "Source not in our library", count: o.dropped_unverified.citations }]} labelKey="reason" valueKey="count" color={C.ink} width={170} />
-          <p className="mt-2 text-[0.9rem] text-ink-soft">
-            {o.dropped_unverified.quotes} quotes not found in the contract · {o.dropped_unverified.citations} sources not in the library. None of them reached a user.
+          <p className="mt-2 text-sm text-ink-soft">
+            {o.dropped_unverified.quotes} quotes not found in the contract, {o.dropped_unverified.citations} sources not in the library. None of them reached a user.
           </p>
         </Panel>
         <Panel title="Deadlines in the next 120 days" visual={false} summary={`${o.upcoming_deadlines.length} deadlines.`}>
@@ -84,14 +84,14 @@ export default function OverviewPanels({ o, days, admin }: { o: Overview; days: 
           ) : (
             <ol className="divide-y divide-paper-line">
               {o.upcoming_deadlines.map((d, i) => (
-                <li key={i} className="flex items-baseline justify-between gap-3 py-2 text-[0.95rem]">
+                <li key={i} className="flex items-baseline justify-between gap-3 py-2 text-sm">
                   <span>
-                    <span className={`tab block ${d.days_left <= 30 ? "text-high" : "text-ink-mute"}`}>
-                      {formatDay(d.date)} <span className="normal-case">· in {d.days_left} days</span>
+                    <span className={`meta block ${d.days_left <= 30 ? "text-high" : "text-ink-mute"}`}>
+                      {formatDay(d.date)} <span>, in {d.days_left} days</span>
                     </span>
                     <span className="text-ink">{d.kind === "notice_deadline" ? "Last day to cancel" : "Renews"}</span>
                   </span>
-                  <span className="tab text-ink-mute">{TYPE[d.contract_type] ?? d.contract_type}</span>
+                  <span className="meta text-ink-mute">{TYPE[d.contract_type] ?? d.contract_type}</span>
                 </li>
               ))}
             </ol>

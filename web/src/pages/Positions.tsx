@@ -20,7 +20,7 @@ const CLAUSE = (c: string) => c.replace(/_/g, " ").replace(/^\w/, (x) => x.toUpp
 
 /** The mark an overridden position carries everywhere. */
 export function CompanyMark() {
-  return <span className="tab inline-flex items-center rounded-r-[3px] bg-desk px-1.5 py-1 !text-[0.72rem] text-white">Your company’s position</span>;
+  return <span className="tab inline-flex items-center rounded-r-[3px] bg-desk px-1.5 py-1 text-xs text-white">Your company’s position</span>;
 }
 
 export default function Positions() {
@@ -47,9 +47,9 @@ export default function Positions() {
 
   return (
     <div className="mx-auto max-w-[1040px] px-5 pb-20 pt-10 sm:px-8 sm:pt-14">
-      <p className="tab text-desk-text">{s.workspace?.workspace.name ?? "Sample workspace"}</p>
-      <h1 className="display mt-3 text-[2.1rem] text-white sm:text-[2.6rem]">Our standard positions</h1>
-      <p className="mt-3 max-w-2xl text-[1.05rem] text-desk-text">
+      <p className="page-eyebrow">{s.workspace?.workspace.name ?? "Sample workspace"}</p>
+      <h1 className="display mt-3 text-2xl text-white sm:text-2xl">Standard positions</h1>
+      <p className="mt-3 max-w-2xl text-base text-desk-text">
         What a balanced clause looks like, what to push back on, and what to ask for. Every review compares the contract with these. Where your company has its own position, reviews use yours.
       </p>
       {!s.user && !s.loading && (
@@ -61,11 +61,11 @@ export default function Positions() {
 
       <div role="group" aria-label="Contract type" className="mt-6 flex flex-wrap items-center gap-1.5">
         {Object.entries(TYPE).map(([v, l]) => (
-          <button key={v} type="button" aria-pressed={type === v} onClick={() => setType(v)} className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-3 text-[0.92rem] ${type === v ? "border-white bg-white font-semibold text-ink" : "border-desk-line text-white hover:border-desk-text"}`}>
+          <button key={v} type="button" aria-pressed={type === v} onClick={() => setType(v)} className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-3 text-sm ${type === v ? "border-white bg-white font-semibold text-ink" : "border-desk-line text-white hover:border-desk-text"}`}>
             {l}
           </button>
         ))}
-        {items && <span className="tab ml-2 text-desk-text">{items.length} clauses · {overridden} set by your company</span>}
+        {items && <span className="meta ml-2 text-desk-text">{items.length} clauses, {overridden} set by your company</span>}
       </div>
 
       {error && <p role="alert" className="mt-5 rounded-[3px] bg-high-tint px-4 py-3 font-medium text-high">{error}</p>}
@@ -104,12 +104,12 @@ function Position({ item, canEdit, onEdit, onReverted }: { item: PlaybookItem; c
           <CompanyMark />
         </span>
       )}
-      <h2 className="pr-40 font-doc text-[1.2rem] font-bold leading-snug text-ink">{CLAUSE(item.clause_type)}</h2>
-      <p className="mt-0.5 text-[0.92rem] text-ink-mute">{item.title}</p>
+      <h2 className="pr-40 font-doc text-lg font-bold leading-snug text-ink">{CLAUSE(item.clause_type)}</h2>
+      <p className="mt-0.5 text-sm text-ink-mute">{item.title}</p>
       <dl className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr]">
         <div>
-          <dt className="tab text-ink-mute">Balanced looks like</dt>
-          <dd className="mt-1 text-[0.98rem] text-ink">
+          <dt className="label text-ink-soft">Balanced looks like</dt>
+          <dd className="mt-1 text-sm text-ink">
             {lines(item.standard).length > 1 ? (
               <ul className="space-y-1">
                 {lines(item.standard).map((l) => (
@@ -125,9 +125,9 @@ function Position({ item, canEdit, onEdit, onReverted }: { item: PlaybookItem; c
           </dd>
         </div>
         <div>
-          <dt className="tab text-ink-mute">Push back on</dt>
+          <dt className="label text-ink-soft">Push back on</dt>
           <dd className="mt-1">
-            <ul className="space-y-1 text-[0.95rem] text-ink">
+            <ul className="space-y-1 text-sm text-ink">
               {item.red_flags.slice(0, 5).map((f) => {
                 const [level, text] = tagged(f);
                 return (
@@ -145,15 +145,15 @@ function Position({ item, canEdit, onEdit, onReverted }: { item: PlaybookItem; c
         </div>
       </dl>
       {item.ask && (
-        <p className="mt-4 border-l-4 border-ink bg-paper-soft px-3 py-2 text-[0.95rem] text-ink">
-          <span className="tab block">Ask for</span>
+        <p className="mt-4 border-l-4 border-ink bg-paper-soft px-3 py-2 text-sm text-ink">
+          <span className="meta block">Ask for</span>
           {clean(item.ask)}
         </p>
       )}
-      {item.note && <p className="mt-3 text-[0.92rem] text-ink-soft">Note: {item.note}</p>}
+      {item.note && <p className="mt-3 text-sm text-ink-soft">Note: {item.note}</p>}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         {item.overridden && item.updated_at && (
-          <span className="tab text-ink-mute">
+          <span className="meta text-ink-mute">
             Set {item.updated_by ? `by ${item.updated_by} ` : ""}on {formatDate(item.updated_at)}
           </span>
         )}
@@ -208,14 +208,14 @@ function Editor({ item, onCancel, onSaved }: { item: PlaybookItem; onCancel: () 
   const field = "mt-1 block w-full rounded-[3px] border border-ink/30 bg-white px-3 py-2 text-ink";
   return (
     <form onSubmit={submit} className="sheet border-l-4 border-desk px-5 py-5 sm:px-7" aria-label={`Edit ${CLAUSE(item.clause_type)}`}>
-      <h2 className="font-doc text-[1.2rem] font-bold text-ink">{CLAUSE(item.clause_type)}: your company’s position</h2>
-      <label htmlFor={`${id}-std`} className="tab mt-4 block text-ink-mute">Balanced looks like</label>
+      <h2 className="font-doc text-lg font-bold text-ink">{CLAUSE(item.clause_type)}: your company’s position</h2>
+      <label htmlFor={`${id}-std`} className="label mt-4 block text-ink-soft">Balanced looks like</label>
       <textarea id={`${id}-std`} rows={3} value={standard} onChange={(e) => setStandard(e.target.value)} maxLength={4000} className={field} />
-      <label htmlFor={`${id}-flags`} className="tab mt-4 block text-ink-mute">Push back on (one per line)</label>
+      <label htmlFor={`${id}-flags`} className="label mt-4 block text-ink-soft">Push back on (one per line)</label>
       <textarea id={`${id}-flags`} rows={4} value={flags} onChange={(e) => setFlags(e.target.value)} className={field} />
-      <label htmlFor={`${id}-ask`} className="tab mt-4 block text-ink-mute">Ask for</label>
+      <label htmlFor={`${id}-ask`} className="label mt-4 block text-ink-soft">Ask for</label>
       <textarea id={`${id}-ask`} rows={2} value={ask} onChange={(e) => setAsk(e.target.value)} maxLength={1000} className={field} />
-      <label htmlFor={`${id}-note`} className="tab mt-4 block text-ink-mute">Note for your team (optional)</label>
+      <label htmlFor={`${id}-note`} className="label mt-4 block text-ink-soft">Note for your team (optional)</label>
       <input id={`${id}-note`} value={note} onChange={(e) => setNote(e.target.value)} maxLength={2000} className={`${field} min-h-[44px]`} />
       {error && <p role="alert" className="mt-3 font-medium text-high">{error}</p>}
       <div className="mt-5 flex flex-wrap gap-3">

@@ -15,6 +15,7 @@ from fastapi import Request
 
 from app import workspaces
 from app.config import DEMO_OWNER, Settings
+from app.guest import GUEST_HEADER, GUEST_ROLE, GUEST_VALUE, guest_forbidden
 from app.models import Identity, User, Workspace
 from app.pipeline import UserError
 from app.ports import InvalidToken
@@ -56,6 +57,7 @@ class Actor:
     role: str | None = None  # owner | admin | member in the active workspace; None in the demo workspace
     admin: bool = False  # platform admin (ADMIN_EMAILS)
     seeding: bool = False  # may write to the demo workspace (seed_demo.py)
+    guest: bool = False  # the read-only guest view of the demo company (no token + `X-Guest: demo`); role "viewer"
 
     @property
     def signed_in(self) -> bool:
@@ -98,6 +100,11 @@ def _resolve(request: Request, *, use_header: bool) -> Actor:
     user = current_user(request)
     admin = is_admin(user, settings)
     wanted = request.headers.get(WORKSPACE_HEADER, "").strip()
+    if user is None and request.headers.get(GUEST_HEADER, "").strip().lower() == GUEST_VALUE:
+        # A guest is read-only in the demo workspace. It never becomes the seeder, and naming any other workspace is a 404.
+        if use_header and wanted and wanted != DEMO_OWNER:
+            raise UserError(404, "workspace_not_found", "We could not find that workspace.")
+        return Actor(None, DEMO_OWNER, GUEST_ROLE, False, guest=True)
     if not use_header:
         wanted = ""
     if wanted == DEMO_OWNER:
@@ -129,7 +136,9 @@ def active_workspace(request: Request, actor: Actor) -> Workspace | None:
 
 
 def require_writer(actor: Actor) -> None:
-    """Upload a contract: any member of a workspace, or the seeder in the demo one."""
+    """Upload a contract: any member of a workspace, or the seeder in the demo one. A guest is read-only (403)."""
+    if actor.guest:
+        raise guest_forbidden()
     if actor.user is None and not actor.seeding:
         raise UserError(401, "sign_in_required", SIGN_IN_MESSAGE)
 

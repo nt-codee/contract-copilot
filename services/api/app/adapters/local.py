@@ -177,10 +177,12 @@ class MemoryCompanyStore:
             self._chunks.get(owner, {}).pop(doc_id, None)
             return self._docs.get(owner, {}).pop(doc_id, None) is not None
 
-    def search(self, vector: list[float], limit: int, *, owner: str) -> list[tuple[CompanyChunk, float]]:
+    def search(self, vector: list[float], limit: int, *, owner: str,
+               doc_ids: frozenset[str] | None = None) -> list[tuple[CompanyChunk, float]]:
         with self._lock:
             scored = [(c, _cosine(vector, c.embedding))
-                      for cs in self._chunks.get(owner, {}).values() for c in cs]
+                      for did, cs in self._chunks.get(owner, {}).items() if doc_ids is None or did in doc_ids
+                      for c in cs]
         scored.sort(key=lambda t: t[1], reverse=True)
         return scored[:limit]
 
@@ -429,6 +431,28 @@ class JsonAuditLog:
 
     def delete_workspace(self, workspace_id: str) -> int:
         return self._drop(lambda e: e.workspace_id != workspace_id)
+
+
+class MemorySpendCounter:
+    """Daily review counter for one process (CLOUD=local); the Firestore one is shared by every instance."""
+
+    def __init__(self) -> None:
+        self._n: dict[str, int] = {}
+        self._lock = threading.Lock()
+
+    def take(self, key: str, cap: int) -> bool:
+        from app.spend import next_count
+
+        with self._lock:
+            new = next_count(self._n.get(key, 0), cap)
+            if new is None:
+                return False
+            self._n[key] = new
+            return True
+
+    def used(self, key: str) -> int:
+        with self._lock:
+            return self._n.get(key, 0)
 
 
 def local_stores(settings: Settings):

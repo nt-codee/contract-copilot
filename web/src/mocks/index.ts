@@ -376,6 +376,7 @@ mockReview.trace = [
 
 export const mockCompanyDocs: CompanyDoc[] = [
   { id: "cd_policy", filename: POLICY, title: "Kopi Kita Sdn Bhd: Contracting policy", created_at: "2026-10-18T03:10:00Z", pages: 4 },
+  { id: "cd_privacy", filename: "kopi-kita-data-handling-rules.pdf", title: "Kopi Kita Sdn Bhd: Customer data handling rules", created_at: "2026-10-16T02:00:00Z", pages: 2 },
 ];
 
 mockReview.key_dates = [
@@ -391,11 +392,11 @@ const day = (n: number) => `2026-10-${String(18 - n).padStart(2, "0")}T0${n % 9}
 mockSummaries.length = 0;
 mockSummaries.push(
   { id: mockReview.id, created_at: day(0), filename: mockReview.filename, contract_type: "service_agreement", overall_risk: "high", headline: mockReview.verdict.headline, finding_counts: { high: 3, medium: 1 }, next_deadline: mockReview.key_dates[1] },
-  { id: "rv_pos", created_at: day(1), filename: "pos-terminal-rental.pdf", contract_type: "service_agreement", overall_risk: "high", headline: "Five-year rental with a fee for every month left if you leave early.", finding_counts: { high: 2, medium: 2 }, next_deadline: dl("Last day to cancel before it renews for 12 months", "notice_deadline", "2026-12-01", 3, "f1") },
-  { id: "rv_clean", created_at: day(2), filename: "office-cleaning-services.pdf", contract_type: "service_agreement", overall_risk: "medium", headline: "Fair overall, but the vendor can change the scope with 7 days' notice.", finding_counts: { medium: 2, low: 1 }, next_deadline: dl("Renews for 12 months", "renewal", "2027-01-31", 2, null) },
-  { id: "rv_nda3", created_at: day(3), filename: "nda-distribution-overseas.pdf", contract_type: "nda", overall_risk: "high", headline: "Secrecy lasts forever and blocks you from working with any competitor for 3 years.", finding_counts: { high: 2, medium: 1 }, next_deadline: null },
-  { id: "rv_app", created_at: day(4), filename: "app-development-and-support.pdf", contract_type: "service_agreement", overall_risk: "medium", headline: "Your liability has no cap while the developer's is one month of fees.", finding_counts: { high: 1, medium: 2, low: 1 }, next_deadline: dl("Support term ends", "end", "2027-03-02", 4, null) },
-  { id: "rv_nda1", created_at: day(5), filename: "mutual-nda-integration.pdf", contract_type: "nda", overall_risk: "low", headline: "A balanced mutual NDA with a sensible 3-year term.", finding_counts: { low: 1 }, next_deadline: null },
+  { id: "rv_pos", created_at: day(1), filename: "hp-03-pos-terminals.pdf", contract_type: "service_agreement", overall_risk: "high", headline: "Five-year rental with a fee for every month left if you leave early.", finding_counts: { high: 2, medium: 2 }, next_deadline: dl("Last day to cancel before it renews for 12 months", "notice_deadline", "2026-12-01", 3, "f1") },
+  { id: "rv_clean", created_at: day(2), filename: "svc-02-outlet-cleaning.pdf", contract_type: "service_agreement", overall_risk: "medium", headline: "Fair overall, but the vendor can change the scope with 7 days' notice.", finding_counts: { medium: 2, low: 1 }, next_deadline: dl("Renews for 12 months", "renewal", "2027-01-31", 2, null) },
+  { id: "rv_nda3", created_at: day(3), filename: "nda-03-predatory.pdf", contract_type: "nda", overall_risk: "high", headline: "Secrecy lasts forever and blocks you from working with any competitor for 3 years.", finding_counts: { high: 2, medium: 1 }, next_deadline: null },
+  { id: "rv_app", created_at: day(4), filename: "svc-08-software-dev.pdf", contract_type: "service_agreement", overall_risk: "medium", headline: "Your liability has no cap while the developer's is one month of fees.", finding_counts: { high: 1, medium: 2, low: 1 }, next_deadline: dl("Support term ends", "end", "2027-03-02", 4, null) },
+  { id: "rv_nda1", created_at: day(5), filename: "nda-01-fair.pdf", contract_type: "nda", overall_risk: "low", headline: "A balanced mutual NDA with a sensible 3-year term.", finding_counts: { low: 1 }, next_deadline: null },
 );
 
 

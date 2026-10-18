@@ -10,7 +10,7 @@ import hashlib
 from pathlib import Path
 
 from app import prompts
-from app.models import Provenance
+from app.models import Provenance, ReviewOptions
 
 HEX = 12
 
@@ -45,5 +45,6 @@ def content_hash(pdf_bytes: bytes) -> str:
     return hashlib.sha256(pdf_bytes).hexdigest()
 
 
-def build(model: str, kb: str, prompt: str, app_version: str | None) -> Provenance:
-    return Provenance(model=model, kb_version=kb, prompt_version=prompt, app_version=app_version or None)
+def build(model: str, kb: str, prompt: str, app_version: str | None, options: ReviewOptions | None = None) -> Provenance:
+    return Provenance(model=model, kb_version=kb, prompt_version=prompt, app_version=app_version or None,
+                      options=options)

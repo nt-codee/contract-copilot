@@ -5,6 +5,7 @@ kind: statute
 title: "Minimum Wages Order 2024 (P.U.(A) 376/2024): RM1,700 a month from 1 February 2025, for all employers from 1 August 2025"
 citation: "Minimum Wages Order 2024 [P.U.(A) 376/2024], paras 1-2, 3-5, 6, made under s 23 of the National Wages Consultative Council Act 2011 (Act 732)"
 clause_types: [payment, salary_deductions]
+applies_to: employee
 source_url: "https://gajiminimum.mohr.gov.my/wp-content/uploads/PUA%20376.pdf"
 retrieved: 2026-10-18
 licence_note: "Quoted from the English text of the Federal Government Gazette P.U.(A) 376 (4 December 2024; made 2 December 2024), Attorney General's Chambers, fetched on 2026-10-18 from the Ministry of Human Resources minimum wage portal (gajiminimum.mohr.gov.my). The table of rates in paragraph 5(1) is shown as it extracts from the PDF. Whether a later order has replaced this one was not checked. A copy from this website is not an official copy of the Gazette."

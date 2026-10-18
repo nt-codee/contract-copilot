@@ -4,7 +4,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { canManage } from "../session";
 import { useMedia } from "../useMedia";
 import { useSession } from "../useSession";
-import Account, { SignInButton } from "./Account";
+import Account, { GuestButton, SignInButton } from "./Account";
 
 /** The wordmark's mark: a page with a flag tab on its edge. */
 function Mark() {
@@ -26,6 +26,7 @@ const I = (d: ReactNode) => (
   </svg>
 );
 const ICON = {
+  home: I(<><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V21h14V9.5" /><path d="M10 21v-6h4v6" /></>),
   review: I(<><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M10 9H8M16 13H8M16 17H8" /></>),
   library: I(<><path d="m16 6 4 14M12 6v14M8 8v12M4 4v16" /></>),
   knowledge: I(<><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="M7 21h10M12 3v18M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" /></>),
@@ -50,14 +51,15 @@ interface Item {
 function useItems(): { main: Item[]; team: Item[] } {
   const s = useSession();
   const main: Item[] = [
-    { to: "/", label: "Review a contract", icon: ICON.review, end: true },
+    { to: "/", label: "Home", icon: ICON.home, end: true },
+    { to: "/review", label: "Review a contract", icon: ICON.review },
     { to: "/library", label: "Library", icon: ICON.library },
     { to: "/knowledge", label: "Knowledge", icon: ICON.knowledge },
     { to: "/rules", label: "Company rules", icon: ICON.rules },
     { to: "/positions", label: "Standard positions", icon: ICON.positions },
   ];
   const team: Item[] = [];
-  if (s.user && canManage(s)) team.push({ to: "/workspace", label: "Workspace", icon: ICON.workspace });
+  if ((s.user && canManage(s)) || s.guest) team.push({ to: "/workspace", label: "Workspace", icon: ICON.workspace });
   team.push({ to: "/activity", label: "Activity", icon: ICON.activity });
   if (s.user?.platform_admin) team.push({ to: "/admin", label: "Admin", icon: ICON.admin });
   return { main, team };
@@ -74,7 +76,7 @@ function NavList({ items, slim, onGo }: { items: Item[]; slim: boolean; onGo?: (
             onClick={onGo}
             title={slim ? it.label : undefined}
             className={({ isActive }) =>
-              `relative flex min-h-[44px] items-center gap-3 rounded-[3px] px-3 text-[0.95rem] transition-colors ${
+              `relative flex min-h-[44px] items-center gap-3 rounded-[3px] px-3 text-sm transition-colors ${
                 isActive ? "bg-white font-semibold text-ink" : "text-desk-text hover:bg-white/10 hover:text-white"
               } ${slim ? "justify-center px-0" : ""}`
             }
@@ -83,7 +85,7 @@ function NavList({ items, slim, onGo }: { items: Item[]; slim: boolean; onGo?: (
               <>
                 {it.icon}
                 <span className={slim ? "sr-only" : ""}>{it.label}</span>
-                {isActive && <span aria-hidden="true" className="absolute -right-[3px] top-2 h-[calc(100%-1rem)] w-[5px] rounded-r-[2px] bg-high-box" />}
+                {isActive && <span aria-hidden="true" className="absolute -right-[3px] top-2 h-[calc(100%-1rem)] w-[5px] rounded-r-[2px] nav-mark" />}
               </>
             )}
           </NavLink>
@@ -96,7 +98,15 @@ function NavList({ items, slim, onGo }: { items: Item[]; slim: boolean; onGo?: (
 /** Shown to visitors: what signing in unlocks. The samples keep working without it. */
 function SignInPanel({ slim }: { slim: boolean }) {
   const s = useSession();
-  if (s.loading || s.user || !s.available) return null;
+  if (s.loading || s.user) return null;
+  if (s.guest)
+    return slim ? null : (
+      <div className="rounded-[3px] border border-desk-line bg-desk px-3 py-3">
+        <p className="text-sm leading-snug text-white">You are looking at a made-up company. Sign in to use your own workspace.</p>
+        {s.available && <div className="mt-3"><SignInButton className="w-full !min-h-[44px] !px-3 text-sm" /></div>}
+      </div>
+    );
+  if (!s.available) return null;
   if (slim)
     return (
       <div className="flex justify-center">
@@ -105,10 +115,11 @@ function SignInPanel({ slim }: { slim: boolean }) {
     );
   return (
     <div className="rounded-[3px] border border-desk-line bg-desk px-3 py-3">
-      <p className="tab text-desk-text">Sample workspace</p>
-      <p className="mt-1 text-[0.9rem] leading-snug text-white">Sign in to review your own contracts, add your company rules and work with your team.</p>
-      <div className="mt-3">
-        <SignInButton className="w-full !min-h-[44px] !px-3 text-[0.92rem]" />
+      <p className="meta text-desk-text">Sample workspace</p>
+      <p className="mt-1 text-sm leading-snug text-white">Sign in to review your own contracts, add your company rules and work with your team.</p>
+      <div className="mt-3 space-y-2">
+        <SignInButton className="w-full !min-h-[44px] !px-3 text-sm" />
+        <GuestButton className="w-full !min-h-[44px] !px-3 text-sm" />
       </div>
     </div>
   );
@@ -120,7 +131,7 @@ function NavBody({ slim, onGo }: { slim: boolean; onGo?: () => void }) {
     <>
       <nav aria-label="Main" className="px-3">
         <NavList items={main} slim={slim} onGo={onGo} />
-        <p className={`tab mb-1 mt-6 px-3 text-desk-text ${slim ? "sr-only" : ""}`}>Team</p>
+        <p className={`meta mb-1 mt-6 px-3 text-desk-text ${slim ? "sr-only" : ""}`}>Team</p>
         {slim && <div aria-hidden="true" className="mx-3 my-4 border-t border-desk-line" />}
         <NavList items={team} slim={slim} onGo={onGo} />
       </nav>
@@ -131,7 +142,7 @@ function NavBody({ slim, onGo }: { slim: boolean; onGo?: () => void }) {
 function Legal({ slim }: { slim: boolean }) {
   if (slim) return null;
   return (
-    <p className="flex gap-4 px-6 text-[0.85rem] text-desk-text">
+    <p className="flex gap-4 px-6 text-xs text-desk-text">
       <NavLink to="/privacy" className="inline-flex min-h-[44px] items-center underline underline-offset-4 hover:text-white">Privacy</NavLink>
       <NavLink to="/terms" className="inline-flex min-h-[44px] items-center underline underline-offset-4 hover:text-white">Terms</NavLink>
     </p>
@@ -188,8 +199,8 @@ export default function Layout() {
 
   const footer = !isReview && (
     <footer className="border-t border-desk-line">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-5 py-4 text-[0.9rem] text-desk-text sm:px-8">
-        <p>Contract Co-pilot · Uploaded files are deleted after 7 days.</p>
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-5 py-4 text-sm text-desk-text sm:px-8">
+        <p>Contract Co-pilot. Uploaded files are deleted after 7 days.</p>
         <nav aria-label="Legal" className="flex gap-4">
           <NavLink to="/privacy" className="inline-flex min-h-[44px] items-center text-white underline underline-offset-4 hover:text-desk-text">Privacy</NavLink>
           <NavLink to="/terms" className="inline-flex min-h-[44px] items-center text-white underline underline-offset-4 hover:text-desk-text">Terms</NavLink>
@@ -210,7 +221,7 @@ export default function Layout() {
             <div className={`flex h-[64px] items-center ${slim ? "justify-center" : "justify-between pl-5 pr-2"}`}>
               <NavLink to="/" className="flex min-h-[44px] items-center gap-2.5 text-white" aria-label="Contract Co-pilot, home">
                 <Mark />
-                {!slim && <span className="whitespace-nowrap text-[1.05rem] font-bold tracking-tight [font-stretch:110%]">Contract Co-pilot</span>}
+                {!slim && <span className="whitespace-nowrap text-base font-bold tracking-tight [font-stretch:110%]">Contract Co-pilot</span>}
               </NavLink>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-2">
@@ -223,7 +234,7 @@ export default function Layout() {
                 type="button"
                 onClick={toggle}
                 aria-expanded={!slim}
-                className={`flex min-h-[44px] w-full items-center gap-3 rounded-[3px] px-3 text-[0.9rem] text-desk-text hover:bg-white/10 hover:text-white ${slim ? "justify-center px-0" : ""}`}
+                className={`flex min-h-[44px] w-full items-center gap-3 rounded-[3px] px-3 text-sm text-desk-text hover:bg-white/10 hover:text-white ${slim ? "justify-center px-0" : ""}`}
               >
                 {slim ? ICON.expand : ICON.collapse}
                 <span className={slim ? "sr-only" : ""}>{slim ? "Show the menu" : "Collapse the menu"}</span>
@@ -251,8 +262,9 @@ export default function Layout() {
         </button>
         <NavLink to="/" className="flex min-h-[44px] items-center gap-2 text-white" aria-label="Contract Co-pilot, home">
           <Mark />
-          <span className="whitespace-nowrap text-[1rem] font-bold tracking-tight [font-stretch:108%]">Contract Co-pilot</span>
+          <span className="whitespace-nowrap text-base font-bold tracking-tight [font-stretch:108%]">Contract Co-pilot</span>
         </NavLink>
+        <GuestBadge />
         <Account slim compact />
       </header>
       <dialog
@@ -291,4 +303,11 @@ export default function Layout() {
       </div>
     </>
   );
+}
+
+/** On phones the sidebar is hidden, so the read-only state shows in the top bar. */
+function GuestBadge() {
+  const s = useSession();
+  if (!s.guest || s.user) return null;
+  return <span className="meta hidden rounded-[3px] bg-medium-box px-1.5 py-0.5 text-xs text-ink min-[400px]:inline">Demo</span>;
 }

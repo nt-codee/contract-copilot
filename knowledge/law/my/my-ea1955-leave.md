@@ -5,6 +5,7 @@ kind: statute
 title: "Employment Act 1955, ss 60E, 60F and 60FA: minimum annual leave, sick leave and paternity leave"
 citation: "Employment Act 1955 (Act 265), s 60E(1)(a)-(c); s 60F(1)(aa); s 60FA(1), (3), as amended or inserted by Act A1651"
 clause_types: [leave]
+applies_to: employee
 source_url: "https://live.investmalaysia.gov.my/media/felj30g0/employment-act-1955.pdf"
 retrieved: 2026-10-18
 licence_note: "Quoted from the Laws of Malaysia Reprint of Act 265 'as at 1 August 2023' (published by the Commissioner of Law Revision under the Revision of Laws Act 1968; its cover records Act A1651 in operation on 1 January 2023 as the latest amendment), fetched on 2026-10-18 from a copy hosted by the Malaysian Investment Development Authority, because lom.agc.gov.my resets plain HTTP connections. Amendments after 1 August 2023, if any, were not checked. LOM T&C cl 5: copyright AGC Malaysia, all rights reserved; short quotation for reference only. Section 60FA was inserted by Act A1651, s 23. Only the 'no hospitalisation' sick-leave tiers are quoted; s 60F(1)(bb) gives sixty days a year if hospitalisation is needed, and sick leave needs a medical certificate."

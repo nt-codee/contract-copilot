@@ -7,7 +7,7 @@ import Reader from "../components/Reader";
 import type { Marked, ReaderState } from "../components/Reader";
 import { deriveRules, docTitle } from "../rules";
 import type { PolicyRule } from "../rules";
-import { formatDate } from "../format";
+import { breakable, formatDate } from "../format";
 import type { CompanyDoc, ReviewResult } from "../types";
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -105,9 +105,9 @@ export default function Company() {
 
   return (
     <div className="mx-auto max-w-[1040px] px-5 pb-20 pt-10 sm:px-8 sm:pt-14">
-      <p className="tab text-desk-text">Your company rules</p>
-      <h1 className="display mt-3 text-[2.1rem] text-white sm:text-[2.9rem]">Check every contract against your own rules</h1>
-      <p className="mt-4 max-w-2xl text-[1.1rem] text-desk-text">
+      <p className="page-eyebrow">Your company rules</p>
+      <h1 className="display mt-3 text-2xl text-white sm:text-2xl">Your company rules</h1>
+      <p className="mt-4 max-w-2xl text-lg text-desk-text">
         Upload your contracting policy once. Every review after that flags the clauses that break it, and quotes the rule.
       </p>
 
@@ -115,7 +115,7 @@ export default function Company() {
         <button type="button" className="btn-go btn-flag !min-h-[52px] !px-6" onClick={() => inputRef.current?.click()} disabled={!!uploading} aria-describedby="rules-help">
           {uploading ? "Adding your document…" : "Upload a policy PDF"}
         </button>
-        <p id="rules-help" className="text-[0.95rem] text-desk-text">
+        <p id="rules-help" className="text-sm text-desk-text">
           PDF up to 10 MB and 40 pages. Only your reviews use it.
         </p>
         <input
@@ -151,7 +151,7 @@ export default function Company() {
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
       >
-        <h2 id="docs-title" className="text-[1.35rem] font-bold text-white">
+        <h2 id="docs-title" className="text-xl font-bold text-white">
           Rules your reviews check
         </h2>
 
@@ -166,12 +166,12 @@ export default function Company() {
         ) : empty ? (
           <div className={`sheet mt-4 grid gap-6 p-6 sm:grid-cols-[1fr_auto] sm:items-center sm:p-8 ${dragging ? "outline-dashed outline-2 outline-offset-4 outline-white" : ""}`}>
             <div>
-              <p className="text-[1.15rem] font-semibold text-ink">No rules yet. Add the policy you want contracts checked against.</p>
+              <p className="text-lg font-semibold text-ink">No rules yet. Add the policy you want contracts checked against.</p>
               <p className="mt-2 text-ink-soft">
                 For example: never accept uncapped liability, renewals of 12 months or less, notice by email allowed. Drop the PDF
                 here or use the button above.
               </p>
-              <p className="mt-4 text-[0.95rem] text-ink-soft">
+              <p className="mt-4 text-sm text-ink-soft">
                 No policy to hand?{" "}
                 <a href={SAMPLE} download className="font-semibold text-desk underline underline-offset-4 hover:text-ink">
                   Download the sample policy for Kopi Kita Sdn Bhd
@@ -206,16 +206,16 @@ export default function Company() {
                   <path d="M31 12h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7z" fill="#121A2B" />
                 </svg>
                 <span className="min-w-0">
-                  <span className="block break-all font-semibold text-ink">{docTitle(d)}</span>
-                  <span className="tab mt-1 block text-ink-mute">
-                    {d.title ? `${d.filename} · ` : ""}
-                    {d.pages} {d.pages === 1 ? "page" : "pages"} · added {formatDate(d.created_at)} · checked in every new review
+                  <span className="block break-words font-semibold text-ink">{docTitle(d)}</span>
+                  <span className="meta mt-1 block text-ink-mute">
+                    {d.title ? `${d.filename}, ` : ""}
+                    {d.pages} {d.pages === 1 ? "page" : "pages"}, added {formatDate(d.created_at)}, checked in every new review
                   </span>
                 </span>
                 </span>
                 {confirm === d.id ? (
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-[0.95rem] text-ink-soft">Stop checking against it?</span>
+                    <span className="text-sm text-ink-soft">Stop checking against it?</span>
                     <button type="button" className="btn !min-h-[44px] bg-high px-4 text-white hover:bg-[#8f1e18]" onClick={() => void remove(d)} disabled={removing === d.id}>
                       {removing === d.id ? "Removing…" : "Remove"}
                     </button>
@@ -245,7 +245,7 @@ function PolicyDocs({ docs, reviews }: { docs: CompanyDoc[]; reviews: ReviewResu
   const contracts = new Set(broken.flatMap((r) => r.breaches.map((b) => b.review.id)));
   return (
     <section aria-labelledby="policy-title" className="mt-12">
-      <h2 id="policy-title" className="text-[1.35rem] font-bold text-white">
+      <h2 id="policy-title" className="text-xl font-bold text-white">
         Your rules, and the contracts that break them
       </h2>
       <p className="mt-1 text-desk-text">
@@ -253,7 +253,7 @@ function PolicyDocs({ docs, reviews }: { docs: CompanyDoc[]; reviews: ReviewResu
           ? "Reading your reviews…"
           : rules.length === 0
             ? "No review has quoted these rules yet. Review a contract and every rule it breaks will show here."
-            : `${rules.length} ${rules.length === 1 ? "rule has" : "rules have"} come up so far · ${contracts.size} ${contracts.size === 1 ? "contract breaks" : "contracts break"} at least one.`}
+            : `${rules.length} ${rules.length === 1 ? "rule has" : "rules have"} come up so far, ${contracts.size} ${contracts.size === 1 ? "contract breaks" : "contracts break"} at least one.`}
       </p>
       {rules && rules.length > 0 &&
         docs.map((d) => {
@@ -263,10 +263,10 @@ function PolicyDocs({ docs, reviews }: { docs: CompanyDoc[]; reviews: ReviewResu
             <div key={d.id} className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <PolicyPdf doc={d} reviews={reviews ?? []} />
             <article className="sheet relative px-5 py-6 pr-14 sm:px-10 sm:py-9 sm:pr-20" aria-label={docTitle(d)}>
-              <p className="tab text-ink-mute">
-                {d.filename} · {d.pages} {d.pages === 1 ? "page" : "pages"}
+              <p className="meta text-ink-mute">
+                {d.filename}, {d.pages} {d.pages === 1 ? "page" : "pages"}
               </p>
-              <h3 className="mt-1 font-doc text-[1.4rem] font-bold leading-snug text-ink">{docTitle(d)}</h3>
+              <h3 className="mt-1 font-doc text-xl font-bold leading-snug text-ink">{docTitle(d)}</h3>
               <ol className="mt-5 space-y-6">
                 {mine.map((r) => (
                   <Rule key={r.key} r={r} />
@@ -284,7 +284,7 @@ function Rule({ r }: { r: PolicyRule }) {
   const n = r.breaches.length;
   return (
     <li className="relative">
-      <p className="font-doc text-[1.05rem] leading-[1.6] text-ink">
+      <p className="font-doc text-base leading-[1.6] text-ink">
         <span className="font-bold">{r.number ? `${r.number} ` : ""}</span>
         {r.excerpt ? (
           <span
@@ -297,13 +297,13 @@ function Rule({ r }: { r: PolicyRule }) {
           <span className="text-ink-soft">Rule {r.number} of your policy</span>
         )}
       </p>
-      <p className="tab mt-1 text-ink-mute">
+      <p className="meta mt-1 text-ink-mute">
         {r.number ? `Rule ${r.number}` : r.title}
-        {r.page ? ` · page ${r.page}` : ""}
+        {r.page ? `, page ${r.page}` : ""}
       </p>
       {/* Margin tab: how many contracts break this rule. */}
       <span
-        className={`tab absolute -right-12 top-0 inline-flex h-7 min-w-[2.6rem] items-center justify-center rounded-r-[3px] px-2 !text-[0.85rem] shadow-lift sm:-right-[4.6rem] ${
+        className={`tab absolute -right-12 top-0 inline-flex h-7 min-w-[2.6rem] items-center justify-center rounded-r-[3px] px-2 text-xs shadow-lift sm:-right-[4.6rem] ${
           n ? "bg-high text-white" : "bg-paper-soft text-ink-mute"
         }`}
         aria-label={n ? `${n} ${n === 1 ? "contract breaks" : "contracts break"} this rule` : "No contract breaks this rule"}
@@ -316,11 +316,11 @@ function Rule({ r }: { r: PolicyRule }) {
             <li key={b.review.id + b.finding.id}>
               <Link
                 to={`/reviews/${b.review.id}?finding=${encodeURIComponent(b.finding.id)}`}
-                className="group flex min-h-[44px] items-start gap-2.5 py-1 text-[0.95rem] leading-snug"
+                className="group flex min-h-[44px] items-start gap-2.5 py-1 text-sm leading-snug"
               >
                 <FlagTab n={b.n} risk={b.finding.risk} className="!h-6 !min-w-[2rem] shrink-0 !rounded-[3px]" />
                 <span className="min-w-0">
-                  <span className="block break-all font-semibold text-ink group-hover:underline">{b.review.filename}</span>
+                  <span className="block break-words font-semibold text-ink group-hover:underline">{breakable(b.review.filename)}</span>
                   <span className="block text-ink-soft">{b.finding.policy_breach}</span>
                 </span>
               </Link>

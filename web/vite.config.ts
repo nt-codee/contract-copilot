@@ -33,10 +33,30 @@ function pdfjsStandardFonts(): Plugin {
   };
 }
 
+// Explicit opt-in (VITE_SAMPLE_PDF_STANDIN=1) local stand-in for GET /api/samples/{id}/pdf (served by the API in production), so
+// the sample preview works under `vite` and `vite preview`. Never part of the built bundle.
+function samplePdfs(): Plugin {
+  const dir = join(process.cwd(), "../samples/contracts");
+  const use = (mw: { use: (fn: (req: any, res: any, next: () => void) => void) => void }) =>
+    mw.use((req, res, next) => {
+      const m = req.url?.match(/^\/api\/samples\/([A-Za-z0-9_-]{1,64})\/pdf(?:\?|$)/);
+      if (!m) return next();
+      try {
+        const body = readFileSync(join(dir, `${m[1]}.pdf`));
+        res.setHeader("Content-Type", "application/pdf");
+        res.end(body);
+      } catch {
+        res.statusCode = 404;
+        res.end();
+      }
+    });
+  return { name: "sample-pdfs", configureServer(s) { use(s.middlewares); }, configurePreviewServer(s) { use(s.middlewares); } };
+}
+
 const proxy = { "/api": { target: API, changeOrigin: true } };
 
 export default defineConfig({
-  plugins: [react(), pdfjsStandardFonts()],
+  plugins: [react(), pdfjsStandardFonts(), ...(process.env.VITE_SAMPLE_PDF_STANDIN === "1" ? [samplePdfs()] : [])],
   build: { outDir: "dist", sourcemap: false, target: "es2022" },
   server: { port: 5173, proxy },
   preview: { port: 4173, proxy },

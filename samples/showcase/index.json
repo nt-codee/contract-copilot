@@ -1,0 +1,242 @@
+[
+  {
+    "id": "svc-01-loyalty-saas",
+    "title": "Loyalty app subscription agreement (SaaS)",
+    "type": "service_agreement",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "svc-01-loyalty-saas.pdf"
+  },
+  {
+    "id": "svc-02-outlet-cleaning",
+    "title": "Outlet cleaning services agreement",
+    "type": "service_agreement",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "svc-02-outlet-cleaning.pdf"
+  },
+  {
+    "id": "svc-03-bean-logistics",
+    "title": "Green bean import and logistics agreement",
+    "type": "service_agreement",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "svc-03-bean-logistics.pdf"
+  },
+  {
+    "id": "svc-04-marketing-retainer",
+    "title": "Marketing and social media retainer agreement",
+    "type": "service_agreement",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "svc-04-marketing-retainer.pdf"
+  },
+  {
+    "id": "svc-05-it-support",
+    "title": "Managed IT support agreement",
+    "type": "service_agreement",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "svc-05-it-support.pdf"
+  },
+  {
+    "id": "svc-06-katering-bm",
+    "title": "Perjanjian Perkhidmatan Katering Acara (event catering, in Bahasa Malaysia)",
+    "type": "service_agreement",
+    "language": "ms",
+    "jurisdiction": "MY",
+    "filename": "svc-06-katering-bm.pdf"
+  },
+  {
+    "id": "svc-07-pengawal-keselamatan-bm",
+    "title": "Perjanjian Perkhidmatan Pengawal Keselamatan (security guards, in Bahasa Malaysia)",
+    "type": "service_agreement",
+    "language": "ms",
+    "jurisdiction": "MY",
+    "filename": "svc-07-pengawal-keselamatan-bm.pdf"
+  },
+  {
+    "id": "svc-08-software-dev",
+    "title": "Custom ordering app development agreement",
+    "type": "service_agreement",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "svc-08-software-dev.pdf"
+  },
+  {
+    "id": "nda-01-mutual-pos",
+    "title": "Mutual NDA: point-of-sale integration talks",
+    "type": "nda",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "nda-01-mutual-pos.pdf"
+  },
+  {
+    "id": "nda-02-oneway-franchise",
+    "title": "One-way NDA: franchise enquiry",
+    "type": "nda",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "nda-02-oneway-franchise.pdf"
+  },
+  {
+    "id": "nda-03-investor",
+    "title": "Confidentiality agreement: investor due diligence",
+    "type": "nda",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "nda-03-investor.pdf"
+  },
+  {
+    "id": "nda-04-supplier-sg",
+    "title": "NDA: green coffee supplier price lists",
+    "type": "nda",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "nda-04-supplier-sg.pdf"
+  },
+  {
+    "id": "nda-05-employee-style",
+    "title": "Confidentiality, non-compete and invention assignment: head roaster",
+    "type": "nda",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "nda-05-employee-style.pdf"
+  },
+  {
+    "id": "nda-06-perjanjian-bm",
+    "title": "Perjanjian Kerahsiaan Bersama (mutual NDA in Bahasa Malaysia)",
+    "type": "nda",
+    "language": "ms",
+    "jurisdiction": "MY",
+    "filename": "nda-06-perjanjian-bm.pdf"
+  },
+  {
+    "id": "emp-01-fulltime-manager",
+    "title": "Employment contract: outlet manager (full-time)",
+    "type": "employment",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "emp-01-fulltime-manager.pdf"
+  },
+  {
+    "id": "emp-02-parttime-bm",
+    "title": "Kontrak Pekerjaan Sambilan: barista (part-time, in Bahasa Malaysia)",
+    "type": "employment",
+    "language": "ms",
+    "jurisdiction": "MY",
+    "filename": "emp-02-parttime-bm.pdf"
+  },
+  {
+    "id": "emp-03-intern",
+    "title": "Internship agreement: marketing intern",
+    "type": "employment",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "emp-03-intern.pdf"
+  },
+  {
+    "id": "emp-04-freelance-designer",
+    "title": "Freelance design services agreement",
+    "type": "employment",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "emp-04-freelance-designer.pdf"
+  },
+  {
+    "id": "emp-05-jurugambar-bm",
+    "title": "Perjanjian Pekerja Bebas: jurugambar (freelance photographer, in Bahasa Malaysia)",
+    "type": "employment",
+    "language": "ms",
+    "jurisdiction": "MY",
+    "filename": "emp-05-jurugambar-bm.pdf"
+  },
+  {
+    "id": "emp-06-fixed-term-teamlead",
+    "title": "Fixed-term employment contract: roastery team lead",
+    "type": "employment",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "emp-06-fixed-term-teamlead.pdf"
+  },
+  {
+    "id": "ten-01-bangsar-shoplot",
+    "title": "Tenancy agreement: Bangsar shop lot (outlet)",
+    "type": "tenancy",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "ten-01-bangsar-shoplot.pdf"
+  },
+  {
+    "id": "ten-02-singapore-office",
+    "title": "Office tenancy: Singapore representative office",
+    "type": "tenancy",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "ten-02-singapore-office.pdf"
+  },
+  {
+    "id": "ten-03-staff-room",
+    "title": "Room rental agreement: staff trainee accommodation",
+    "type": "tenancy",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "ten-03-staff-room.pdf"
+  },
+  {
+    "id": "ten-04-warehouse",
+    "title": "Warehouse tenancy: roastery storage",
+    "type": "tenancy",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "ten-04-warehouse.pdf"
+  },
+  {
+    "id": "ten-05-kedai-bm",
+    "title": "Perjanjian Sewa Kedai (shop tenancy, in Bahasa Malaysia)",
+    "type": "tenancy",
+    "language": "ms",
+    "jurisdiction": "MY",
+    "filename": "ten-05-kedai-bm.pdf"
+  },
+  {
+    "id": "hp-01-delivery-van",
+    "title": "Hire purchase agreement: delivery van",
+    "type": "hire_purchase",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "hp-01-delivery-van.pdf"
+  },
+  {
+    "id": "hp-02-forklift",
+    "title": "Hire purchase: warehouse forklift",
+    "type": "hire_purchase",
+    "language": "en",
+    "jurisdiction": "MY",
+    "filename": "hp-02-forklift.pdf"
+  },
+  {
+    "id": "hp-03-pos-terminals",
+    "title": "Equipment finance and lease: POS terminals",
+    "type": "hire_purchase",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "hp-03-pos-terminals.pdf"
+  },
+  {
+    "id": "hp-04-laptop-lease",
+    "title": "Laptop lease agreement",
+    "type": "hire_purchase",
+    "language": "en",
+    "jurisdiction": "SG",
+    "filename": "hp-04-laptop-lease.pdf"
+  },
+  {
+    "id": "hp-05-pembiayaan-bm",
+    "title": "Perjanjian Pembiayaan Perniagaan (business financing, in Bahasa Malaysia)",
+    "type": "hire_purchase",
+    "language": "ms",
+    "jurisdiction": "MY",
+    "filename": "hp-05-pembiayaan-bm.pdf"
+  }
+]

@@ -54,8 +54,12 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
    weaker party), plus anything unusual or hidden. Risk:
    - high: could cost a lot of money, lock the reader in, or take away rights they would expect
      (uncapped one-sided liability, a non-compete inside an NDA, perpetual obligations, auto-renewal
-     with a long notice window, the vendor owning work the reader paid for).
-   - medium: one-sided but common; worth asking about.
+     with a long notice window, the vendor owning work the reader paid for). A high finding MUST fill
+     "consequence": one sentence naming what actually happens to the reader under this contract's own
+     terms (an amount, a lock-in period, a right lost), with the clause number. If you cannot name one,
+     it is medium; a high without a consequence is shown as medium.
+   - medium: one-sided but common; worth asking about. Most terms in an ordinary, mildly one-sided
+     contract are medium.
    - low: minor drafting point.
    The playbook's Red flags are tagged High, Medium or Low: when a clause matches a red-flag line, assign
    exactly that level, neither higher nor lower, and use your own judgement only for a clause no line
@@ -80,9 +84,17 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
    Cite only what a tool returned; a ref you did not receive is discarded. Use [] when nothing fits.
    Law is context for the reader, not a verdict: write "Malaysian courts generally allow only
    reasonable compensation under s.75", never "this is illegal" or "you should".
-8. policy_breach: one sentence when the clause conflicts with a rule that search_company returned,
-   naming the rule; otherwise "". Never invent a company rule.
-9. Write title, why_risky, standard, suggested_ask, headline and summary in plain English, even when
+8. policy_breach: only when the quoted clause directly conflicts with a rule that search_company
+   returned. Then cite that company result with the rule's own words copied exactly as its excerpt, and
+   write one sentence naming the rule. A related or merely similar rule is not a breach: use "". A breach
+   whose rule is not quoted word for word is removed.
+9. title: at most 8 words, a noun phrase that names the risk so a reader can scan the list, for
+   example "Auto-renewal with 90-day notice", "Uncapped liability for you only", "Deposit kept at
+   landlord's discretion". Never a sentence and no full stop. why_risky: its FIRST sentence must stand
+   alone as a one-line summary of the risk, at most 25 words; any detail follows in later sentences.
+   clause_ref: the contract's own number for the quoted clause ("3.3", "5.1(b)") when it numbers its
+   clauses, else "".
+   Write title, why_risky, standard, suggested_ask, headline and summary in plain English, even when
    the contract is in Bahasa Malaysia. Short sentences, no legalese; if a legal term is unavoidable,
    explain it in a few words. suggested_ask is one sentence the reader can say to the vendor.
 10. key_dates: every date the reader must act on or plan around: start, end, renewal, the NOTICE
@@ -98,8 +110,42 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
     days of the Effective Date"), use the stated date as base_date: it gives the earliest possible
     deadline, the safe one to act on, and say in rule that the real date may be later (name the window). rule says in words how the date
     is derived. finding_title is the exact title of the finding about it, else "". Use [] if there are none.
-11. verdict.overall_risk is the highest risk that genuinely matters for the reader; headline is one
-    sentence under 140 characters; summary is 1 to 3 short sentences.
+11. verdict.overall_risk follows from the findings: "high" only if at least one high finding is about a
+    term the contract contains (not just a missing protection); "medium" if any finding is medium or
+    high; otherwise "low". It is recomputed that way after verification. headline is one sentence under
+    140 characters and must not name a different risk level; summary is 1 to 3 short sentences.
+"""
+
+# Stage-2 writing rules. Sent with the whole contract; a long contract's planning turns (outline only) skip
+# them, since they only plan lookups.
+REVIEW_RULES = """\
+12. GROUNDING. Every statement in why_risky, suggested_ask, missing_clauses and the summary about what
+    THIS contract says must come from its text: name the clause by its number (for example "clause
+    3.3") and use only the amounts, periods, rates and charges the contract states. The playbook's red
+    flags and asks describe typical problems; never write one as if this contract contained it (no
+    "daily compounding late fee" unless the contract says so). suggested_ask must fix the clause you
+    quoted. Before you say a clause locks the reader in or leaves them with no remedy, check the rest of
+    the contract for termination rights, exceptions and other remedies, and mention them. Do not
+    certify that a contract complies with a statute. Statements with numbers or charges that are not in
+    the contract are removed automatically.
+13. ONE JURISDICTION, ONE RELATIONSHIP. Write every ask for the governing jurisdiction you fixed: never
+    "(or Singapore)" or "(or Malaysia)". Decide from the contract whether the reader is an employee
+    (salary, employer) or a freelancer or contractor (fees, own equipment, independent contractor);
+    never offer both ("or, as a freelancer, ..."). A freelancer has no salary: do not mention salary,
+    salary in lieu or garden leave unless the contract does. Under Malaysian law (s 28 of the Contracts
+    Act 1950) a restraint after the contract ends is void with no reasonableness exception: ask to
+    delete it; never offer a shorter, narrower or paid restraint as a fallback.
+14. CITATION SCOPE. Each law result says which finding types it supports ("cite only on findings of
+    type ..."); cite it only on such a finding, or it is removed. A cited result's caveat is added to
+    the explanation automatically; do not state the law more firmly than the caveat allows.
+    Employment statutes (Employment Act, Minimum Wages Order, Industrial Relations Act) protect employees
+    under a contract of service. On a freelance or contractor agreement, cite one only if why_risky
+    states the condition, for example "if you are in substance an employee, s 12 ..."; otherwise it is
+    removed.
+15. CROSS-CLAUSE. Before you write that a clause locks the reader in, leaves them no remedy or makes them
+    bear a whole loss, read the rest of the contract: a right to end on notice, a liability cap, a duty of
+    reasonable care or another remedy changes that. Say what the clause does and what else applies;
+    never state the worst case as certain.
 """
 
 CLAUSE_TYPES_HEADING = """
@@ -167,16 +213,68 @@ def contract_outline(pages: list[str]) -> str | None:
             + "\n\n".join(blocks))
 
 
+# ---- what the reader chose for this review (ReviewOptions). Nothing is added for a default review. -------------
+
+INDIVIDUAL_TYPES = ("employment", "tenancy", "hire_purchase")
+_TYPE_NAME = {"nda": "NDA", "service_agreement": "service agreement", "employment": "employment contract",
+              "tenancy": "tenancy agreement", "hire_purchase": "hire-purchase agreement"}
+_LAW_NAME = {"MY": "Malaysian", "SG": "Singapore"}
+
+OPTION_CONTRACT_TYPE = ("The reader has told you this is a {label}. Set contract_type to \"{ctype}\", use that type's "
+                        "playbook (search_playbook contract_type=\"{ctype}\") and do not pick another type.")
+OPTION_JURISDICTION = ("The reader has told you the contract is governed by {law} law, so the jurisdiction is already "
+                       "fixed. Do not call set_jurisdiction; use the research as given.")
+OPTION_NO_COMPANY = ("The reader switched company rules off for this review. Do not call search_company, cite no "
+                     "company rule, and set policy_breach to \"\" for every finding.")
+OPTION_POLICIES = ("The reader chose {n} of the company's policy documents for this review. search_company searches only "
+                   "those; a rule from any other document does not apply here.")
+OPTION_INDIVIDUAL = ("The reader is an individual (an employee, tenant or hirer), not a business, and the other side "
+                     "is the employer, landlord or finance company. This replaces the line above about business "
+                     "founders. Judge every clause from the individual's side: what is fair to them, and write each "
+                     "standard and suggested_ask as what they should ask the other party for.")
+OPTION_BUSINESS = ("The reader is the business side of the contract (the customer, employer, landlord or lender). "
+                   "Judge every clause from the business's side.")
+
+
+def uses_individual_view(options) -> bool:
+    """individual, or auto with a contract type whose reader is normally the individual."""
+    if options is None:
+        return False
+    return options.perspective == "individual" or (options.perspective == "auto" and options.contract_type in INDIVIDUAL_TYPES)
+
+
+def options_block(options) -> str:
+    """The instructions for the reader's choices; empty for a default review so its prompt is unchanged."""
+    if options is None:
+        return ""
+    lines = []
+    if options.contract_type != "auto":
+        lines.append(OPTION_CONTRACT_TYPE.format(label=_TYPE_NAME[options.contract_type], ctype=options.contract_type))
+    if options.jurisdiction != "auto":
+        lines.append(OPTION_JURISDICTION.format(law=_LAW_NAME[options.jurisdiction]))
+    if not options.apply_company_rules:
+        lines.append(OPTION_NO_COMPANY)
+    elif options.company_doc_ids:
+        lines.append(OPTION_POLICIES.format(n=len(options.company_doc_ids)))
+    if uses_individual_view(options):
+        lines.append(OPTION_INDIVIDUAL)
+    elif options.perspective == "business":
+        lines.append(OPTION_BUSINESS)
+    return ("\n\nTHE READER'S CHOICES FOR THIS REVIEW:\n" + "\n".join(f"- {x}" for x in lines)) if lines else ""
+
+
 def agent_system(pages: list[str], max_tools: int, vocabulary: dict[str, list[str]] | None = None,
-                 outline: bool = False) -> str:
+                 outline: bool = False, options=None) -> str:
     """The system prompt. `vocabulary` maps each contract type to the clause types its playbook covers.
     With `outline`, a long contract is replaced by its outline (a short one is always sent whole)."""
     contract = (contract_outline(pages) if outline else None) or contract_text(pages)
     text = AGENT_SYSTEM.format(contract=contract, max_tools=max_tools)
+    if not (outline and contract != contract_text(pages)):
+        text += REVIEW_RULES
     if vocabulary:
         lines = "\n".join(f"- {ctype}: {', '.join(clauses)}" for ctype, clauses in sorted(vocabulary.items()))
         text += CLAUSE_TYPES_HEADING.format(vocabulary=lines)
-    return text
+    return text + options_block(options)
 
 
 def research_transcript(steps: list[tuple[str, dict, str]], fixed: str | None = None) -> str:

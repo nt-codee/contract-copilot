@@ -77,7 +77,7 @@
         },
         "title": {
           "type": "string",
-          "description": "short plain label, e.g. 'Unlimited liability for you only'"
+          "description": "at most 8 words, a noun phrase naming the risk, e.g. 'Auto-renewal with 90-day notice'; never a sentence"
         },
         "risk": {
           "$ref": "#/$defs/Risk"
@@ -90,9 +90,16 @@
           "type": "integer",
           "minimum": 1
         },
+        "clause_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "the contract's own clause number for the quote, e.g. '3.3' or '5.1(b)'; null when the contract does not number its clauses"
+        },
         "why_risky": {
           "type": "string",
-          "description": "1-3 sentences, plain English, no legalese"
+          "description": "1-3 sentences, plain English, no legalese; the first sentence stands alone as a one-line summary (at most 25 words)"
         },
         "standard": {
           "type": "string",
@@ -633,6 +640,7 @@
         "action": {
           "enum": [
             "read_contract",
+            "plan_research",
             "search_law",
             "search_playbook",
             "search_company",
@@ -650,6 +658,18 @@
             "string",
             "null"
           ]
+        },
+        "start_ms": {
+          "type": ["integer", "null"],
+          "description": "Observed start offset from this review's monotonic origin; absent for legacy traces."
+        },
+        "turn": {
+          "type": ["integer", "null"],
+          "description": "One-based model turn, including the final drafting call."
+        },
+        "batch": {
+          "type": ["integer", "null"],
+          "description": "One-based parallel tool batch; absent on non-tool spans."
         },
         "ms": {
           "type": [
@@ -960,6 +980,70 @@
             "string",
             "null"
           ]
+        },
+        "options": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "the options the reader chose for this run (null on reviews made before options existed)"
+        }
+      }
+    },
+    "ReviewOptions": {
+      "type": "object",
+      "required": [],
+      "description": "Optional multipart form fields of POST /api/reviews, with these defaults when omitted or empty. Values are case-insensitive on input; the result records them as shown here.",
+      "properties": {
+        "contract_type": {
+          "enum": [
+            "auto",
+            "nda",
+            "service_agreement",
+            "employment",
+            "tenancy",
+            "hire_purchase"
+          ],
+          "default": "auto",
+          "description": "auto: the review decides. Otherwise the review uses this type and its playbook."
+        },
+        "jurisdiction": {
+          "enum": [
+            "auto",
+            "MY",
+            "SG"
+          ],
+          "default": "auto",
+          "description": "auto: the agent reads the governing-law clause. MY or SG locks the law checked, instead of the agent choosing it."
+        },
+        "apply_company_rules": {
+          "type": "boolean",
+          "default": true,
+          "description": "false: the workspace's company policies are not searched or cited in this review"
+        },
+        "perspective": {
+          "enum": [
+            "auto",
+            "business",
+            "individual"
+          ],
+          "default": "auto",
+          "description": "whose side the advice is written from. individual: an employee, tenant or hirer. auto behaves as individual when contract_type is employment, tenancy or hire_purchase, otherwise as business."
+        },
+        "company_doc_ids": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "default": null,
+          "description": "ids of the workspace's company policy documents to apply (form field: comma-separated). null: all of them. Ignored (null) when apply_company_rules is false."
         }
       }
     },
@@ -1122,7 +1206,8 @@
           "enum": [
             "finding",
             "citation",
-            "policy_breach"
+            "policy_breach",
+            "statement"
           ]
         },
         "reason": {
@@ -1130,12 +1215,16 @@
             "quote_not_found",
             "source_not_retrieved",
             "no_company_citation",
-            "wrong_jurisdiction"
+            "wrong_jurisdiction",
+            "ungrounded",
+            "citation_scope",
+            "remedy_scope",
+            "unsupported_severity"
           ]
         },
         "text": {
           "type": "string",
-          "description": "what the model claimed: title + quote, or the cited ref"
+          "description": "what the model claimed: title + quote, the cited ref, or a removed statement (explanation, ask or summary sentence)"
         },
         "page": {
           "type": [

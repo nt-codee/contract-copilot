@@ -27,6 +27,10 @@ EMBED_DIM = 768
 #   characters, approximated here at 4 chars/token = $0.10 per 1M tokens.
 PRICES_PER_1M: dict[str, tuple[float, float]] = {
     "gemini-3.8-flash": (0.75, 3.75),
+    # fallback model (LLM_FALLBACK_MODEL). $1.50 in / $9.00 out per 1M tokens: the official pricing page did
+    # not render in our fetch; four consistent third-party price pages (metatext.io, markaicode.com,
+    # thepricer.org, evolink.ai), read 2026-10-18 18:45 +08. Re-check against the official page.
+    "gemini-3.5-flash": (1.50, 9.00),
     "gemini-embedding-2": (0.20, 0.0),
     "text-multilingual-embedding-002": (0.10, 0.0),
 }
@@ -54,6 +58,8 @@ class Settings:
     embed_model: str = field(default_factory=lambda: _env("EMBED_MODEL", "gemini-embedding-2"))
     # Gemini 3 thinking level: "low" | "medium" | "high" | "" (model default). Thinking bills as output.
     gemini_thinking: str = field(default_factory=lambda: _env("GEMINI_THINKING", "low"))
+    # answers the retry of a stalled agent or review call ("" turns the fallback off)
+    llm_fallback_model: str = field(default_factory=lambda: os.environ.get("LLM_FALLBACK_MODEL", "gemini-3.5-flash").strip())
     embed_location: str = field(default_factory=lambda: _env("EMBED_LOCATION", "global"))
     upload_bucket: str = field(default_factory=lambda: _env("UPLOAD_BUCKET", ""))
     firestore_db: str = field(default_factory=lambda: _env("FIRESTORE_DB", "(default)"))
@@ -79,6 +85,8 @@ class Settings:
     dev_cors: bool = field(default_factory=lambda: _env("DEV_CORS", "") == "1")
     rate_limit_per_hour: int = field(default_factory=lambda: int(_env("RATE_LIMIT_PER_HOUR", "10")))  # per IP address
     rate_limit_user_per_hour: int = field(default_factory=lambda: int(_env("RATE_LIMIT_USER_PER_HOUR", "30")))  # per signed-in user
+    # Global cap on fresh model reviews per UTC day, across instances (uploads and sample refreshes; admins exempt).
+    max_model_reviews_per_day: int = field(default_factory=lambda: int(_env("MAX_MODEL_REVIEWS_PER_DAY", "300")))
     # Content-Security-Policy: report-only (default), enforce, or off. Report-only never blocks anything.
     csp_mode: str = field(default_factory=lambda: _env("CSP_MODE", "report-only"))
 

@@ -13,29 +13,27 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
+from typing import Callable
 
 import pymupdf
-from rapidfuzz import fuzz
 
-from app import prompts, provenance
+from app import calibration, grounding, prompts, provenance, quotes
 from app.agent import Toolbox, Trace, fill_cited, run_agent
 from app.audit import Audit
 from app.config import DEMO_OWNER, DISCLAIMER, Settings, estimate_cost
 from app.knowledge import _STOP as STOPWORDS
-from app.knowledge import Knowledge
+from app.knowledge import Knowledge, LawEntry
 from app.playbook_overrides import PlaybookOverrideStore
 from app.models import (
     RISK_ORDER, Citation, CompanyDoc, Finding, KeyDate, LLMBoxes, LLMCitation, LLMFinding, LLMKeyDate,
-    LLMNegotiation, LLMTranscription, Metrics, NegotiationAsk, NegotiationDraft, RemovedClaim, ReviewResult, SearchHit, Verdict, Verification,
+    LLMNegotiation, LLMTranscription, Metrics, NegotiationAsk, NegotiationDraft, RemovedClaim, ReviewOptions, ReviewResult, SearchHit, Verdict, Verification,
 )
 from app.ports import (LLM, AuthVerifier, BlobStore, Chunk, CompanyChunk, CompanyStore, Embedder, LLMUsage,
-                       PdfPart, ReviewStore, SearchIndex, UserStore, WorkspaceStore)
+                       PdfPart, ReviewStore, SearchIndex, SpendCounter, UserStore, WorkspaceStore)
 
 log = logging.getLogger("cc.pipeline")
 
 MIN_CHARS_PER_PAGE = 50
-FUZZY_THRESHOLD = 90
-MIN_QUOTE_CHARS = 12
 CHUNK_CHARS = 800
 
 
@@ -66,6 +64,7 @@ class Services:
     kb_version: str  # content hash of knowledge/, computed once at startup
     prompt_version: str
     overrides: "PlaybookOverrideStore | None" = None  # workspace playbook overrides (None: defaults only)
+    spend: "SpendCounter | None" = None  # daily cap on fresh model reviews (None: no cap)
 
 
 # ---- 1. validate and extract -----------------------------------------------------------------
@@ -92,6 +91,86 @@ def validate_pdf(pdf_bytes: bytes, settings: Settings) -> pymupdf.Document:
         raise UserError(422, "too_many_pages",
                         f"That PDF has {doc.page_count} pages. The limit is {settings.max_pages} pages.")
     return doc
+
+
+# Contract photos and scans: one image is one page. Recognised by magic bytes, never by the file name.
+IMAGE_TYPES = {"jpeg": "image/jpeg", "png": "image/png"}  # what PyMuPDF 1.28 can open and convert
+MAX_IMAGE_PIXELS = 50_000_000  # about a 50 MP photo; refuses decompression bombs before decoding
+NOT_SUPPORTED = ("That file is not a PDF, JPEG or PNG. Please upload the contract as a PDF, "
+                 "or a photo of one page as a JPEG or PNG.")
+UNSUPPORTED_IMAGE = ("We cannot read {name} images yet. Please save the photo as a JPEG or PNG, "
+                     "or upload the contract as a PDF.")
+
+
+def sniff(data: bytes) -> str | None:
+    """'pdf', 'jpeg', 'png', 'webp', 'heic' from the first bytes; None for anything else."""
+    if data.lstrip()[:5].startswith(b"%PDF-"):
+        return "pdf"
+    if data[:3] == b"\xff\xd8\xff":
+        return "jpeg"
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "webp"
+    if data[4:8] == b"ftyp" and data[8:12] in (b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis",
+                                                  b"mif1", b"msf1"):
+        return "heic"
+    return None
+
+
+def image_to_pdf(data: bytes, settings: Settings) -> bytes:
+    """One JPEG or PNG -> a one-page PDF at the image's own size (PyMuPDF; EXIF rotation applied), so it
+    takes the scanned path: the model transcribes it and boxes come back in page coordinates."""
+    if len(data) > settings.max_bytes:
+        raise UserError(413, "file_too_large",
+                        f"That file is larger than {settings.max_bytes // (1024 * 1024)} MB. "
+                        "Please upload a smaller image.")
+    try:
+        img = pymupdf.open(stream=data)
+    except Exception:
+        raise UserError(422, "unreadable_image",
+                        "We could not open that image. It may be damaged; please try another copy.") from None
+    try:
+        r = img[0].rect  # points: the pixels at the image's own resolution, read without decoding
+        w, h = _pixel_size(data)
+        if (w * h if w and h else r.width * r.height * (96 / 72) ** 2) > MAX_IMAGE_PIXELS:
+            raise UserError(422, "image_too_large",
+                            "That image has too many pixels. Please upload a smaller photo of the page.")
+        return img.convert_to_pdf()
+    except UserError:
+        raise
+    except Exception:
+        raise UserError(422, "unreadable_image",
+                        "We could not open that image. It may be damaged; please try another copy.") from None
+    finally:
+        img.close()
+
+
+def _pixel_size(data: bytes) -> tuple[int, int]:
+    """Width and height in pixels from a PNG IHDR or a JPEG SOF header; (0, 0) if not found."""
+    if data[:8] == b"\x89PNG\r\n\x1a\n" and data[12:16] == b"IHDR":
+        return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    i = 2
+    while data[:2] == b"\xff\xd8" and i + 9 < len(data):
+        if data[i] != 0xFF:
+            break
+        marker, size = data[i + 1], int.from_bytes(data[i + 2:i + 4], "big")
+        if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+            return int.from_bytes(data[i + 7:i + 9], "big"), int.from_bytes(data[i + 5:i + 7], "big")
+        i += 2 + size
+    return 0, 0
+
+
+def contract_pdf(data: bytes, settings: Settings) -> tuple[bytes, str]:
+    """The upload as PDF bytes, and what it was ('pdf', 'jpeg', 'png'). Other types are refused."""
+    kind = sniff(data)
+    if kind == "pdf":
+        return data, kind
+    if kind in IMAGE_TYPES:
+        return image_to_pdf(data, settings), kind
+    if kind in ("webp", "heic"):
+        raise UserError(415, "not_a_pdf", UNSUPPORTED_IMAGE.format(name=kind.upper()))
+    raise UserError(415, "not_a_pdf", NOT_SUPPORTED)
 
 
 def extract_pages(doc: pymupdf.Document) -> list[str]:
@@ -153,32 +232,16 @@ def _clean_span(text: str) -> str:
     return " ".join(text.split())
 
 
-def match_on_page_detail(quote: str, page_text: str) -> tuple[str, str, float] | None:
+def match_on_page_detail(quote: str, page_text: str,
+                         repeated: set[str] | None = None) -> tuple[str, str, float] | None:
     """(matching original span of `page_text`, how it matched, score 0-100), or None.
 
-    How: "exact" = the quote is on the page character for character; "normalised" = only case,
-    whitespace, quotes or dashes differ; "fuzzy" = close enough by the similarity score.
+    How: "exact" = the quote is on the page character for character; "normalised" = the same letters
+    and digits once Unicode forms, ligatures, quotes, dashes, spacing, hyphenation and page furniture are
+    evened out (app/quotes.py); "fuzzy" = a window of the page scores >= quotes.FUZZY_THRESHOLD.
     """
-    nq = normalise(quote)
-    np_, idx = _norm_map(page_text)
-    if len(nq) < MIN_QUOTE_CHARS or not np_:
-        return None
-    pos = np_.find(nq)
-    if pos >= 0:
-        span = _clean_span(page_text[idx[pos]: idx[pos + len(nq) - 1] + 1])
-        return span, ("exact" if quote.strip() in page_text else "normalised"), 100.0
-    if len(nq) > len(np_):
-        return None
-    al = fuzz.partial_ratio_alignment(nq, np_, score_cutoff=FUZZY_THRESHOLD)
-    if al is None or al.dest_end <= al.dest_start:
-        return None
-    start, end = idx[al.dest_start], idx[al.dest_end - 1] + 1
-    # widen to whole words so the displayed quote never starts or ends mid-word
-    while start > 0 and not page_text[start - 1].isspace():
-        start -= 1
-    while end < len(page_text) and not page_text[end].isspace():
-        end += 1
-    return _clean_span(page_text[start:end]), "fuzzy", round(float(al.score), 1)
+    hit = quotes.match_text(quote, page_text, repeated)
+    return (hit.span, hit.how, hit.score, hit.start) if hit else None
 
 
 def match_on_page(quote: str, page_text: str) -> str | None:
@@ -194,15 +257,29 @@ class QuoteHit:
     how: str
     score: float
     corrected_from: int | None  # the page the model claimed, when the quote was on a neighbouring page
+    start: int = 0  # offset of the quote in its page's text
 
 
-def verify_quote_detail(quote: str, page: int, pages: list[str]) -> QuoteHit | None:
-    """Find `quote` on the claimed page, else on page-1 / page+1."""
+def page_furniture(pages: list[str]) -> set[str]:
+    """Running headers and footers: short lines repeated on most pages (see quotes.furniture)."""
+    return quotes.furniture([quotes.tokenize(p) for p in pages])
+
+
+def verify_quote_detail(quote: str, page: int, pages: list[str],
+                        repeated: set[str] | None = None) -> QuoteHit | None:
+    """Find `quote` on the claimed page, else on page-1 / page+1, else running from one of those pages
+    onto the next (exact only; the hit's page is the one the quote starts on)."""
+    repeated = page_furniture(pages) if repeated is None else repeated
     for candidate in (page, page - 1, page + 1):
         if 1 <= candidate <= len(pages):
-            hit = match_on_page_detail(quote, pages[candidate - 1])
+            hit = match_on_page_detail(quote, pages[candidate - 1], repeated)
             if hit is not None:
-                return QuoteHit(candidate, hit[0], hit[1], hit[2], page if candidate != page else None)
+                return QuoteHit(candidate, hit[0], hit[1], hit[2], page if candidate != page else None, hit[3])
+    for start in (page, page - 1):
+        if 1 <= start < len(pages):
+            hit = quotes.match_across(quote, pages[start - 1], pages[start], repeated)
+            if hit is not None:
+                return QuoteHit(start, hit.span, hit.how, hit.score, page if start != page else None, hit.start)
     return None
 
 
@@ -220,16 +297,49 @@ def fallback_prefix(home: str) -> str:
     return f"If disputed in {JURISDICTION_NAME.get(home, 'Malaysia')}: "
 
 
+# the reader is a freelancer or contractor, not an employee, by the contract's own words
+CONTRACTOR = re.compile(r"independent contractor|kontraktor bebas|\bfreelancer\b|not an employee|bukan (?:seorang )?"
+                        r"pekerja|contract for services|kontrak untuk perkhidmatan|tiada hubungan (?:majikan|pekerjaan)",
+                        re.I)
+# a finding that states when an employee-only statute applies
+EMPLOYEE_CONDITION = re.compile(r"\bif (?:you are|you're|the \w+ is|they are)\b[^.]{0,30}\bemployee\b|"
+                                r"\bonly (?:applies to|protects|covers) employees\b|\bemployee status\b|"
+                                r"\bwhether you (?:are|count as) an employee\b|\bif (?:the )?employment act[^.]{0,20}"
+                                r"(?:applies|covers)\b|\bif (?:this|the agreement) is (?:in substance |really )?a "
+                                r"contract of service\b", re.I)
+
+
+def is_contractor(pages: list[str]) -> bool:
+    return any(CONTRACTOR.search(p) for p in pages)
+
+
+def policy_quoted(raw: list[LLMCitation], known: dict[str, list[Citation]]) -> bool:
+    """True if the model quoted the words of a retrieved company rule (its excerpt is in that rule's text)."""
+    for c in raw:
+        if c.kind != "company" or len(c.excerpt.strip()) < 12:
+            continue
+        for rec in known.get(c.ref.strip(), []):
+            if rec.kind == "company" and quotes.match_text(c.excerpt, rec.excerpt) is not None:
+                return True
+    return False
+
+
 def verify_citations(raw: list[LLMCitation], known: dict[str, list[Citation]], *,
                      removed: list[RemovedClaim] | None = None,
                      finding_title: str | None = None, jurisdiction: str | None = None,
-                     home: str = "my") -> tuple[list[Citation], int]:
+                     home: str = "my", clause_type: str | None = None, quote: str = "",
+                     contractor: bool = False, why: str = "",
+                     law_by_id: Callable[[str], LawEntry | None] | None = None) -> tuple[list[Citation], int]:
     """Keep a citation only if a tool returned its ref in this run, and take every displayed field
     (kind, title, excerpt, url, jurisdiction, page) from that KB record, never from the model.
 
     With `jurisdiction` (the review's), a law or case is also dropped unless it is that country's law:
     a Malaysian contract is not judged on Singapore law, nor the reverse. Under a foreign law
-    ("other") the home country's law is allowed as a fallback and its title says so."""
+    ("other") the home country's law is allowed as a fallback and its title says so.
+
+    With `law_by_id` and `clause_type`, a law or case is also dropped unless its entry's `supports`
+    scope covers that clause type and the finding's `quote` (reason citation_scope): being in the
+    library is not enough, the entry must back this kind of claim."""
     kept: list[Citation] = []
     dropped = 0
     for c in raw:
@@ -253,6 +363,17 @@ def verify_citations(raw: list[LLMCitation], known: dict[str, list[Citation]], *
                     removed.append(RemovedClaim(kind="citation", reason="wrong_jurisdiction", text=c.ref,
                                                 finding_title=finding_title))
                 continue
+        entry = law_by_id(rec.ref) if law_by_id and clause_type and rec.kind in ("law", "case") else None
+        # an employee-only statute on a freelance or contractor agreement: kept only if the finding says so
+        not_for_them = (entry is not None and contractor and entry.applies_to == "employee"
+                        and not EMPLOYEE_CONDITION.search(why))
+        if entry is not None and (not entry.supports_claim(clause_type, quote) or not_for_them):
+            dropped += 1
+            log.info("dropped citation %r: does not support a %s claim", c.ref, clause_type)
+            if removed is not None:
+                removed.append(RemovedClaim(kind="citation", reason="citation_scope", text=c.ref,
+                                            finding_title=finding_title))
+            continue
         if any(k.ref == rec.ref and k.page == rec.page for k in kept):
             continue  # the same source cited twice for one finding
         rec = rec.model_copy()
@@ -262,10 +383,25 @@ def verify_citations(raw: list[LLMCitation], known: dict[str, list[Citation]], *
     return kept, dropped
 
 
+def add_caveats(findings: list[Finding], law_by_id: Callable[[str], LawEntry | None]) -> None:
+    """Append each cited entry's caveat (for example the Hire-Purchase Act version warning) to the
+    finding's explanation, once. Runs after grounding: the caveat is the library's words, not a claim
+    about the contract."""
+    for f in findings:
+        notes: list[str] = []
+        for c in f.citations:
+            e = law_by_id(c.ref) if c.kind in ("law", "case") else None
+            if e is not None and e.caveat and e.caveat not in notes and e.caveat not in f.why_risky:
+                notes.append(e.caveat)
+        if notes:
+            f.why_risky = " ".join([f.why_risky.strip(), *notes])
+
+
 def verify_findings(raw: list[LLMFinding], pages: list[str],
                     known: dict[str, list[Citation]] | None = None, *, kb_version: str | None = None,
                     removed: list[RemovedClaim] | None = None, jurisdiction: str | None = None,
-                    home: str = "my") -> tuple[list[Finding], int, int]:
+                    home: str = "my", law_by_id: Callable[[str], LawEntry | None] | None = None,
+                    consequences: dict[str, str] | None = None) -> tuple[list[Finding], int, int]:
     """Quote verification (drop a finding with no real quote) and citation verification.
 
     Returns (findings, dropped_findings, dropped_citations). Every claim that is removed is appended to
@@ -275,8 +411,10 @@ def verify_findings(raw: list[LLMFinding], pages: list[str],
     removed = removed if removed is not None else []
     kept: list[tuple[LLMFinding, QuoteHit]] = []
     dropped = 0
+    repeated = page_furniture(pages)
+    contractor = is_contractor(pages)
     for f in raw:
-        hit = verify_quote_detail(f.quote, f.page, pages)
+        hit = verify_quote_detail(f.quote, f.page, pages, repeated)
         if hit is None:
             dropped += 1
             log.info("dropped unverified finding on p%s (%s)", f.page, f.clause_type)
@@ -289,22 +427,60 @@ def verify_findings(raw: list[LLMFinding], pages: list[str],
     dropped_citations = 0
     for i, (f, hit) in enumerate(kept, start=1):
         cites, n = verify_citations(f.citations, known, removed=removed, finding_title=f.title,
-                                    jurisdiction=jurisdiction, home=home)
+                                    jurisdiction=jurisdiction, home=home, clause_type=f.clause_type,
+                                    quote=hit.span, law_by_id=law_by_id, contractor=contractor,
+                                    why=f.why_risky)
         dropped_citations += n
         # a policy breach is a claim about the user's own rules: keep it only if one is cited
+        # a policy breach is asserted only when both are quoted: the clause (verified above) and the rule
         breach = f.policy_breach.strip()
-        if breach and not any(c.kind == "company" for c in cites):
+        if breach and not (any(c.kind == "company" for c in cites) and policy_quoted(f.citations, known)):
             removed.append(RemovedClaim(kind="policy_breach", reason="no_company_citation", text=breach,
                                         page=hit.page, finding_title=f.title))
             breach = ""
+        if consequences is not None:
+            consequences[f"f{i}"] = f.consequence
         findings.append(Finding(
-            id=f"f{i}", clause_type=f.clause_type, title=f.title, risk=f.risk, quote=hit.span, page=hit.page,
+            id=f"f{i}", clause_type=f.clause_type, title=f.title.strip(), risk=f.risk, quote=hit.span, page=hit.page,
+            clause_ref=pick_clause_ref(f.clause_ref, pages[hit.page - 1], hit.start, pages),
             why_risky=f.why_risky, standard=f.standard, suggested_ask=f.suggested_ask,
             baseline_ref=f.baseline_ref or None, citations=cites, policy_breach=breach or None,
             verification=Verification(quote_match=hit.how, score=hit.score,  # type: ignore[arg-type]
                                       page_corrected_from=hit.corrected_from,
                                       citations_checked=len(f.citations), kb_version=kb_version)))
     return findings, dropped, dropped_citations
+
+
+# a clause number at the start of a line, followed by a capital, a quote or a bracket: "5.1 The ...",
+# "7. TERMINATION", "Fasal 3 (a)". A wrapped line that starts "12 months after ..." is not a clause.
+_HEAD_NO = re.compile(r"(?m)^[ \t]*(?:(?i:clause|fasal|klausa|section|seksyen)[ \t]+)?"
+                      r"(\d{1,2}(?:\.\d{1,2}){0,3})[.)]?[ \t]+[\"\u201c(A-Z]")
+_REF_NO = re.compile(r"\d{1,2}(?:\.\d{1,2}){0,3}(?:\s*\([a-z0-9]{1,4}\))*", re.I)
+
+
+def clause_number(page_text: str, offset: int) -> str | None:
+    """The number of the clause the text at `offset` belongs to: the last line-start number ('5.1',
+    '7.', '12)') at or before it on the page. None when the page numbers no lines before it."""
+    best = None
+    for m in _HEAD_NO.finditer(page_text):
+        if m.start(1) > offset:
+            break
+        best = m.group(1)
+    return best
+
+
+def pick_clause_ref(model_ref: str, page_text: str, offset: int, pages: list[str]) -> str | None:
+    """The finding's clause number. The one read off the page wins; the model's is kept only when it
+    refines it ('5.1(b)' for '5.1') or, if the page gave none, when that number occurs in the contract.
+    Never a number the contract does not contain."""
+    found = clause_number(page_text, offset)
+    m = _REF_NO.search(model_ref or "")
+    given = re.sub(r"\s+", "", m.group(0)) if m else ""
+    if found:
+        return given if given and given != found and given.startswith(found + "(") else found
+    if given and any(re.search(rf"(?<![\d.]){re.escape(given)}(?![\d])", p) for p in pages):
+        return given
+    return None
 
 
 def locate_company_boxes(svc: Services, findings: list[Finding], owner: str) -> None:
@@ -433,12 +609,34 @@ def _normalised(lines: list[pymupdf.Rect], page_rect: pymupdf.Rect) -> list[list
     return out
 
 
-def locate_boxes(page: pymupdf.Page, quote: str) -> list[list[float]]:
-    """Where `quote` sits on `page` as normalised line rects; [] when it cannot be found."""
+def _word_lines(words: list[tuple], idx: list[int]) -> list[pymupdf.Rect]:
+    """Union the chosen words per text line (PyMuPDF block, line), in reading order. Per line, not by
+    height alone, so a quote in one column never takes in words from the column beside it."""
+    lines: dict[tuple[int, int], pymupdf.Rect] = {}
+    for i in idx:
+        x0, y0, x1, y1, _, block, line, *_ = words[i]
+        r = pymupdf.Rect(x0, y0, x1, y1)
+        if (block, line) in lines:
+            lines[(block, line)].include_rect(r)
+        else:
+            lines[(block, line)] = r
+    return list(lines.values())
+
+
+def locate_boxes(page: pymupdf.Page, quote: str, repeated: set[str] | None = None) -> list[list[float]]:
+    """Where `quote` sits on `page` as normalised line rects; [] when it cannot be found.
+
+    First the token matcher over the page's words (the same normalisation as verification, so
+    ligatures, hyphenation, footers and columns do not break it; a quote that runs onto the next page is
+    boxed by the part on this page), then PyMuPDF's own search as a fallback."""
     quote = _clean_span(quote)
     if not quote:
         return []
     try:
+        words = page.get_text("words")
+        idx = quotes.match_words(quote, words, repeated=repeated, prefix_ok=True)
+        if idx:
+            return _normalised(_word_lines(words, idx), page.rect)
         hits = page.search_for(quote)
         if hits:
             return _normalised(_merge_lines(hits), page.rect)
@@ -567,20 +765,22 @@ def index_review(svc: Services, review: ReviewResult, pages: list[str]) -> int:
 
 
 def review(svc: Services, pdf_bytes: bytes, filename: str, sample_id: str | None = None,
-           owner: str = DEMO_OWNER, created_by: str | None = None) -> ReviewResult:
-    """Review a PDF into workspace `owner`, run by member `created_by`."""
+           owner: str = DEMO_OWNER, created_by: str | None = None,
+           options: ReviewOptions | None = None) -> ReviewResult:
+    """Review a PDF into workspace `owner`, run by member `created_by`, with the reader's `options`."""
     t0 = time.monotonic()
     doc = validate_pdf(pdf_bytes, svc.settings)
     try:
-        return _review(svc, doc, pdf_bytes, filename, sample_id, t0, owner, created_by)
+        return _review(svc, doc, pdf_bytes, filename, sample_id, t0, owner, created_by, options or ReviewOptions())
     finally:
         doc.close()
 
 
 def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: str,
-            sample_id: str | None, t0: float, owner: str, created_by: str | None) -> ReviewResult:
+            sample_id: str | None, t0: float, owner: str, created_by: str | None,
+            options: ReviewOptions) -> ReviewResult:
     page_count = doc.page_count
-    trace = Trace()
+    trace = Trace(origin=t0)
     t_read = time.monotonic()
     pages = extract_pages(doc)
 
@@ -596,16 +796,20 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
                             "We could not read any text in that PDF. Please upload a clearer copy.")
     trace.add("read_contract", f"Read the contract ({page_count} page{'s' if page_count != 1 else ''})",
               "scanned copy: read with AI text recognition" if scanned else None,
-              (time.monotonic() - t_read) * 1000)
+              (time.monotonic() - t_read) * 1000, start=t_read)
 
     home = svc.settings.home_jurisdiction
     tools = Toolbox(svc.kb, svc.company, svc.embedder, pages, owner=owner, overrides=svc.overrides, home=home)
-    agent = run_agent(svc.llm, tools, pages, trace)
+    agent = run_agent(svc.llm, tools, pages, trace, options=options)
     out = agent.review
     usage.add(agent.usage)
     # the jurisdiction fixed during research wins over the model's final word; both default to "my"
     jurisdiction = agent.jurisdiction or out.jurisdiction.strip().lower()
     jurisdiction = jurisdiction if jurisdiction in ("my", "sg", "other") else "my"
+    chosen = [f"{k}={len(v) if k == 'company_doc_ids' else v}" for k, v in options.model_dump().items()
+              if v != ReviewOptions.model_fields[k].default]
+    if chosen:  # what the reader set, shown with the other facts about how the contract was read
+        trace.steps[0].detail = " | ".join(x for x in (trace.steps[0].detail, "set by the reader: " + ", ".join(chosen)) if x)
     if agent.outlined:
         trace.steps[0].detail = " | ".join(x for x in (trace.steps[0].detail, "long contract: planned from an outline, "
                                                        "reviewed in full") if x)
@@ -615,47 +819,73 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
 
     t_verify = time.monotonic()
     removed: list[RemovedClaim] = []
+    consequences: dict[str, str] = {}
     kb_version = svc.kb_version  # the same content hash the provenance records
     findings, dropped, dropped_cites = verify_findings(out.findings, pages, agent.known,
                                                        kb_version=kb_version, removed=removed,
-                                                       jurisdiction=jurisdiction, home=home)
+                                                       jurisdiction=jurisdiction, home=home,
+                                                       law_by_id=svc.kb.law_by_id, consequences=consequences)
+    missing = [m.model_copy() for m in out.missing_clauses]
+    model_summary = [s.strip() for s in out.verdict.summary if s.strip()][:3]
+    n_before = len(removed)
+    kept_summary = grounding.ground_review(findings, missing, model_summary, pages, jurisdiction, removed)
+    contract_text, numbers = "\n".join(pages), grounding.contract_numbers(pages)
+    overall, headline, kept_summary = calibration.calibrate_review(
+        findings, consequences, kept_summary, out.verdict.headline.strip(), pages, removed,
+        lambda s: not grounding.ungrounded_numbers(s, numbers) and not grounding.unsupported_terms(s, contract_text))
+    findings.sort(key=lambda f: (RISK_ORDER[f.risk], f.page))  # demoted findings move down
+    for i, f in enumerate(findings, start=1):
+        f.id = f"f{i}"
+    n_grounding = len(removed) - n_before
+    if overall != out.verdict.overall_risk:
+        trace.steps[0].detail = " | ".join(x for x in (trace.steps[0].detail, (
+            f"overall risk {overall}, from the findings (the model said {out.verdict.overall_risk})")) if x)
+    add_caveats(findings, svc.kb.law_by_id)
     locate_company_boxes(svc, findings, owner)
     fill_cited(trace.steps, {c.ref for f in findings for c in f.citations})
     if scanned:
         usage.add(boxes_from_llm(svc.llm, doc, findings))
     else:
+        repeated = page_furniture(pages)
         for f in findings:
-            f.boxes = locate_boxes(doc[f.page - 1], f.quote)
+            f.boxes = locate_boxes(doc[f.page - 1], f.quote, repeated)
     n_cites = sum(len(f.citations) for f in findings)
     trace.add("verify", "Checked every quote against the contract and every source against the library",
               f"kept {len(findings)} findings and {n_cites} sources; dropped {dropped} unsupported findings "
-              f"and {dropped_cites} unverified sources", (time.monotonic() - t_verify) * 1000)
+              f"and {dropped_cites} unverified sources; removed {n_grounding} statements not found in the contract",
+              (time.monotonic() - t_verify) * 1000, start=t_verify)
     key_dates = build_key_dates(out.key_dates, findings, page_count)
-    headline = out.verdict.headline.strip()
     if len(headline) > 160:
         headline = headline[:157].rstrip() + "..."
-    summary = [s.strip() for s in out.verdict.summary if s.strip()][:3] or [headline]
+    summary = kept_summary or [headline]
     if jurisdiction == "other":  # the reader must know the law checked is only a fallback
         law = (agent.governing_law or "a foreign law").rstrip(". ")
         summary = summary[:2] + [f"This contract is governed by {law}; we check it against "
                                  f"{JURISDICTION_ADJECTIVE.get(home, 'Malaysian')} law only as a fallback."]
+
+    # the model that wrote the findings: the fallback when it answered the review call (the primary stalled)
+    answered_by = usage.fallback_model if usage.fallback_model and "review" in usage.fallback_purposes else svc.llm.model
+    if usage.fallback_purposes:
+        trace.steps[0].detail = " | ".join(x for x in (trace.steps[0].detail, (
+            f"answered by fallback model {usage.fallback_model} ({', '.join(dict.fromkeys(usage.fallback_purposes))}): "
+            f"{svc.llm.model} did not respond")) if x)
 
     review_id = uuid.uuid4().hex[:12]
     chash = provenance.content_hash(pdf_bytes)
     earlier = svc.store.runs_of(chash, owner=owner)  # newest first
     result = ReviewResult(
         id=review_id, created_at=datetime.now(timezone.utc), filename=filename, sample_id=sample_id,
-        contract_type=out.contract_type, language=out.language.strip().lower()[:5] or "en",
+        contract_type=out.contract_type if options.contract_type == "auto" else options.contract_type, language=out.language.strip().lower()[:5] or "en",
         pages=page_count, parties=out.parties,
-        verdict=Verdict(overall_risk=out.verdict.overall_risk, headline=headline, summary=summary),
-        findings=findings, missing_clauses=out.missing_clauses,
-        metrics=Metrics(latency_ms=0, model=svc.llm.model, dropped_unverified=dropped,
+        verdict=Verdict(overall_risk=overall, headline=headline, summary=summary),
+        findings=findings, missing_clauses=missing,
+        metrics=Metrics(latency_ms=0, model=answered_by, dropped_unverified=dropped,
                         dropped_unverified_citations=dropped_cites),
         disclaimer=DISCLAIMER, jurisdiction=jurisdiction, trace=trace.steps, key_dates=key_dates,
         removed=removed,
         owner=owner, created_by=created_by, content_hash=chash, previous_review_id=earlier[0].id if earlier else None,
-        provenance=provenance.build(svc.llm.model, svc.kb_version, svc.prompt_version,
-                                    svc.settings.app_version),
+        provenance=provenance.build(answered_by, svc.kb_version, svc.prompt_version,
+                                    svc.settings.app_version, options),
     )
 
     svc.blobs.put(f"uploads/{review_id}.pdf", pdf_bytes)
@@ -667,12 +897,15 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
         log.exception("indexing failed for review %s", review_id)
 
     cost = estimate_cost(usage.model, usage.input_tokens, usage.output_tokens)
+    if usage.fallback_model and cost is not None:
+        fb = estimate_cost(usage.fallback_model, usage.fallback_input_tokens, usage.fallback_output_tokens)
+        cost = cost + fb if fb is not None else None
     embed_cost = estimate_cost(svc.embedder.model, embed_tokens, 0)
     if cost is not None and embed_cost is not None:
         cost += embed_cost
     result.metrics = Metrics(
-        latency_ms=int((time.monotonic() - t0) * 1000), model=usage.model,
-        input_tokens=usage.input_tokens, output_tokens=usage.output_tokens,
+        latency_ms=int((time.monotonic() - t0) * 1000), model=answered_by,
+        input_tokens=usage.total_input, output_tokens=usage.total_output,
         cost_usd_est=round(cost, 6) if cost is not None else None, dropped_unverified=dropped,
         dropped_unverified_citations=dropped_cites,
     )
@@ -712,6 +945,7 @@ def audit_review(svc: Services, actor: str, result: ReviewResult, **extra) -> No
         actor, "re_reviewed" if result.previous_review_id else "reviewed", result.id, result.filename,
         {"model": p.model if p else None, "kb_version": p.kb_version if p else None,
          "prompt_version": p.prompt_version if p else None, "findings": len(result.findings),
+         "options": p.options.model_dump() if p and p.options else None,
          "latency_ms": result.metrics.latency_ms, "previous_review_id": result.previous_review_id, **extra},
         workspace_id=result.owner)
 
@@ -830,7 +1064,8 @@ def negotiation(svc: Services, review: ReviewResult) -> NegotiationDraft:
     items = [
         {"finding_id": f.id, "title": f.title, "risk": f.risk, "quote": f.quote,
          "suggested_ask": f.suggested_ask,
-         "where": clause_label(pages[f.page - 1], f.quote, f.page) if 1 <= f.page <= len(pages)
+         "where": f"Clause {f.clause_ref} (page {f.page})" if f.clause_ref
+         else clause_label(pages[f.page - 1], f.quote, f.page) if 1 <= f.page <= len(pages)
          else f"Page {f.page}",
          # law is context only when it governs the contract; fallback law on a foreign-law contract is not
          "context": [c.title for c in f.citations if c.kind in ("law", "case")][:2]

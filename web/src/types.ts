@@ -50,6 +50,7 @@ export interface Finding {
   standard: string;
   suggested_ask: string;
   baseline_ref?: string | null;
+  clause_ref?: string | null;
   /**
    * Where the quote sits on `page`: one [x0, y0, x1, y1] per line fragment,
    * normalised 0-1 to the page, top-left origin. Empty when not located.
@@ -73,10 +74,18 @@ export interface Verification {
   kb_version?: string | null;
 }
 
-export type RemovedReason = "quote_not_found" | "source_not_retrieved" | "no_company_citation" | "wrong_jurisdiction";
+export type RemovedReason =
+  | "quote_not_found"
+  | "source_not_retrieved"
+  | "no_company_citation"
+  | "wrong_jurisdiction"
+  | "ungrounded"
+  | "citation_scope"
+  | "remedy_scope"
+  | "unsupported_severity";
 
 export interface RemovedClaim {
-  kind: "finding" | "citation" | "policy_breach";
+  kind: "finding" | "citation" | "policy_breach" | "statement";
   reason: RemovedReason;
   /** what the model claimed */
   text: string;
@@ -84,7 +93,18 @@ export interface RemovedClaim {
   finding_title?: string | null;
 }
 
+/** What the reader chose on upload; defaults are "auto" / true. */
+export interface ReviewOptions {
+  contract_type: "auto" | "nda" | "service_agreement" | "employment" | "tenancy" | "hire_purchase";
+  jurisdiction: "auto" | "MY" | "SG";
+  apply_company_rules: boolean;
+  perspective: "auto" | "business" | "individual";
+  /** null = every policy */
+  company_doc_ids?: string[] | null;
+}
+
 export interface Provenance {
+  options?: ReviewOptions | null;
   model: string;
   /** content hash of the knowledge base at review time */
   kb_version: string;
@@ -124,6 +144,7 @@ export interface TraceDetail {
 
 export type TraceAction =
   | "read_contract"
+  | "plan_research"
   | "search_law"
   | "search_playbook"
   | "search_company"
@@ -138,6 +159,11 @@ export interface TraceStep {
   summary: string;
   detail?: string | null;
   ms?: number | null;
+  /** Elapsed milliseconds from the review's single monotonic origin; absent on older runs. */
+  start_ms?: number | null;
+  /** Recorded model turn and parallel tool batch identifiers; never inferred by the UI. */
+  turn?: number | null;
+  batch?: number | null;
 }
 
 export interface CompanyDoc {

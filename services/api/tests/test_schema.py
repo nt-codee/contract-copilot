@@ -31,6 +31,16 @@ def test_enums_match_schema(alias, defname):
     assert list(get_args(alias)) == SCHEMA["$defs"][defname]["enum"]
 
 
+def test_review_option_enums_and_defaults_match_schema():
+    props = SCHEMA["$defs"]["ReviewOptions"]["properties"]
+    for field in ("contract_type", "jurisdiction", "perspective"):
+        assert list(get_args(models.ReviewOptions.model_fields[field].annotation)) == props[field]["enum"], field
+        assert models.ReviewOptions.model_fields[field].default == props[field]["default"]
+    assert models.ReviewOptions().apply_company_rules is True and props["apply_company_rules"]["default"] is True
+    assert models.ReviewOptions().company_doc_ids is None and props["company_doc_ids"]["default"] is None
+    assert SCHEMA["$defs"]["Provenance"]["properties"]["options"]["anyOf"][0] == {"$ref": "#/$defs/ReviewOptions"}
+
+
 def test_nested_enums_match_schema():
     defs = SCHEMA["$defs"]
     assert list(get_args(models.AuditAction)) == defs["AuditEvent"]["properties"]["action"]["enum"]
@@ -44,7 +54,7 @@ def test_nested_enums_match_schema():
     (models.ReviewSummary, "ReviewSummary"), (models.NegotiationDraft, "NegotiationDraft"),
     (models.SearchHit, "SearchHit"), (models.Sample, "Sample"),
     (models.Citation, "Citation"), (models.KeyDate, "KeyDate"), (models.KnowledgeEntry, "KnowledgeEntry"), (models.TraceStep, "TraceStep"), (models.CompanyDoc, "CompanyDoc"),
-    (models.User, "User"), (models.AuditEvent, "AuditEvent"), (models.Provenance, "Provenance"),
+    (models.User, "User"), (models.AuditEvent, "AuditEvent"), (models.Provenance, "Provenance"), (models.ReviewOptions, "ReviewOptions"),
 ])
 def test_model_fields_match_schema(model, defname):
     spec = SCHEMA["$defs"][defname]

@@ -51,7 +51,7 @@ export default function HeroVisual() {
         {/* Page 3 peeking out behind. */}
         <div className="sheet absolute inset-y-4 left-4 right-14 rotate-[1.8deg] opacity-80 sm:right-[6.5rem]" />
 
-        <div className="sheet relative mr-14 px-5 pb-12 pt-6 font-doc text-[0.8rem] leading-[1.5] text-[#1d1d1d] sm:mr-24 sm:px-8 sm:pt-7 sm:text-[0.9rem]">
+        <div className="sheet page-doc relative mr-14 px-5 pb-12 pt-6 font-doc text-[0.8rem] leading-[1.5] text-[#1d1d1d] sm:mr-24 sm:px-8 sm:pt-7 sm:text-[0.9rem]">
           <p className="text-center text-[0.95em] font-bold tracking-wide">FLEET TRACKING SUBSCRIPTION AGREEMENT</p>
           <p className="mt-4 font-bold">4. TERM AND RENEWAL</p>
           <Boxed risk="high" n={1} at={0.6}>

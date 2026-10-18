@@ -26,6 +26,8 @@ what you made before the job, or on your own time.
 - **Low:** no schedule for listing pre-existing work.
 
 ## Suggested ask
-"Please limit the assignment to work I create in the course of my duties (or, as a freelancer, to
-the paid deliverables), and confirm that I keep my pre-existing work, tools and unrelated personal
-projects."
+Employee: "Please limit the assignment to work I create in the course of my duties, and confirm that I
+keep my pre-existing work, tools and unrelated personal projects."
+Freelancer or contractor: "Please limit the assignment to the deliverables once they are paid for, and
+confirm that I keep my pre-existing work, tools and templates, with a licence to you to use any that are
+built into the deliverables."

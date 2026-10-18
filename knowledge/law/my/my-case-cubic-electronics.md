@@ -4,7 +4,8 @@ jurisdiction: my
 kind: case
 title: "Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75"
 citation: "[2019] 6 MLJ 15; [2018] MLJU 1935 (Federal Court of Malaysia, decided 21 November 2018)"
-clause_types: [liability, payment, termination]
+clause_types: [liability, payment, termination, early_termination]
+supports: [liability, payment, termination, early_termination, *=compensation|liquidated|penalt|forfeit|shall pay|must pay|will pay|pay the|pay a|sum of|amount of|pampasan|ganti rugi|dilucuthak|lucut hak|hendaklah membayar|bayaran]
 source_url: "https://globallitigationnews.bakermckenzie.com/2019/12/04/penalty-clauses-the-is-and-the-was/"
 retrieved: 2026-10-18
 licence_note: "Full judgment not fetched: the official reports (MLJ) are subscription-only and no judiciary.gov.my copy was found. Holding verified against two independent secondary sources that I fetched: the Wong & Partners/Baker McKenzie Global Litigation News note (source_url, (c) Baker McKenzie, short quotation) and a practitioner blog quoting paras 65 and 70 of the judgment (https://gavinjayapal.wordpress.com/2019/02/06/cubic-electronics-v-mars-telecommunications-the-federal-court-revisits-the-law-on-damages-and-reverses-the-burden-of-proof-for-liquidated-claims/). The [2019] 6 MLJ 15 citation and 'Federal Court' are corroborated by the University of Malaya Law Review and Journal of Malaysian and Comparative Law articles. No reuse licence; quotations kept short."

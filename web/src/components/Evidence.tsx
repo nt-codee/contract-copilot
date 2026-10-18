@@ -70,7 +70,7 @@ function Body({ target, reviewId, onClose, headRef }: { target: EvidenceTarget; 
       <header className="flex shrink-0 items-center justify-between gap-4 bg-ink px-5 py-3 text-white">
         <h2 id="ev-title" ref={headRef} tabIndex={-1} className="flex min-w-0 items-center gap-3">
           <FlagTab n={m.n} risk={m.f.risk} className="!rounded-[3px]" />
-          <span className="tab truncate !text-[0.95rem]">Evidence · {m.f.title}</span>
+          <span className="meta truncate text-sm">Evidence: {m.f.title}</span>
         </h2>
         <button type="button" onClick={onClose} className="btn -mr-3 min-w-[44px] !px-3 text-white hover:bg-white/10">
           Close
@@ -78,15 +78,15 @@ function Body({ target, reviewId, onClose, headRef }: { target: EvidenceTarget; 
       </header>
       <div className="grid min-h-0 flex-1 grid-rows-2 gap-px bg-ink lg:grid-cols-2 lg:grid-rows-1">
         <section aria-label={`The contract, page ${m.f.page}`} className="flex min-h-0 flex-col bg-desk">
-          <p className="tab shrink-0 px-5 pt-3 text-desk-text">The contract · page {m.f.page}</p>
+          <p className="meta shrink-0 px-5 pt-3 text-desk-text">The contract, page {m.f.page}</p>
           <div className="min-h-0 flex-1">
             <Reader url={pdfUrl(reviewId)} items={[contract]} selected={m.f.id} focus={{ id: m.f.id, k: 0 }} onSelect={noop} onLocated={(x) => setMine(x[m.f.id] ?? [])} onState={noop} />
           </div>
         </section>
         <section aria-label={`The source: ${c.title}`} className="flex min-h-0 flex-col bg-desk">
-          <p className="tab shrink-0 px-5 pt-3 text-desk-text">
+          <p className="meta shrink-0 px-5 pt-3 text-desk-text">
             {KIND[c.kind]}
-            {company && c.page ? ` · page ${c.page}` : ""}
+            {company && c.page ? `, page ${c.page}` : ""}
           </p>
           {source ? (
             <div className="min-h-0 flex-1">
@@ -96,21 +96,21 @@ function Body({ target, reviewId, onClose, headRef }: { target: EvidenceTarget; 
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
               <article className="sheet relative px-6 py-6 sm:px-9">
                 <span className="absolute -left-1 top-6 h-[calc(100%-3rem)] w-1 rounded-r-sm" style={{ background: box.edge }} aria-hidden="true" />
-                <p className="tab text-ink-mute">{c.jurisdiction === "my" ? "Malaysia" : c.jurisdiction === "sg" ? "Singapore" : KIND[c.kind]}</p>
-                <h3 className="mt-1 font-doc text-[1.3rem] font-bold leading-snug text-ink">{entry?.title ?? c.title}</h3>
+                <p className="meta text-ink-mute">{c.jurisdiction === "my" ? "Malaysia" : c.jurisdiction === "sg" ? "Singapore" : KIND[c.kind]}</p>
+                <h3 className="mt-1 font-doc text-xl font-bold leading-snug text-ink">{entry?.title ?? c.title}</h3>
                 {entry?.citation && <p className="mt-1 font-doc text-ink-soft">{entry.citation}</p>}
-                <blockquote className="mt-4 font-doc text-[1.06rem] leading-[1.65] text-ink">
+                <blockquote className="mt-4 font-doc text-base leading-[1.65] text-ink">
                   <span className="hl" style={{ ["--hl" as string]: box.fill, borderBottom: `2px solid ${box.edge}` }}>
                     {c.excerpt.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/(^|\s)[-*]\s+/g, "$1").replace(/\s+/g, " ").trim()}
                   </span>
                 </blockquote>
                 {entry?.plain && (
-                  <p className="mt-5 border-l-4 border-ink bg-paper-soft px-3 py-2 text-[0.95rem] text-ink">
-                    <span className="tab block">In plain words</span>
+                  <p className="mt-5 border-l-4 border-ink bg-paper-soft px-3 py-2 text-sm text-ink">
+                    <span className="meta block">In plain words</span>
                     {entry.plain}
                   </p>
                 )}
-                {failed && <p className="mt-4 text-[0.92rem] text-ink-soft">The full entry could not be loaded. The quoted text above is what the review relied on.</p>}
+                {failed && <p className="mt-4 text-sm text-ink-soft">The full entry could not be loaded. The quoted text above is what the review relied on.</p>}
                 <div className="mt-5 flex flex-wrap gap-3">
                   {official && (c.kind === "law" || c.kind === "case") && (
                     <a href={official} target="_blank" rel="noopener noreferrer" className="btn-ink">

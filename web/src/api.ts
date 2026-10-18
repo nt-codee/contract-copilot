@@ -40,7 +40,7 @@ async function send(path: string, init?: RequestInit): Promise<Response> {
   return fetch(path, { ...init, headers });
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, onResponse?: (res: Response) => void): Promise<T> {
   let res: Response;
   try {
     res = await send(path, init);
@@ -62,12 +62,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(code, message);
   }
+  onResponse?.(res);
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
 
 export const pdfUrl = (id: string, page?: number) =>
   (MOCK ? "/samples/msa-02-autorenew.pdf" : `/api/reviews/${encodeURIComponent(id)}/pdf`) + (page ? `#page=${page}` : "");
+
+/** A bundled sample contract's PDF. Public: the samples need no sign-in. */
+export const samplePdfUrl = (id: string) => `/api/samples/${encodeURIComponent(id)}/pdf`;
 
 export async function listSamples(): Promise<Sample[]> {
   if (MOCK) {
@@ -79,34 +83,66 @@ export async function listSamples(): Promise<Sample[]> {
 }
 
 async function mockSignedIn(): Promise<boolean> {
-  const { getSession } = await import("./session");
-  return !!getSession().user;
+  const { getSession, readOnlyReason } = await import("./session");
+  for (let i = 0; getSession().loading && i < 50; i++) await wait(100);
+  const s = getSession();
+  const why = readOnlyReason(s);
+  if (why) throw new ApiError("guest_read_only", why);
+  return !!s.user;
 }
 
 export const SIGN_IN_CODE = "sign_in_required";
 
-export async function uploadReview(file: File): Promise<ReviewResult> {
+/** Review options; anything left out is detected from the contract. */
+export interface ReviewOptions {
+  contract_type?: string;
+  jurisdiction?: "my" | "sg";
+  apply_company_rules?: boolean;
+  perspective?: "business" | "individual";
+  /** which company policies to apply; left out = all */
+  company_doc_ids?: string[];
+}
+
+export async function uploadReview(file: File, opts: ReviewOptions = {}): Promise<ReviewResult> {
   if (MOCK) {
     if (!(await mockSignedIn())) throw new ApiError(SIGN_IN_CODE, "Sign in with Google to review your own contract.");
     const m = await import("./mocks");
-    await wait(6500);
-    return { ...m.mockReview, filename: file.name };
+    await wait(2500 + Math.random() * 2000);
+    if (/fail/i.test(file.name)) throw new ApiError("unreadable_pdf", "We could not read any text in this PDF. Try a clearer scan or the original file.");
+    return { ...m.mockReview, filename: file.name, contract_type: (opts.contract_type as ReviewResult["contract_type"]) ?? m.mockReview.contract_type, jurisdiction: opts.jurisdiction ?? m.mockReview.jurisdiction };
   }
   const form = new FormData();
   form.append("file", file);
+  if (opts.contract_type) form.append("contract_type", opts.contract_type);
+  if (opts.jurisdiction) form.append("jurisdiction", opts.jurisdiction.toUpperCase());
+  if (opts.apply_company_rules !== undefined) form.append("apply_company_rules", String(opts.apply_company_rules));
+  if (opts.perspective) form.append("perspective", opts.perspective);
+  if (opts.apply_company_rules !== false && opts.company_doc_ids?.length) form.append("company_doc_ids", opts.company_doc_ids.join(","));
   return request<ReviewResult>("/api/reviews", { method: "POST", body: form });
 }
 
-export async function reviewSample(sampleId: string): Promise<ReviewResult> {
+/** Opens a sample. The server answers from an earlier run when it has one; `refresh` re-runs it (signed in only). */
+export type SampleReviewResult = ReviewResult & { sample_opening?: "cached" | "copied" | "fresh" };
+
+export async function reviewSample(sampleId: string, refresh = false): Promise<SampleReviewResult> {
   if (MOCK) {
+    if (refresh && !(await mockSignedIn())) throw new ApiError(SIGN_IN_CODE, "Sign in with Google to run a fresh review.");
     const m = await import("./mocks");
-    await wait(6500);
-    return m.mockReview;
+    await wait(refresh ? 6500 : 900);
+    return refresh
+      ? { ...m.mockReview, created_at: new Date().toISOString(), sample_opening: "fresh" }
+      : { ...m.mockReview, sample_opening: "cached" };
   }
-  return request<ReviewResult>(
-    `/api/reviews/sample/${encodeURIComponent(sampleId)}`,
+  let source: SampleReviewResult["sample_opening"];
+  const result = await request<ReviewResult>(
+    `/api/reviews/sample/${encodeURIComponent(sampleId)}${refresh ? "?refresh=1" : ""}`,
     { method: "POST" },
+    (res) => {
+      const value = res.headers.get("X-Review-Source");
+      if (value === "cached" || value === "copied" || value === "fresh") source = value;
+    },
   );
+  return { ...result, sample_opening: source };
 }
 
 export async function getReview(id: string): Promise<ReviewResult> {
