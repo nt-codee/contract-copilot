@@ -137,6 +137,16 @@ class MemoryIndex:
         scored.sort(key=lambda t: t[1], reverse=True)
         return scored[:limit]
 
+    def keyword(self, query: str, limit: int, *, owner: str) -> list[tuple[Chunk, float]]:
+        from app.keyword import rank
+        with self._lock:
+            chunks = [c for c in self._chunks.values() if c.owner == owner]
+        return rank(chunks, query, limit)
+
+    def chunks(self, review_id: str, *, owner: str) -> list[Chunk]:
+        with self._lock:
+            return [c for c in self._chunks.values() if c.owner == owner and c.review_id == review_id]
+
     def delete_review(self, review_id: str, *, owner: str) -> None:
         with self._lock:
             self._chunks = {k: c for k, c in self._chunks.items()
@@ -461,3 +471,42 @@ def local_stores(settings: Settings):
             JsonReviewStore(root / "reviews"), MemoryCompanyStore(),
             LocalTokenVerifier(), JsonUserStore(root / "users.json"), JsonAuditLog(root / "audit.jsonl"),
             JsonWorkspaceStore(root / "workspaces.json"))
+
+
+class MemoryBudgetLedger:
+    """Thread-safe account/day reservations. Local only; Firestore shares enforcement across instances."""
+    def __init__(self):
+        self._totals, self._holds = {}, {}
+        self._lock = threading.Lock()
+
+    def reserve(self, reservation, limit):
+        key = (reservation.uid, reservation.day)
+        with self._lock:
+            previous = self._holds.get(reservation.id)
+            if previous is not None:
+                if previous[0] != reservation:
+                    raise ValueError("reservation mismatch")
+                return True
+            total = self._totals.get(key, 0)
+            if reservation.micros < 0 or total + reservation.micros > limit:
+                return False
+            self._totals[key] = total + reservation.micros
+            self._holds[reservation.id] = (reservation, None)
+            return True
+
+    def settle(self, reservation, actual_micros):
+        with self._lock:
+            original, actual = self._holds[reservation.id]
+            if original != reservation or actual_micros < 0:
+                raise ValueError("invalid settlement")
+            if actual is not None:
+                if actual != actual_micros:
+                    raise ValueError("settlement mismatch")
+                return
+            key = (reservation.uid, reservation.day)
+            self._totals[key] += actual_micros - reservation.micros
+            self._holds[reservation.id] = (original, actual_micros)
+
+    def used(self, uid, day):
+        with self._lock:
+            return self._totals.get((uid, day), 0)

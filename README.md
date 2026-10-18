@@ -45,7 +45,7 @@ One click turns the findings into a reply to the vendor, with one ask per issue,
 | **Citations that are real.** Each finding links Malaysian or Singapore law, or a case, taken from a library where every entry keeps its source URL and the quoted text. | <img src="docs/public/screens/citation.png" alt="A Contracts Act 1950 entry with its text and a link to the official source" width="520"> |
 | **Your own rules, applied.** Upload your company's contracting policy once (owners and admins do this). Reviews flag the clauses that break it and quote the rule. | <img src="docs/public/screens/rules.png" alt="The company rules page: each rule with the contracts that break it" width="520"> |
 | **Dates that matter.** The last day to cancel before an auto-renewal, and other deadlines, collected across your contracts. | <img src="docs/public/screens/dates.png" alt="The summary of a reviewed contract: overall risk, the headline, and the key date, the end of the initial term" width="520"> |
-| **Search every contract your company has reviewed.** Describe the situation in your own words and get the clause and its page. Results blend meaning (vector) with exact words and phrases (keyword). | <img src="docs/public/screens/library.png" alt="Library search results for the phrase cancel early" width="520"> |
+| **Search every contract your company has reviewed.** Describe the situation in your own words and get the clause and its page. Signed-in search blends meaning (vector) with exact words and phrases (keyword); visitors use keyword search. | <img src="docs/public/screens/library.png" alt="Library search results for the phrase cancel early" width="520"> |
 | **A reply ready to send.** One ask per issue, numbered to match the flags on the contract. Edit it, copy it, or open it in your email. | <img src="docs/public/screens/reply.png" alt="The drafted reply to the vendor" width="520"> |
 
 Also:
@@ -60,8 +60,10 @@ Also:
 
 ### Teams, accounts and trust
 
-The public demo needs no login: anyone can open the sample reviews, draft a reply, search and browse the law library. Uploading
-a contract or a policy, and deleting anything, needs sign-in.
+New AI work has a USD 1 allowance per signed-in account per UTC day. Calls reserve a bounded amount before each attempt, including retries, fallback models and embeddings. Known usage releases the unused amount; uncertain failed calls keep their reservation. Cached reads are free of new AI calls. This allowance uses conservative token prices rather than reproducing a provider invoice.
+
+The public demo needs no login: anyone can open cached sample reviews and saved replies, search by keyword, and browse the law library.
+New AI reviews and replies, semantic search, and policy processing require Google sign-in. Uploading a contract or policy, and deleting anything, also needs sign-in.
 
 **View the demo company.** One button, no sign-in, opens a read-only view of a made-up company, Kopi Kita Sdn Bhd: its
 contracts, company rules, dashboard, activity and people. A guest can read all of it and can change nothing and cannot start

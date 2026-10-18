@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from app import prompts
 from app.knowledge import PLAYBOOK_EXCERPT, PLAIN_EXCERPT, TEXT_EXCERPT, TOP_K, Knowledge, clip, playbook_view
 from app.models import Citation, ClauseType, ContractType, LLMReview, TraceStep
+from app.progress import Progress, report
 from app.playbook_overrides import SUFFIX, PlaybookOverrideStore, override_excerpt, override_ref
 from app.ports import (LLM, ChatMessage, CompanyStore, Embedder, LLMUsage, ToolCall, ToolResult,
                        ToolSpec, UpstreamError)
@@ -494,7 +495,8 @@ def apply_options(tools: Toolbox, options) -> list[ToolSpec]:
 
 
 def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
-              max_turns: int = MAX_TURNS, max_tool_calls: int = MAX_TOOL_CALLS, options=None) -> AgentOutcome:
+              max_turns: int = MAX_TURNS, max_tool_calls: int = MAX_TOOL_CALLS, options=None,
+              progress: Progress | None = None) -> AgentOutcome:
     vocabulary = clause_vocabulary(tools.kb)
     specs = apply_options(tools, options)
     system = prompts.agent_system(pages, max_tool_calls, vocabulary, options=options)  # the whole contract: the review call
@@ -512,6 +514,7 @@ def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
         turns += 1
         failed = False
         try:
+            report(progress, "planning")
             reply, u = llm.chat(system=plan_system, messages=messages, tools=specs, purpose="agent",
                                 force_tools=(turns == 1))
         except UpstreamError:
@@ -531,6 +534,7 @@ def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
             break
         messages.append(reply)
         run_now = calls[:max_tool_calls - n_calls]  # calls beyond the budget are ignored
+        report(progress, "researching")
         run_now, skipped = _lock_jurisdiction(tools, run_now)
         batches += 1
         timed = _run_all(tools, run_now)
@@ -554,6 +558,7 @@ def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
         wants_pages = any(c.name == "read_page" for c in run_now)
 
     t0 = time.monotonic()
+    report(progress, "drafting")
     out, u = llm.generate(system=system, parts=[prompts.research_transcript(research, _fixed_line(tools)),
                                                 prompts.FINAL_USER],
                           schema=LLMReview, purpose="review")

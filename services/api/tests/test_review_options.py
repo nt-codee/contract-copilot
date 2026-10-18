@@ -211,8 +211,8 @@ def test_a_review_made_before_options_existed_still_loads(services):
     assert p.options is None
 
 
-def test_sample_runs_record_default_options_and_copies_keep_them(anon, client):
-    demo = anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
+def test_sample_runs_record_default_options_and_copies_keep_them(admin, anon, client):
+    demo = admin.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
     assert demo["provenance"]["options"]["contract_type"] == "auto"
     mine = client.post("/api/reviews/sample/demo-01").json()
     assert mine["provenance"]["options"] == demo["provenance"]["options"]

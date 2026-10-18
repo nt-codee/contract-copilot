@@ -1,7 +1,9 @@
 """Calibration: severity and certainty follow from the contract, not from the model's tone.
 
-- A high finding must name a concrete, grounded consequence (LLMFinding.consequence), else it is rated
-  medium. Overall risk is then a function of the findings: high only if a high finding is about a term
+- A high finding must name a concrete, grounded consequence (LLMFinding.consequence), or quote an
+  explicit payment/right-loss consequence. Otherwise severity is uncertain and it is rated medium;
+  that does not establish that a consequence is absent. Overall risk is a function of the findings:
+  high only if a high finding is about a term
   the contract HAS (not merely a missing protection); medium if any medium or high; else low.
 - Cross-clause checks on the model's wording, all deterministic:
   * a "locks you in" claim is replaced when the reader has a convenience exit elsewhere (clause and
@@ -17,6 +19,7 @@ import re
 from dataclasses import dataclass
 
 from app.models import Finding, RemovedClaim
+from app.grounding import unsupported_permission
 
 # ---- severity -------------------------------------------------------------------------------------
 
@@ -66,9 +69,9 @@ _EXIT_STOP = re.compile(r",?\s+(?:or immediately|atau serta-merta|or forthwith)\
 _EXIT_BAD = re.compile(r"breach|pelanggaran|melanggar|insolven|consent|persetujuan|\bonly\b|\bhanya\b|"
                        r"liquidat|default|gagal|fails?\b|remain(?:ing|der)|balance of|termination (?:fee|charge)|baki",
                        re.I)
-_AFTER = re.compile(r"\b(?:after|selepas)\s+(?:the\s+)?(?:first\s+)?(?:[a-z-]+\s+)*\((\d{1,3})\)\s*"
+_AFTER = re.compile(r"\b(?:after|selepas)\s+(?:the\s+)?(?:first\s+)?(?:[a-z-]+\s+)*\(?(\d{1,3})\)?\s*"
                     r"(months|years|bulan|tahun)", re.I)
-_NOTICE = re.compile(r"(?:not less than |at least |sekurang-kurangnya )?(?:[a-z-]+ )*\((\d{1,3})\)\s*"
+_NOTICE = re.compile(r"(?:not less than |at least |sekurang-kurangnya )?(?:[a-z-]+ )*\(?(\d{1,3})\)?\s*"
                      r"(days|months|weeks|hari|bulan|minggu)", re.I)
 _UNIT = {"hari": "days", "bulan": "months", "minggu": "weeks", "tahun": "years"}
 _HEAD_NO = re.compile(r"(?m)^[ \t]*(\d{1,2}(?:\.\d{1,2}){0,3})[.)]?[ \t]+")
@@ -112,6 +115,63 @@ _LOCK_IN = re.compile(r"\block(?:s|ed|ing)?\b[^.]{0,30}\bin(?:to)?\b|\banother (
                       r"\d+[- ]month)|\bstuck (?:with|in|for)\b|\btrapped\b|\bno way (?:out|to exit|to leave)\b|"
                       r"\bcannot (?:exit|leave|get out)\b", re.I)
 
+_EARLY_EXIT = re.compile(r"terminat|exit|leav|ending|menamatkan|penamatan|keluar", re.I)
+_REMAINING_RENT = re.compile(r"all (?:the )?(?:remaining|unaccrued|unexpired)?\s*rent|"
+                             r"rent for (?:the )?(?:rest|remainder|unexpired)|"
+                             r"semua (?:baki )?sewa|baki sewa", re.I)
+_QUALIFIED_EXIT = re.compile(r"outside|except|unless|other than|in any other way|before|"
+                             r"kecuali|melainkan|sebelum|di luar", re.I)
+
+
+def qualify_exit(text: str, exit_: Exit | None) -> str | None:
+    """Qualify a blanket remaining-rent assertion, not a statement already limited to other exits."""
+    if not (exit_ and exit_.after and _EARLY_EXIT.search(text) and _REMAINING_RENT.search(text)):
+        return None
+    if _QUALIFIED_EXIT.search(text):
+        return None
+    where = f"clause {exit_.clause}" if exit_.clause else "the break provision"
+    return (f"The clause demands remaining rent for an exit outside {where}; {where} also allows you to "
+            f"leave on {exit_.notice}' notice {exit_.after}.")
+
+
+_QUOTED_CONSEQUENCE = re.compile(
+    r"\bno rebate\b[^.\n]{0,70}\b(?:will be given|shall be given|is payable|is allowed)\b|"
+    r"\bwithout any rebate\b|"
+    r"\b(?:no|not) (?:be )?(?:responsible|liable|obliged|required) (?:to|for) pay\w*\b|"
+    r"\b(?:may not|cannot) (?:end|terminate|return)\b|"
+    r"\btiada rebat\b[^.\n]{0,40}\b(?:diberikan|dibayar|dibenarkan)\b|\btanpa rebat\b|"
+    r"\btidak bertanggungjawab membayar\b|\btidak boleh (?:menamatkan|memulangkan)\b", re.I)
+
+# 'Shall pay all' alone includes ordinary invoices. Only rescue a payment consequence when
+# remaining-term rent/instalments or a balance is demanded on exit, in the same sentence.
+_EXIT_PAYMENT = re.compile(
+    r"\b(?:shall|must) pay\s+(?:all\s+)?(?:the\s+)?(?:"
+    r"(?:remaining|unexpired|outstanding)\s+(?:rent|instalments?|installments?|balance)|"
+    r"balance(?:\s+of\b[^.]{0,40})?|rent for (?:the )?(?:rest|remainder|unexpired)\b)|"
+    r"\bhendaklah membayar\s+(?:semua\s+)?(?:baki (?:sewa|ansuran|pinjaman)|"
+    r"sewa bagi (?:baki|seluruh) tempoh)\b", re.I)
+_EXIT_PAYMENT_TRIGGER = re.compile(
+    r"\bearly (?:exit|termination|settlement)\b|"
+    r"\b(?:on|upon|if|when|after)\b[^.]{0,70}\b(?:terminat\w*|cancel\w*|leav\w*|return\w*)\b|"
+    r"\b(?:penamatan|penyelesaian) awal\b|\b(?:jika|apabila|sekiranya)\b[^.]{0,70}"
+    r"\b(?:menamatkan|ditamatkan|memulangkan)\b", re.I)
+
+
+def quoted_consequence(quote: str, pages: list[str]) -> bool:
+    """A small positive fallback for explicit consequences, never a test that one is absent.
+
+    The normal pipeline has already verified this quote. Also require its whitespace-normalised
+    presence here so standalone callers cannot preserve a high using invented quotation text.
+    This recognises direct payment/right-loss terms, not severity or implied legal consequences.
+    """
+    flat = " ".join(quote.split()).casefold()
+    contract = " ".join(" ".join(pages).split()).casefold()
+    if not flat or flat not in contract:
+        return False
+    return bool(_QUOTED_CONSEQUENCE.search(flat) or any(
+        _EXIT_PAYMENT.search(sentence) and _EXIT_PAYMENT_TRIGGER.search(sentence)
+        for sentence in re.split(r"[.!?]", flat)))
+
 # ---- remedies -------------------------------------------------------------------------------------
 
 _ABSOLUTE = re.compile(r"\bdisclaims? (?:all|any|every)\b|\b(?:all|any) responsibility\b|\bno (?:remedy|recourse|"
@@ -153,7 +213,13 @@ def _sentences(text: str) -> list[str]:
 def calibrate_finding(f: Finding, exit_: Exit | None, remedy: str | None, removed: list[RemovedClaim]) -> None:
     out, added = [], set()
     for s in _sentences(f.why_risky):
-        if exit_ and f.clause_type in ("auto_renewal", "term") and _LOCK_IN.search(s):
+        qualified = qualify_exit(s, exit_) if f.clause_type == "early_termination" else None
+        if qualified:
+            removed.append(_note(f"Explanation: {s}", f.title, f.page))
+            if qualified not in added:
+                out.append(qualified)
+                added.add(qualified)
+        elif exit_ and f.clause_type in ("auto_renewal", "term") and _LOCK_IN.search(s):
             where = f"Clause {exit_.clause}" if exit_.clause else "The contract"
             when = f" {exit_.after}" if exit_.after else ""
             repl = (f"{where} lets you end the agreement on {exit_.notice}' notice{when}, so missing the deadline "
@@ -179,9 +245,11 @@ def calibrate_review(findings: list[Finding], consequences: dict[str, str], summ
     for f in findings:
         if f.risk == "high":
             c = consequences.get(f.id, "").strip()
-            if not c or not grounded(c):
+            if (not c or not grounded(c)) and not quoted_consequence(f.quote, pages):
                 f.risk = "medium"
-                why = "no concrete consequence was given" if not c else "its consequence is not in the contract"
+                why = ("no separate consequence evidence was supplied; severity could not be verified"
+                       if not c else "the separate consequence evidence could not be verified; this does not "
+                       "establish that the contract lacks a consequence")
                 removed.append(_note(f"High risk: {f.title} (shown as medium: {why})", f.title, f.page,
                                      "unsupported_severity"))
     exit_, remedy = convenience_exit(pages), remaining_remedy(pages)
@@ -189,12 +257,18 @@ def calibrate_review(findings: list[Finding], consequences: dict[str, str], summ
         calibrate_finding(f, exit_, remedy, removed)
     kept = []
     for s in summary:
-        if _CERTIFY.search(s) or (exit_ and not exit_.after and _LOCK_IN.search(s)) or (remedy and _ABSOLUTE.search(s)):
+        qualified = qualify_exit(s, exit_)
+        if qualified:
+            removed.append(_note(f"Summary: {s}", None, None))
+            kept.append(qualified)
+        elif _CERTIFY.search(s) or (exit_ and not exit_.after and _LOCK_IN.search(s)) or (remedy and _ABSOLUTE.search(s)):
             removed.append(_note(f"Summary: {s}", None, None))
         else:
             kept.append(s)
     level = overall_risk(findings)
     new_head = headline_for(headline, level)
+    if unsupported_permission(headline, "\n".join(pages)) or qualify_exit(headline, exit_):
+        new_head = LEVEL_HEADLINE[level]
     if new_head:
         removed.append(_note(f"Headline: {headline}", None, None))
     return level, new_head or headline, kept

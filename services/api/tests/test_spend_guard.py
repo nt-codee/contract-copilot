@@ -67,8 +67,10 @@ def test_copies_cached_samples_drafts_and_policy_uploads_are_not_counted(service
     api = capped(services, 1)
     anon = TestClient(api)
     ann = TestClient(api, headers=bearer(tok("ann")))
-    # one fresh model review spends the whole allowance
-    assert anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).status_code == 200
+    # A signed-in account uses the global allowance; admin seeds the cached demo separately.
+    assert upload(TestClient(api, headers=bearer(tok("seed-control")))).status_code == 200
+    seeder = TestClient(api, headers=bearer(ROOT))
+    assert seeder.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).status_code == 200
     assert services.spend.used(f"reviews-{spend.today()}") == 1
     # none of these is a fresh model review: they all still work
     assert anon.post("/api/reviews/sample/demo-01").status_code == 200  # cached

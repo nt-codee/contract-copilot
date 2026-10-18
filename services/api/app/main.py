@@ -37,6 +37,8 @@ from app.models import (AuditEvent, CompanyDoc, Identity, Invite, Member, Negoti
                         ReviewOptions, ReviewSummary, Sample, SearchHit, User, Workspace, WorkspaceRef)
 from app.pipeline import Services, UserError
 from app.ports import UpstreamError
+from app.progress import stream_review, wants_stream
+from app.budget import BudgetError, request_services
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 log = logging.getLogger("cc.api")
@@ -44,6 +46,16 @@ log = logging.getLogger("cc.api")
 
 def _err(status: int, code: str, message: str) -> JSONResponse:
     return JSONResponse({"error": {"code": code, "message": message}}, status_code=status)
+
+
+def stream_error(exc: Exception) -> tuple[int, dict]:
+    """Use the same public error envelope after headers have already been sent."""
+    if isinstance(exc, (UserError, BudgetError)):
+        return exc.status, {"error": {"code": exc.code, "message": exc.message}}
+    if isinstance(exc, UpstreamError):
+        return 502, {"error": {"code": "upstream_unavailable", "message": str(exc)}}
+    log.error("review stream failed", exc_info=(type(exc), exc, exc.__traceback__))
+    return 500, {"error": {"code": "internal_error", "message": "Something went wrong on our side. Please try again."}}
 
 
 class RateLimiter:
@@ -160,7 +172,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     limiter = RateLimiter(settings.rate_limit_per_hour)
     user_limiter = RateLimiter(settings.rate_limit_user_per_hour)
     sample_locks: dict[tuple[str, str], threading.Lock] = defaultdict(threading.Lock)
-    negotiation_cache: dict[str, NegotiationDraft] = {}
+    negotiation_locks: dict[str, threading.Lock] = defaultdict(threading.Lock)
 
     app = FastAPI(title="Contract Review Co-pilot API", docs_url="/api/docs", openapi_url="/api/openapi.json")
     app.state.services = svc
@@ -172,6 +184,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
 
     # ---- errors: plain words, never a stack trace ----------------------------------------
     @app.exception_handler(UserError)
+    @app.exception_handler(BudgetError)
     async def _user_error(_: Request, e: UserError):
         return _err(e.status, e.code, e.message)
 
@@ -304,8 +317,6 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         if actor.user is None:
             raise UserError(401, "sign_in_required", SIGN_IN_MESSAGE)
         counts, review_ids = pipeline.delete_my_data(svc, actor.user.uid)
-        for rid in review_ids:
-            negotiation_cache.pop(rid, None)
         note(actor, "deleted_my_data", None, None, counts)
         return {"deleted": counts}
 
@@ -343,14 +354,23 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         options = parse_review_options(contract_type, jurisdiction, apply_company_rules, perspective)  # before a slot is spent
         options = choose_policies(options, company_doc_ids, [d.id for d in svc.company.list(owner=actor.owner)])
         data = await read_pdf_upload(request, file, actor, images=True)
+        paid_svc, account = request_services(svc, actor.uid)
+        account.admit()
         check_spend(actor)
         name = clean_filename(file.filename, "contract.pdf")
-        result = await run_in_threadpool(pipeline.review, svc, data, name, None, actor.owner, actor.uid,
-                                       options)
-        note(actor, "uploaded_contract", result.id, name,
-                         {"bytes": len(data), "pages": result.pages,
-                          "type": getattr(request.state, "upload_kind", "pdf")})
-        pipeline.audit_review(svc, actor.audit_actor, result)
+        def perform(progress=None):
+            kwargs = {"progress": progress} if progress is not None else {}
+            result = pipeline.review(paid_svc, data, name, None, actor.owner, actor.uid, options, **kwargs)
+            account.check()
+            note(actor, "uploaded_contract", result.id, name,
+                             {"bytes": len(data), "pages": result.pages,
+                              "type": getattr(request.state, "upload_kind", "pdf")})
+            pipeline.audit_review(svc, actor.audit_actor, result)
+            return result, "fresh"
+
+        if wants_stream(request.headers.get("accept", "")):
+            return await stream_review(perform, stream_error)
+        result, _ = await run_in_threadpool(perform)
         return result
 
     # ---- company knowledge base: each workspace has its own documents ----------------------------
@@ -358,8 +378,11 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     async def add_company_doc(request: Request, file: UploadFile = File(...), actor: Actor = Depends(get_actor)):
         require_policy_manager(actor)
         data = await read_pdf_upload(request, file, actor)
-        doc = await run_in_threadpool(pipeline.add_company_doc, svc, data, clean_filename(file.filename, "document.pdf"),
+        paid_svc, account = request_services(svc, actor.uid)
+        account.admit()
+        doc = await run_in_threadpool(pipeline.add_company_doc, paid_svc, data, clean_filename(file.filename, "document.pdf"),
                                       actor.owner)
+        account.check()
         note(actor, "uploaded_policy", doc.id, doc.filename, {"pages": doc.pages})
         return doc
 
@@ -391,49 +414,55 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
                             content_disposition_type="inline")
 
     @app.post("/api/reviews/sample/{sample_id}", response_model=ReviewResult)
-    def review_sample(sample_id: str, request: Request, response: Response, refresh: bool = False,
-                      actor: Actor = Depends(get_actor)):
-        """Open a bundled sample in the caller's workspace. A demo visitor gets the shared demo copy.
-        A signed-in user gets their own copy (copied from the demo one when it exists, no model call).
-
-        Cached after the first run. ?refresh=1 re-runs it (counts against the rate limit); a demo visitor
-        cannot refresh, because that would rewrite the shared demo workspace."""
+    async def review_sample(sample_id: str, request: Request, response: Response, refresh: bool = False,
+                            actor: Actor = Depends(get_actor)):
+        """Open a cached sample/copy, or run a guarded fresh review under the per-sample lock."""
         entry = next((s for s in load_samples() if s.get("id") == sample_id), None)
         if entry is None:
             raise UserError(404, "sample_not_found", "We could not find that sample contract.")
-        if actor.guest:  # read-only: the shared demo copy if it exists; never a model call
-            cached = svc.store.find_by_sample(sample_id, owner=DEMO_OWNER)
-            if cached is None:
-                raise guestmod.guest_forbidden()
-            response.headers["X-Review-Source"] = "cached"
-            return cached
-        with sample_locks[(actor.owner, sample_id)]:
-            can_refresh = refresh and (actor.signed_in or actor.seeding)
-            cached = None if can_refresh else svc.store.find_by_sample(sample_id, owner=actor.owner)
-            if cached is not None:
-                if audits_views(actor):
-                    svc.audit.record_view(actor.audit_actor, cached.id, cached.filename, workspace_id=actor.owner)
-                response.headers["X-Review-Source"] = "cached"
-                return cached
-            require_writer(actor)  # cached sample browsing is public; a fresh model run needs sign-in
-            path = sample_pdf_path(entry)
-            if path is None:
-                raise UserError(404, "sample_not_found", "That sample contract file is missing.")
-            pdf = path.read_bytes()
-            if actor.owner != DEMO_OWNER and not can_refresh:
-                shared = svc.store.find_by_sample(sample_id, owner=DEMO_OWNER)
-                if shared is not None:
-                    result = pipeline.copy_review(svc, shared, pdf, actor.owner, actor.uid)
-                    pipeline.audit_review(svc, actor.audit_actor, result, copied_from_sample=sample_id)
-                    response.headers["X-Review-Source"] = "copied"
-                    return result
-            check_rate(request, actor)
-            check_spend(actor)
-            result = pipeline.review(svc, pdf, path.name, sample_id=sample_id, owner=actor.owner,
-                                    created_by=actor.uid)
-            pipeline.audit_review(svc, actor.audit_actor, result, sample_id=sample_id)
-            response.headers["X-Review-Source"] = "fresh"
-            return result
+
+        def perform(progress=None):
+            if actor.guest:
+                cached = svc.store.find_by_sample(sample_id, owner=DEMO_OWNER)
+                if cached is None:
+                    raise guestmod.guest_forbidden()
+                return cached, "cached"
+            # The worker owns the lock through cache recheck, guards, review, persistence and audit.
+            # Never transfer a lock from the request/event-loop thread to another thread.
+            with sample_locks[(actor.owner, sample_id)]:
+                can_refresh = refresh and (actor.signed_in or actor.seeding)
+                cached = None if can_refresh else svc.store.find_by_sample(sample_id, owner=actor.owner)
+                if cached is not None:
+                    if audits_views(actor):
+                        svc.audit.record_view(actor.audit_actor, cached.id, cached.filename, workspace_id=actor.owner)
+                    return cached, "cached"
+                require_writer(actor)
+                path = sample_pdf_path(entry)
+                if path is None:
+                    raise UserError(404, "sample_not_found", "That sample contract file is missing.")
+                pdf = path.read_bytes()
+                if actor.owner != DEMO_OWNER and not can_refresh:
+                    shared = svc.store.find_by_sample(sample_id, owner=DEMO_OWNER)
+                    if shared is not None:
+                        result = pipeline.copy_review(svc, shared, pdf, actor.owner, actor.uid)
+                        pipeline.audit_review(svc, actor.audit_actor, result, copied_from_sample=sample_id)
+                        return result, "copied"
+                check_rate(request, actor)
+                paid_svc, account = request_services(svc, actor.uid)
+                account.admit()
+                check_spend(actor)
+                kwargs = {"progress": progress} if progress is not None else {}
+                result = pipeline.review(paid_svc, pdf, path.name, sample_id=sample_id, owner=actor.owner,
+                                         created_by=actor.uid, **kwargs)
+                account.check()
+                pipeline.audit_review(svc, actor.audit_actor, result, sample_id=sample_id)
+                return result, "fresh"
+
+        if wants_stream(request.headers.get("accept", "")):
+            return await stream_review(perform, stream_error)
+        result, source = await run_in_threadpool(perform)
+        response.headers["X-Review-Source"] = source
+        return result
 
     @app.get("/api/reviews", response_model=list[ReviewSummary])
     def list_reviews(limit: int = Query(50, ge=1, le=200), actor: Actor = Depends(get_actor)):
@@ -460,7 +489,6 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         if not (actor.manages or actor.seeding or mine.created_by == actor.uid):
             raise UserError(403, "forbidden_role", "Members can delete only the reviews they ran. Ask an owner or admin.")
         r = pipeline.delete_review(svc, review_id, actor.owner)
-        negotiation_cache.pop(review_id, None)
         note(actor, "deleted_review", r.id, r.filename)
         return Response(status_code=204)
 
@@ -475,14 +503,33 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
 
     @app.post("/api/reviews/{review_id}/negotiation", response_model=NegotiationDraft)
     def negotiate(review_id: str, actor: Actor = Depends(get_actor)):
-        r = get_review_or_404(review_id, actor)
-        if review_id not in negotiation_cache:  # one LLM call per review per instance
+        # Authorization precedes every cache read, including cold instances and plain visitors.
+        with negotiation_locks[review_id]:
+            r = get_review_or_404(review_id, actor)
+            key = f"negotiations/{r.id}.json"
+            data = svc.blobs.get(key)
+            if data is not None:
+                try:
+                    cached = NegotiationDraft.model_validate_json(data)
+                    if cached.review_id == r.id:
+                        return cached
+                except (ValidationError, ValueError, UnicodeError):
+                    pass  # malformed cached data is a miss, never arbitrary JSON returned to a caller
             if actor.guest:
                 raise guestmod.guest_forbidden()
-            negotiation_cache[review_id] = pipeline.negotiation(svc, r)
-            note(actor, "drafted_reply", r.id, r.filename,
-                             {"asks": len(negotiation_cache[review_id].asks)})
-        return negotiation_cache[review_id]
+            paid_svc, account = request_services(svc, actor.uid)
+            account.admit()
+            draft = pipeline.negotiation(paid_svc, r)
+            account.check()
+            get_review_or_404(review_id, actor)  # deletion while the model was running must not resurrect a draft
+            svc.blobs.put(key, draft.model_dump_json().encode("utf-8"), "application/json")
+            try:
+                get_review_or_404(review_id, actor)
+            except UserError:
+                svc.blobs.delete(key)
+                raise
+            note(actor, "drafted_reply", r.id, r.filename, {"asks": len(draft.asks)})
+            return draft
 
     @app.get("/api/reviews/{review_id}/pdf")
     def get_pdf(review_id: str, actor: Actor = Depends(get_actor)):
@@ -496,7 +543,13 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     @app.get("/api/search", response_model=list[SearchHit])
     def search(q: str = Query(..., min_length=1, max_length=500), limit: int = Query(10, ge=1, le=50),
                actor: Actor = Depends(get_actor)):
-        return pipeline.search(svc, q.strip(), actor.owner, limit)
+        if not actor.signed_in:
+            return pipeline.search(svc, q.strip(), actor.owner, limit, semantic=False)
+        paid_svc, account = request_services(svc, actor.uid)
+        account.admit()
+        result = pipeline.search(paid_svc, q.strip(), actor.owner, limit)
+        account.check()
+        return result
 
     # ---- knowledge library, playbook overrides, company policy PDF (app/routes_knowledge.py)
     app.include_router(routes_knowledge.router)

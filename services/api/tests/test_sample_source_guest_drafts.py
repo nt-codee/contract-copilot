@@ -22,8 +22,8 @@ def assert_source(response, source):
     return response.json()
 
 
-def test_all_sample_cache_branches_report_cached(anon, client, services):
-    demo = assert_source(anon.post(SAMPLE, headers=SEED), "fresh")
+def test_all_sample_cache_branches_report_cached(admin, anon, client, services):
+    demo = assert_source(admin.post(SAMPLE, headers=SEED), "fresh")
     before = len(services.llm.calls)
     for headers in ({}, GUEST, SEED):
         for refresh in (False, True) if headers != SEED else (False,):
@@ -35,8 +35,8 @@ def test_all_sample_cache_branches_report_cached(anon, client, services):
     assert len(services.llm.calls) == before
 
 
-def test_a_newly_created_copy_is_still_reported_as_copied(anon, client, services, monkeypatch):
-    assert_source(anon.post(SAMPLE, headers=SEED), "fresh")
+def test_a_newly_created_copy_is_still_reported_as_copied(admin, anon, client, services, monkeypatch):
+    assert_source(admin.post(SAMPLE, headers=SEED), "fresh")
     copy = Mock(wraps=pipeline.copy_review)
     monkeypatch.setattr(pipeline, "copy_review", copy)
     model = Mock(side_effect=AssertionError("copy must not start a review"))
@@ -78,8 +78,8 @@ def no_draft_side_effects(monkeypatch, services):
     return model, audit, draft
 
 
-def test_guest_draft_cache_miss_refuses_before_pipeline_model_and_audit(anon, services, monkeypatch):
-    result = assert_source(anon.post(SAMPLE, headers=SEED), "fresh")
+def test_guest_draft_cache_miss_refuses_before_pipeline_model_and_audit(admin, anon, services, monkeypatch):
+    result = assert_source(admin.post(SAMPLE, headers=SEED), "fresh")
     before = services.audit.everyone(100)
     spies = no_draft_side_effects(monkeypatch, services)
     for _ in range(2):
@@ -91,12 +91,12 @@ def test_guest_draft_cache_miss_refuses_before_pipeline_model_and_audit(anon, se
     assert services.audit.everyone(100) == before
 
 
-def test_guest_draft_cache_hit_reads_without_pipeline_model_or_audit(anon, services, monkeypatch):
-    result = assert_source(anon.post(SAMPLE, headers=SEED), "fresh")
+def test_guest_draft_cache_hit_reads_without_pipeline_model_or_audit(admin, anon, services, monkeypatch):
+    result = assert_source(admin.post(SAMPLE, headers=SEED), "fresh")
     path = f"/api/reviews/{result['id']}/negotiation"
-    # Plain anonymous generation remains supported and populates the existing instance cache.
+    # A signed-in admin generates the shared demo reply; guests only read its cache.
     calls = len(services.llm.calls)
-    draft = anon.post(path)
+    draft = admin.post(path, headers=SEED)
     assert draft.status_code == 200 and len(services.llm.calls) > calls
     assert any(event.action == "drafted_reply" for event in services.audit.everyone(100))
     before = services.audit.everyone(100)
@@ -109,8 +109,8 @@ def test_guest_draft_cache_hit_reads_without_pipeline_model_or_audit(anon, servi
     assert services.audit.everyone(100) == before
 
 
-def test_cached_draft_still_checks_workspace_access(api, anon, client):
-    result = assert_source(anon.post(SAMPLE, headers=SEED), "fresh")
+def test_cached_draft_still_checks_workspace_access(admin, api, anon, client):
+    result = assert_source(admin.post(SAMPLE, headers=SEED), "fresh")
     path = f"/api/reviews/{result['id']}/negotiation"
-    assert anon.post(path).status_code == 200
+    assert admin.post(path, headers=SEED).status_code == 200
     assert client.post(path).status_code == 404

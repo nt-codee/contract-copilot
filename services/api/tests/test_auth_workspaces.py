@@ -43,35 +43,37 @@ def actions(c, **kw):
 # ---- the demo visitor is never walled off -----------------------------------------------------------
 
 
-def test_no_token_reaches_the_demo(anon, services):
+def test_no_token_reaches_the_demo(admin, anon, services):
     assert anon.get("/api/reviews").json() == []
     assert anon.get("/api/samples").status_code == 200
     assert anon.get("/api/knowledge").status_code == 200
     assert anon.get("/api/company/docs").json() == []
     assert anon.get("/api/search", params={"q": "liability"}).json() == []
     assert anon.get("/api/activity").json() == []
-    anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})  # explicit offline seed
+    admin.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})  # signed-in administrative seed
     r = anon.post("/api/reviews/sample/demo-01")
-    assert r.status_code == 200 and r.json()["owner"] == "demo" and r.json()["created_by"] is None
+    assert r.status_code == 200 and r.json()["owner"] == "demo" and r.json()["created_by"] == "root"
     rid = r.json()["id"]
     assert [x["id"] for x in anon.get("/api/reviews").json()] == [rid]
     assert anon.get(f"/api/reviews/{rid}").status_code == 200
     assert anon.get(f"/api/reviews/{rid}/pdf").status_code == 200
-    assert anon.post(f"/api/reviews/{rid}/negotiation").status_code == 200  # drafting is open to visitors
+    assert anon.post(f"/api/reviews/{rid}/negotiation").status_code == 401  # new paid work requires sign-in
+    assert admin.post(f"/api/reviews/{rid}/negotiation", headers={"X-Workspace-Id": "demo"}).status_code == 200
+    assert anon.post(f"/api/reviews/{rid}/negotiation").status_code == 200  # cached reply is public
     assert anon.get("/api/search", params={"q": "governed by the laws of Delaware"}).json()
     assert anon.get("/api/reviews/sample/demo-01").status_code in (404, 405)
     assert {"reviewed", "drafted_reply"} <= set(actions(anon))  # the demo workspace's own trail
 
 
-def test_demo_visitor_cannot_rewrite_the_shared_demo(anon, services):
-    first = anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
+def test_demo_visitor_cannot_rewrite_the_shared_demo(admin, anon, services):
+    first = admin.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
     n = len(services.llm.calls)
     again = anon.post("/api/reviews/sample/demo-01", params={"refresh": 1}).json()
     assert again["id"] == first["id"] and len(services.llm.calls) == n  # refresh ignored, cache served
 
 
-def test_views_by_anonymous_visitors_are_not_logged(anon):
-    rid = anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()["id"]
+def test_views_by_anonymous_visitors_are_not_logged(admin, anon):
+    rid = admin.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()["id"]
     anon.get(f"/api/reviews/{rid}")
     assert "viewed_review" not in actions(anon)
 
@@ -100,8 +102,9 @@ def test_demo_workspace_is_read_only_for_everyone_but_the_seeder(services, anon,
     assert ok.status_code == 200
     assert [d.filename for d in services.company.list(owner="demo")] == ["c.pdf"]
     assert services.company.list(owner=WS_ROOT) == []
-    # an anonymous caller may only when the server runs with CLOUD=local
-    assert anon.post("/api/company/docs", files={"file": PDF_FILE}, headers=hdr).status_code == 200
+    # local seed headers do not bypass sign-in for paid HTTP work
+    refused = anon.post("/api/company/docs", files={"file": PDF_FILE}, headers=hdr)
+    assert refused.status_code == 401 and refused.json()["error"]["code"] == "sign_in_required"
     services.settings = dataclasses.replace(services.settings, cloud="gcp")
     r = anon.post("/api/company/docs", files={"file": PDF_FILE}, headers=hdr)
     assert r.status_code == 403
@@ -265,8 +268,8 @@ def test_same_document_in_two_workspaces_stays_separate(client, bob):
     assert [r["id"] for r in bob.get(f"/api/reviews/{b['id']}/history").json()] == [b["id"]]
 
 
-def test_signed_in_user_gets_a_private_copy_of_a_sample(anon, client, bob, services):
-    demo = anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
+def test_signed_in_user_gets_a_private_copy_of_a_sample(admin, anon, client, bob, services):
+    demo = admin.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
     n = len(services.llm.calls)
     mine = client.post("/api/reviews/sample/demo-01").json()
     assert len(services.llm.calls) == n  # copied, no model call
@@ -547,7 +550,7 @@ def test_admin_users_have_review_counts_and_last_seen(client, bob, admin):
 
 
 def test_copies_of_samples_do_not_count_as_model_runs(anon, client, admin, services):
-    anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})
+    admin.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})
     client.post("/api/reviews/sample/demo-01")  # a free copy
     o = admin_mod.overview(services, 7, use_cache=False)
     assert o["reviews"] == 2

@@ -16,6 +16,7 @@ from app.config import REPO_ROOT
 from app.models import KeyDate, next_deadline
 from app.pipeline import add_months, build_key_dates, compute_date
 from app.models import LLMKeyDate
+from conftest import ROOT
 
 # ---- knowledge API -------------------------------------------------------------------------------
 
@@ -152,7 +153,7 @@ def test_seed_demo_is_idempotent(live_server, services, capsys):
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
     import seed_demo
 
-    assert seed_demo.main(["--base-url", live_server, "--pause", "0"]) == 0
+    assert seed_demo.main(["--base-url", live_server, "--token", ROOT, "--pause", "0"]) == 0
     out = capsys.readouterr().out
     assert "kopi-kita-contracting-policy.pdf: uploaded" in out
     row = next(line for line in out.splitlines() if line.startswith("demo-01"))
@@ -160,10 +161,10 @@ def test_seed_demo_is_idempotent(live_server, services, capsys):
     assert [d.filename for d in services.company.list(owner="demo")] == ["kopi-kita-contracting-policy.pdf"]
     n_calls = len(services.llm.calls)
 
-    assert seed_demo.main(["--base-url", live_server, "--pause", "0"]) == 0  # again: nothing re-uploaded
+    assert seed_demo.main(["--base-url", live_server, "--token", ROOT, "--pause", "0"]) == 0  # again: nothing re-uploaded
     out2 = capsys.readouterr().out
     assert "already there" in out2 and len(services.company.list(owner="demo")) == 1
     assert len(services.llm.calls) == n_calls  # cached sample review, no model call
 
-    assert seed_demo.main(["--base-url", live_server, "--pause", "0", "--refresh"]) == 0
+    assert seed_demo.main(["--base-url", live_server, "--token", ROOT, "--pause", "0", "--refresh"]) == 0
     assert len(services.llm.calls) > n_calls  # --refresh re-runs it

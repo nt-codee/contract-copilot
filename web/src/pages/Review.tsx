@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from "reac
 import { deleteReview, draftNegotiation, exportReview, getReview, pdfUrl, reviewSample } from "../api";
 import { canManage } from "../session";
 import { useSession } from "../useSession";
+import type { ReviewStage } from "../api";
 import Progress from "../components/Progress";
 import { SignInButton } from "../components/Account";
 import DraftDialog from "../components/DraftDialog";
@@ -78,6 +79,7 @@ export default function Review() {
   const opening = location.state as { earlier?: string; sampleId?: string } | null;
   const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshStage, setRefreshStage] = useState<ReviewStage | undefined>();
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const wide = useMedia("(min-width: 1024px)");
 
@@ -176,10 +178,11 @@ export default function Review() {
 
   async function refreshSample() {
     if (!(review?.sample_id ?? opening?.sampleId) || !session.user || session.guest || session.loading || refreshing) return;
+    setRefreshStage(undefined);
     setRefreshing(true);
     setRefreshError(null);
     try {
-      const fresh = await reviewSample((review?.sample_id ?? opening?.sampleId)!, true);
+      const fresh = await reviewSample((review?.sample_id ?? opening?.sampleId)!, true, setRefreshStage);
       const query = new URLSearchParams(params);
       // Finding IDs can change between runs; keep only a still-valid selection.
       if (!fresh.findings.some((f) => f.id === query.get("finding"))) query.delete("finding");
@@ -189,6 +192,7 @@ export default function Review() {
       setRefreshError(e instanceof Error ? e.message : "The fresh review could not be completed.");
     } finally {
       setRefreshing(false);
+      setRefreshStage(undefined);
     }
   }
 
@@ -259,7 +263,7 @@ export default function Review() {
       </p>
     );
 
-  if (refreshing) return <Progress subject={reviewTitle(review)} />;
+  if (refreshing) return <Progress subject={reviewTitle(review)} stage={refreshStage} />;
 
   const url = pdfUrl(review.id);
   const reader = (compact: boolean) => (

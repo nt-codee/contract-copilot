@@ -1,3 +1,4 @@
+import { ApiError, readReviewResponse } from "./reviewTransport";
 import type {
   AdminUserRow,
   AuditEvent,
@@ -23,13 +24,8 @@ import type {
 
 const MOCK = import.meta.env.VITE_MOCK === "1";
 
-export class ApiError extends Error {
-  code: string;
-  constructor(code: string, message: string) {
-    super(message);
-    this.code = code;
-  }
-}
+export { ApiError };
+export type ReviewStage = "reading" | "planning" | "researching" | "drafting" | "verifying" | "locating";
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -65,6 +61,19 @@ async function request<T>(path: string, init?: RequestInit, onResponse?: (res: R
   onResponse?.(res);
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
+}
+
+/** Only the callback opts into streaming; auth and upload form handling stay the same. */
+async function requestReview(path: string, init: RequestInit, onProgress?: (stage: ReviewStage) => void) {
+  const headers = new Headers(init.headers);
+  if (onProgress) headers.set("Accept", "text/event-stream");
+  let response: Response;
+  try {
+    response = await send(path, { ...init, headers });
+  } catch {
+    throw new ApiError("network", "We could not reach the server. Check your connection and try again.");
+  }
+  return readReviewResponse(response, onProgress);
 }
 
 export const pdfUrl = (id: string, page?: number) =>
@@ -103,7 +112,7 @@ export interface ReviewOptions {
   company_doc_ids?: string[];
 }
 
-export async function uploadReview(file: File, opts: ReviewOptions = {}): Promise<ReviewResult> {
+export async function uploadReview(file: File, opts: ReviewOptions = {}, onProgress?: (stage: ReviewStage) => void): Promise<ReviewResult> {
   if (MOCK) {
     if (!(await mockSignedIn())) throw new ApiError(SIGN_IN_CODE, "Sign in with Google to review your own contract.");
     const m = await import("./mocks");
@@ -118,13 +127,13 @@ export async function uploadReview(file: File, opts: ReviewOptions = {}): Promis
   if (opts.apply_company_rules !== undefined) form.append("apply_company_rules", String(opts.apply_company_rules));
   if (opts.perspective) form.append("perspective", opts.perspective);
   if (opts.apply_company_rules !== false && opts.company_doc_ids?.length) form.append("company_doc_ids", opts.company_doc_ids.join(","));
-  return request<ReviewResult>("/api/reviews", { method: "POST", body: form });
+  return (await requestReview("/api/reviews", { method: "POST", body: form }, onProgress)).review;
 }
 
 /** Opens a sample. The server answers from an earlier run when it has one; `refresh` re-runs it (signed in only). */
 export type SampleReviewResult = ReviewResult & { sample_opening?: "cached" | "copied" | "fresh" };
 
-export async function reviewSample(sampleId: string, refresh = false): Promise<SampleReviewResult> {
+export async function reviewSample(sampleId: string, refresh = false, onProgress?: (stage: ReviewStage) => void): Promise<SampleReviewResult> {
   if (MOCK) {
     if (refresh && !(await mockSignedIn())) throw new ApiError(SIGN_IN_CODE, "Sign in with Google to run a fresh review.");
     const m = await import("./mocks");
@@ -133,16 +142,12 @@ export async function reviewSample(sampleId: string, refresh = false): Promise<S
       ? { ...m.mockReview, created_at: new Date().toISOString(), sample_opening: "fresh" }
       : { ...m.mockReview, sample_opening: "cached" };
   }
-  let source: SampleReviewResult["sample_opening"];
-  const result = await request<ReviewResult>(
+  const { review, source } = await requestReview(
     `/api/reviews/sample/${encodeURIComponent(sampleId)}${refresh ? "?refresh=1" : ""}`,
     { method: "POST" },
-    (res) => {
-      const value = res.headers.get("X-Review-Source");
-      if (value === "cached" || value === "copied" || value === "fresh") source = value;
-    },
+    onProgress,
   );
-  return { ...result, sample_opening: source };
+  return { ...review, sample_opening: source };
 }
 
 export async function getReview(id: string): Promise<ReviewResult> {

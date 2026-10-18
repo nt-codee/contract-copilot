@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.security import build_csp, clean_filename
-from conftest import bearer
+from conftest import ROOT, bearer
 from pdfgen import make_pdf
 
 PDF = make_pdf()
@@ -192,7 +192,7 @@ def test_a_sample_copy_costs_no_rate_slot(services):
     import dataclasses
 
     api = create_app(dataclasses.replace(services.settings, rate_limit_per_hour=1, rate_limit_user_per_hour=1), services)
-    TestClient(api).post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})  # seeds the shared demo copy (one real run)
+    TestClient(api, headers=bearer(ROOT)).post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"})  # signed-in administrative seed
     me = TestClient(api, headers=bearer(tok("dee")))
     assert me.post("/api/reviews/sample/demo-01").status_code == 200  # a free copy, no model call
 

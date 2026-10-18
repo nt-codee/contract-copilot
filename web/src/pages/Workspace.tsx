@@ -1,14 +1,16 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { acceptInvite, createInvite, listMembers, removeMember, renameWorkspace, setMemberRole, workspaceOverview } from "../api";
 import { SignInButton } from "../components/Account";
 import { formatDate } from "../format";
-import { canManage, readOnlyReason, refresh, switchWorkspace } from "../session";
+import { canManage, enterGuest, readOnlyReason, refresh, switchWorkspace } from "../session";
 import type { Invite, Member, Overview, Role } from "../types";
 
 const OverviewPanels = lazy(() => import("../components/OverviewPanels"));
 import { useSession } from "../useSession";
+
+interface Loaded<T> { key: string; data?: T; error?: string }
 
 const ROLE: Record<Role, string> = { owner: "Owner", admin: "Admin", member: "Member" };
 
@@ -18,7 +20,11 @@ export function WorkspaceSettings() {
   const mine = s.workspace?.role;
   const [name, setName] = useState(ws?.name ?? "");
   const [saved, setSaved] = useState<string | null>(null);
-  const [members, setMembers] = useState<Member[] | null>(null);
+  const [memberState, setMemberState] = useState<Loaded<Member[]>>();
+  const [memberRetry, setMemberRetry] = useState(0);
+  const [overviewRetry, setOverviewRetry] = useState(0);
+  const [enteringDemo, setEnteringDemo] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [invite, setInvite] = useState<Invite | null>(null);
   const [inviteRole, setInviteRole] = useState<Invite["role"]>("member");
@@ -26,49 +32,110 @@ export function WorkspaceSettings() {
   const [confirm, setConfirm] = useState<string | null>(null);
   const [tab, setTab] = useState<"overview" | "people">("overview");
   const [days, setDays] = useState(30);
-  const [o, setO] = useState<Overview | null>(null);
+  const [overviewState, setOverviewState] = useState<Loaded<Overview>>();
+  const readOnly = readOnlyReason(s);
+  const canView = !s.loading && !!ws && ((!s.user && s.guest) || (!!s.user && canManage(s)));
+  const accessKey = canView ? `${ws!.id}|${s.user?.uid ?? "guest"}|${mine}` : "denied";
+  const overviewKey = `${accessKey}|${days}|${overviewRetry}`;
+  const memberKey = `${accessKey}|${memberRetry}`;
+  const actionScope = `${accessKey}|${tab}`;
+  const activeScope = useRef(actionScope);
+  activeScope.current = actionScope;
+  const o = overviewState?.key === overviewKey ? overviewState.data : undefined;
+  const overviewError = overviewState?.key === overviewKey ? overviewState.error : undefined;
+  const members = memberState?.key === memberKey ? memberState.data : undefined;
+  const memberError = memberState?.key === memberKey ? memberState.error : undefined;
 
-  useEffect(() => setName(ws?.name ?? ""), [ws?.name]);
   useEffect(() => {
-    if (!ws || tab !== "overview") return;
-    setO(null);
-    workspaceOverview(ws.id, days).then(setO).catch((e: Error) => setError(e.message));
-  }, [ws?.id, tab, days]);
+    setName(ws?.name ?? "");
+  }, [ws?.name]);
   useEffect(() => {
-    if (!ws) return;
-    listMembers(ws.id).then(setMembers).catch((e: Error) => setError(e.message));
-  }, [ws?.id]);
+    setError(null);
+    setSaved(null);
+    setInvite(null);
+    setConfirm(null);
+    setDemoError(null);
+  }, [accessKey, tab]);
+  useEffect(() => {
+    if (!canView || !ws || tab !== "overview") return;
+    let live = true;
+    setOverviewState({ key: overviewKey });
+    workspaceOverview(ws.id, days)
+      .then((data) => { if (live) setOverviewState({ key: overviewKey, data }); })
+      .catch((e: Error) => { if (live) setOverviewState({ key: overviewKey, error: e.message || "The overview could not be loaded." }); });
+    return () => { live = false; };
+  }, [canView, ws?.id, overviewKey, tab, days]);
+  useEffect(() => {
+    if (!canView || !ws || tab !== "people") return;
+    let live = true;
+    setMemberState({ key: memberKey });
+    listMembers(ws.id)
+      .then((data) => { if (live) setMemberState({ key: memberKey, data }); })
+      .catch((e: Error) => { if (live) setMemberState({ key: memberKey, error: e.message || "The members could not be loaded." }); });
+    return () => { live = false; };
+  }, [canView, ws?.id, memberKey, tab]);
+
+  async function viewDemo() {
+    if (enteringDemo || s.user || s.guest) return;
+    setEnteringDemo(true);
+    setDemoError(null);
+    try {
+      await enterGuest(); // explicit action only; remain on /workspace
+    } catch (e) {
+      setDemoError(e instanceof Error ? e.message : "The demo company could not be opened. Please try again.");
+    } finally {
+      setEnteringDemo(false);
+    }
+  }
 
   if (s.loading) return <p className="px-5 py-16 text-center text-desk-text" role="status">Loading…</p>;
-  const readOnly = readOnlyReason(s);
-  if (!ws || (!readOnly && (!s.user || !canManage(s))))
+  if (!canView || !ws)
     return (
       <div className="mx-auto max-w-xl px-5 py-16 text-white">
         <h1 className="display text-2xl">Workspace settings</h1>
-        <p className="mt-3 text-desk-text">{s.user ? "Only the workspace owner or an admin can change these settings." : "Sign in to manage your company’s workspace."}</p>
-        {!s.user && <div className="mt-5"><SignInButton /></div>}
+        {s.user ? (
+          <p className="mt-3 text-desk-text">Only the workspace owner or an admin can view these settings. Your contracts are available in the <Link to="/library" className="underline underline-offset-4">Library</Link>.</p>
+        ) : (
+          <>
+            <p className="mt-3 text-desk-text">Sign in to manage your own workspace, with your company’s contracts, rules and people.</p>
+            {s.available && <div className="mt-5"><SignInButton /></div>}
+            <section aria-labelledby="demo-workspace-title" className="mt-8 rounded-[3px] border border-desk-line px-5 py-5">
+              <h2 id="demo-workspace-title" className="text-lg font-semibold">Explore the demo company</h2>
+              <p className="mt-2 text-desk-text">Kopi Kita Sdn Bhd is a made-up company. View its workspace overview and sample team without signing in. The demo is read-only; your own workspace stays separate.</p>
+              <button type="button" className="btn-go mt-4 !min-h-[44px]" disabled={enteringDemo} onClick={() => void viewDemo()}>
+                {enteringDemo ? "Opening the demo…" : "View the read-only demo"}
+              </button>
+              {enteringDemo && <p role="status" className="mt-2 text-sm text-desk-text">Opening the demo company’s workspace…</p>}
+              {demoError && <p role="alert" className="mt-3 rounded-[3px] bg-high-tint px-3 py-2 text-high">{demoError}</p>}
+            </section>
+          </>
+        )}
       </div>
     );
 
   async function save(e: FormEvent) {
     e.preventDefault();
     if (!ws || !name.trim() || name.trim() === ws.name) return;
+    setError(null);
     try {
       await renameWorkspace(ws.id, name.trim());
+      if (activeScope.current !== actionScope) return;
       await refresh();
-      setSaved("Name saved.");
+      if (activeScope.current === actionScope) setSaved("Name saved.");
     } catch (x) {
-      setError((x as Error).message);
+      if (activeScope.current === actionScope) setError((x as Error).message);
     }
   }
 
   async function makeInvite() {
     if (!ws) return;
     setCopied(false);
+    setError(null);
     try {
-      setInvite(await createInvite(ws.id, inviteRole));
+      const created = await createInvite(ws.id, inviteRole);
+      if (activeScope.current === actionScope) setInvite(created);
     } catch (x) {
-      setError((x as Error).message);
+      if (activeScope.current === actionScope) setError((x as Error).message);
     }
   }
 
@@ -88,7 +155,7 @@ export function WorkspaceSettings() {
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div role="tablist" aria-label="Workspace" className="flex gap-1.5">
           {([["overview", "Overview"], ["people", "People and settings"]] as const).map(([v, l]) => (
-            <button key={v} type="button" role="tab" id={`tab-${v}`} aria-selected={tab === v} aria-controls={`panel-${v}`} onClick={() => setTab(v)} className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-4 text-sm ${tab === v ? "border-white bg-white font-semibold text-ink" : "border-desk-line text-white hover:border-desk-text"}`}>
+            <button key={v} type="button" role="tab" id={`tab-${v}`} aria-selected={tab === v} aria-controls={`panel-${v}`} onClick={() => { if (v !== tab) { setTab(v); setOverviewState(undefined); setMemberState(undefined); } }} className={`inline-flex min-h-[44px] items-center rounded-[3px] border px-4 text-sm ${tab === v ? "border-white bg-white font-semibold text-ink" : "border-desk-line text-white hover:border-desk-text"}`}>
               {l}
             </button>
           ))}
@@ -106,9 +173,16 @@ export function WorkspaceSettings() {
 
       {tab === "overview" ? (
         <div id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" className="mt-5">
-          <Suspense fallback={<OverviewSkeleton />}>
-            {o ? <OverviewPanels o={o} days={days} admin={false} /> : <OverviewSkeleton />}
-          </Suspense>
+          {overviewError ? (
+            <div className="sheet px-5 py-5">
+              <p role="alert" className="text-high">The workspace overview could not be loaded. {overviewError}</p>
+              <button type="button" className="btn-line mt-3 !min-h-[44px]" onClick={() => setOverviewRetry((n) => n + 1)}>Try the overview again</button>
+            </div>
+          ) : (
+            <Suspense fallback={<OverviewSkeleton />}>
+              {o ? <OverviewPanels o={o} days={days} admin={false} /> : <OverviewSkeleton />}
+            </Suspense>
+          )}
         </div>
       ) : (
       <div id="panel-people" role="tabpanel" aria-labelledby="tab-people">
@@ -151,8 +225,15 @@ export function WorkspaceSettings() {
         <h2 id="members-title" className="label border-b border-paper-line px-5 py-4 text-ink-soft sm:px-8">
           Members{members ? `, ${members.length}` : ""}
         </h2>
-        {members === null ? (
+        {memberError ? (
+          <div className="px-5 py-4 sm:px-8">
+            <p role="alert" className="text-high">The workspace members could not be loaded. {memberError}</p>
+            <button type="button" className="btn-line mt-3 !min-h-[44px]" onClick={() => setMemberRetry((n) => n + 1)}>Try loading members again</button>
+          </div>
+        ) : !members ? (
           <p className="px-5 py-4 text-ink-soft sm:px-8" role="status">Loading…</p>
+        ) : members.length === 0 ? (
+          <p className="px-5 py-4 text-ink-soft sm:px-8">No members to show in this workspace.</p>
         ) : (
           <ul className="divide-y divide-paper-line">
             {members.map((m) => {
@@ -174,8 +255,9 @@ export function WorkspaceSettings() {
                           value={m.role}
                           onChange={async (e) => {
                             const role = e.target.value as Role;
-                            const updated = await setMemberRole(ws.id, m.uid, role).catch((x: Error) => { setError(x.message); return null; });
-                            if (updated) setMembers((list) => list!.map((x) => (x.uid === m.uid ? updated : x)));
+                            setError(null);
+                            const updated = await setMemberRole(ws.id, m.uid, role).catch((x: Error) => { if (activeScope.current === actionScope) setError(x.message); return null; });
+                            if (updated && activeScope.current === actionScope) setMemberState((state) => state?.key === memberKey ? { ...state, data: state.data?.map((x) => x.uid === m.uid ? updated : x) } : state);
                           }}
                           className="min-h-[44px] rounded-[3px] border border-ink/30 bg-white px-2 text-ink"
                         >
@@ -190,9 +272,15 @@ export function WorkspaceSettings() {
                     {canEdit && !lastOwner && (confirm === m.uid ? (
                       <>
                         <button type="button" className="btn !min-h-[44px] bg-high px-3 text-white" onClick={async () => {
-                          await removeMember(ws.id, m.uid).catch((x: Error) => setError(x.message));
-                          setMembers((list) => list!.filter((x) => x.uid !== m.uid));
-                          setConfirm(null);
+                          setError(null);
+                          try {
+                            await removeMember(ws.id, m.uid);
+                            if (activeScope.current !== actionScope) return;
+                            setMemberState((state) => state?.key === memberKey ? { ...state, data: state.data?.filter((x) => x.uid !== m.uid) } : state);
+                            setConfirm(null);
+                          } catch (x) {
+                            if (activeScope.current === actionScope) setError((x as Error).message);
+                          }
                         }}>Remove</button>
                         <button type="button" className="btn-line !min-h-[44px] px-3" onClick={() => setConfirm(null)}>Keep</button>
                       </>

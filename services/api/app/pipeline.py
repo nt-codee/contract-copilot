@@ -11,7 +11,7 @@ import re
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, timezone
 from typing import Callable
 
@@ -29,7 +29,8 @@ from app.models import (
     LLMNegotiation, LLMTranscription, Metrics, NegotiationAsk, NegotiationDraft, RemovedClaim, ReviewOptions, ReviewResult, SearchHit, Verdict, Verification,
 )
 from app.ports import (LLM, AuthVerifier, BlobStore, Chunk, CompanyChunk, CompanyStore, Embedder, LLMUsage,
-                       PdfPart, ReviewStore, SearchIndex, SpendCounter, UserStore, WorkspaceStore)
+                       PdfPart, ReviewStore, SearchIndex, SpendCounter, UserStore, WorkspaceStore, BudgetLedger)
+from app.progress import Progress, report
 
 log = logging.getLogger("cc.pipeline")
 
@@ -65,6 +66,7 @@ class Services:
     prompt_version: str
     overrides: "PlaybookOverrideStore | None" = None  # workspace playbook overrides (None: defaults only)
     spend: "SpendCounter | None" = None  # daily cap on fresh model reviews (None: no cap)
+    budget_ledger: BudgetLedger | None = None
 
 
 # ---- 1. validate and extract -----------------------------------------------------------------
@@ -766,22 +768,24 @@ def index_review(svc: Services, review: ReviewResult, pages: list[str]) -> int:
 
 def review(svc: Services, pdf_bytes: bytes, filename: str, sample_id: str | None = None,
            owner: str = DEMO_OWNER, created_by: str | None = None,
-           options: ReviewOptions | None = None) -> ReviewResult:
+           options: ReviewOptions | None = None, *, progress: Progress | None = None) -> ReviewResult:
     """Review a PDF into workspace `owner`, run by member `created_by`, with the reader's `options`."""
     t0 = time.monotonic()
     doc = validate_pdf(pdf_bytes, svc.settings)
     try:
-        return _review(svc, doc, pdf_bytes, filename, sample_id, t0, owner, created_by, options or ReviewOptions())
+        return _review(svc, doc, pdf_bytes, filename, sample_id, t0, owner, created_by, options or ReviewOptions(),
+                       progress=progress)
     finally:
         doc.close()
 
 
 def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: str,
             sample_id: str | None, t0: float, owner: str, created_by: str | None,
-            options: ReviewOptions) -> ReviewResult:
+            options: ReviewOptions, *, progress: Progress | None = None) -> ReviewResult:
     page_count = doc.page_count
     trace = Trace(origin=t0)
     t_read = time.monotonic()
+    report(progress, "reading")
     pages = extract_pages(doc)
 
     usage = LLMUsage(model=svc.llm.model)
@@ -800,7 +804,7 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
 
     home = svc.settings.home_jurisdiction
     tools = Toolbox(svc.kb, svc.company, svc.embedder, pages, owner=owner, overrides=svc.overrides, home=home)
-    agent = run_agent(svc.llm, tools, pages, trace, options=options)
+    agent = run_agent(svc.llm, tools, pages, trace, options=options, progress=progress)
     out = agent.review
     usage.add(agent.usage)
     # the jurisdiction fixed during research wins over the model's final word; both default to "my"
@@ -818,6 +822,7 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
             x for x in (trace.steps[0].detail, f"governing law: {agent.governing_law} -> {jurisdiction}") if x)
 
     t_verify = time.monotonic()
+    report(progress, "verifying")
     removed: list[RemovedClaim] = []
     consequences: dict[str, str] = {}
     kb_version = svc.kb_version  # the same content hash the provenance records
@@ -841,6 +846,7 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
         trace.steps[0].detail = " | ".join(x for x in (trace.steps[0].detail, (
             f"overall risk {overall}, from the findings (the model said {out.verdict.overall_risk})")) if x)
     add_caveats(findings, svc.kb.law_by_id)
+    report(progress, "locating")
     locate_company_boxes(svc, findings, owner)
     fill_cited(trace.steps, {c.ref for f in findings for c in f.citations})
     if scanned:
@@ -925,10 +931,10 @@ def copy_review(svc: Services, src: ReviewResult, pdf_bytes: bytes, owner: str,
         "created_by": created_by, "content_hash": chash, "previous_review_id": earlier[0].id if earlier else None})
     svc.blobs.put(f"uploads/{result.id}.pdf", pdf_bytes)
     try:
-        with pymupdf.open(stream=pdf_bytes, filetype="pdf") as doc:
-            pages = extract_pages(doc)
-        if not needs_ocr(pages):  # a scanned sample would need a model call to read; skip search for it
-            index_review(svc, result, pages)
+        # A cached sample copy is free: reuse already indexed full-text chunks/vectors, never re-embed.
+        svc.index.upsert([replace(c, id=f"{result.id}-{i}", review_id=result.id, owner=owner,
+                                  filename=result.filename)
+                          for i, c in enumerate(svc.index.chunks(src.id, owner=src.owner or DEMO_OWNER))])
     except Exception:
         log.exception("indexing the copied sample failed for review %s", result.id)
     result.metrics = result.metrics.model_copy(update={
@@ -966,6 +972,7 @@ def delete_review(svc: Services, review_id: str, owner: str) -> ReviewResult:
     svc.store.delete(review_id, owner=owner)
     svc.index.delete_review(review_id, owner=owner)
     svc.blobs.delete(f"uploads/{review_id}.pdf")
+    svc.blobs.delete(f"negotiations/{review_id}.json")
     return r
 
 
@@ -975,6 +982,7 @@ def _drop_workspace(svc: Services, workspace_id: str) -> tuple[int, int, int]:
     svc.index.delete_owner(workspace_id)
     for rid in review_ids:
         svc.blobs.delete(f"uploads/{rid}.pdf")
+        svc.blobs.delete(f"negotiations/{rid}.json")
     doc_ids = svc.company.delete_owner(workspace_id)
     for did in doc_ids:
         svc.blobs.delete(f"company/{did}.pdf")
@@ -1161,15 +1169,18 @@ def hybrid_score(q_terms: set[str], q_phrase: str, text: str, vector_score: floa
     return VECTOR_WEIGHT * max(vector_score, 0.0) + KEYWORD_WEIGHT * kw + PHRASE_BOOST * phrase
 
 
-def search(svc: Services, q: str, owner: str, limit: int = 10) -> list[SearchHit]:
+def search(svc: Services, q: str, owner: str, limit: int = 10, *, semantic: bool = True) -> list[SearchHit]:
     """Hybrid search of one workspace: the nearest chunks by vector, re-scored by keyword overlap and an
     exact-phrase boost, then de-duplicated per passage."""
-    vectors, _ = svc.embedder.embed([q], query=True)
-    near = svc.index.query(vectors[0], max(limit * 5, VECTOR_FETCH), owner=owner)
+    if semantic:
+        vectors, _ = svc.embedder.embed([q], query=True)
+        near = svc.index.query(vectors[0], max(limit * 5, VECTOR_FETCH), owner=owner)
+    else:
+        near = svc.index.keyword(q, max(limit * 5, VECTOR_FETCH), owner=owner)
     words = _words(q)
     terms = {w for w in words if w not in STOPWORDS and len(w) > 1}
     phrase = " ".join(words)
-    scored = [(c, hybrid_score(terms, phrase, c.text, s)) for c, s in near]
+    scored = [(c, hybrid_score(terms, phrase, c.text, s)) for c, s in near] if semantic else near
     hits = collapse_hits(scored)[:limit]
     return [
         SearchHit(review_id=c.review_id, filename=c.filename, page=c.page,

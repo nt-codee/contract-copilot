@@ -38,6 +38,8 @@ def build_services(settings: Settings) -> Services:
         from app.adapters.gcp import FirestoreSpendCounter
 
         spend = FirestoreSpendCounter(settings)
+        from app.adapters.gcp_budget import FirestoreBudgetLedger
+        budget_ledger = FirestoreBudgetLedger(settings)
     elif settings.cloud == "local":
         from app.adapters.local import local_stores
 
@@ -46,6 +48,8 @@ def build_services(settings: Settings) -> Services:
         from app.adapters.local import MemorySpendCounter
 
         spend = MemorySpendCounter()
+        from app.adapters.local import MemoryBudgetLedger
+        budget_ledger = MemoryBudgetLedger()
     else:
         raise RuntimeError(f"CLOUD must be 'gcp' or 'local', got {settings.cloud!r}")
 
@@ -53,4 +57,5 @@ def build_services(settings: Settings) -> Services:
     return Services(settings=settings, llm=llm, embedder=embedder, blobs=blobs, index=index, store=store,
                     company=company, kb=kb, auth=auth, users=users, audit=Audit(audit_log), workspaces=workspaces,
                     kb_version=provenance.kb_version(settings.knowledge_dir),  # once, at startup
-                    prompt_version=provenance.prompt_version(), overrides=overrides, spend=spend)
+                    prompt_version=provenance.prompt_version(), overrides=overrides, spend=spend,
+                    budget_ledger=budget_ledger)

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { DragEvent } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, SIGN_IN_CODE, listCompanyDocs, uploadReview } from "../api";
-import type { ReviewOptions } from "../api";
+import type { ReviewOptions, ReviewStage } from "../api";
 import { SignInButton } from "../components/Account";
 import { RiskLabel } from "../components/Risk";
 import { breakable, contractTypeLabel } from "../format";
@@ -16,11 +16,12 @@ const isAccepted = (f: File) => OK_TYPES.includes(f.type) || /\.(pdf|jpe?g|png)$
 
 const LAW: Record<string, string> = { my: "Malaysian law", sg: "Singapore law" };
 
-type Status = "waiting" | "reading" | "reviewing" | "done" | "failed";
+type Status = "waiting" | "reviewing" | "done" | "failed";
 interface Job {
   key: string;
   file: File;
   status: Status;
+  stage?: ReviewStage;
   /** the options this file was (or will be) reviewed with */
   opts: ReviewOptions;
   result?: ReviewResult;
@@ -29,10 +30,18 @@ interface Job {
 
 const STATUS: Record<Status, string> = {
   waiting: "Waiting",
-  reading: "Reading",
   reviewing: "Reviewing",
   done: "Done",
   failed: "Not reviewed",
+};
+
+const PHASE: Record<ReviewStage, string> = {
+  reading: "Reading the contract",
+  planning: "Planning what to look up",
+  researching: "Looking up sources",
+  drafting: "Drafting the findings",
+  verifying: "Checking quotes and sources",
+  locating: "Locating quotes on the pages",
 };
 
 function check(file: File): string | null {
@@ -94,9 +103,8 @@ export default function Upload() {
     const next = jobs.find((j) => j.status === "waiting");
     if (!next) return;
     running.current = true;
-    patch(next.key, { status: "reading", error: undefined });
-    const t = window.setTimeout(() => patch(next.key, { status: "reviewing" }), 2500);
-    uploadReview(next.file, next.opts)
+    patch(next.key, { status: "reviewing", stage: undefined, error: undefined });
+    uploadReview(next.file, next.opts, (stage) => patch(next.key, { stage }))
       .then((result) => patch(next.key, { status: "done", result }))
       .catch((e) => {
         if (e instanceof ApiError && (e.code === SIGN_IN_CODE || e.code === "guest_read_only")) {
@@ -106,7 +114,6 @@ export default function Upload() {
         } else patch(next.key, { status: "failed", error: e instanceof Error ? e.message : "The review did not finish. Try again." });
       })
       .finally(() => {
-        window.clearTimeout(t);
         running.current = false;
         setJobs((js) => [...js]); // wake the queue
       });
@@ -128,7 +135,7 @@ export default function Upload() {
   }
 
   const done = jobs.filter((j) => j.status === "done").length;
-  const active = jobs.some((j) => j.status === "waiting" || j.status === "reading" || j.status === "reviewing");
+  const active = jobs.some((j) => j.status === "waiting" || j.status === "reviewing");
 
   return (
     <div className="mx-auto max-w-[960px] px-5 pb-20 pt-10 sm:px-8 sm:pt-14">
@@ -268,7 +275,7 @@ export default function Upload() {
               <Row
                 key={j.key}
                 job={j}
-                onRetry={() => patch(j.key, { status: "waiting", error: undefined })}
+                onRetry={() => patch(j.key, { status: "waiting", stage: undefined, error: undefined })}
                 onRedo={(o) => setJobs((js) => [...js, { key: `${Date.now()}-redo-${j.file.name}`, file: j.file, opts: { ...j.opts, ...o }, status: "waiting" }])}
               />
             ))}
@@ -313,7 +320,7 @@ const TYPES: [string, string][] = [["nda", "NDA"], ["service_agreement", "Servic
 function Row({ job, onRetry, onRedo }: { job: Job; onRetry: () => void; onRedo: (o: Partial<ReviewOptions>) => void }) {
   const [redo, setRedo] = useState(false);
   const r = job.result;
-  const busy = job.status === "reading" || job.status === "reviewing";
+  const busy = job.status === "reviewing";
   const tone = job.status === "done" ? "bg-low text-white" : job.status === "failed" ? "bg-high text-white" : busy ? "bg-desk text-white" : "bg-paper-soft text-ink border border-paper-line";
   return (
     <li className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-start gap-x-4 gap-y-2 px-5 py-4 sm:grid-cols-[6.5rem_minmax(0,1fr)_auto] sm:items-center">
@@ -361,7 +368,7 @@ function Row({ job, onRetry, onRedo }: { job: Job; onRetry: () => void; onRedo: 
           <span className="mt-0.5 block text-sm text-high">{job.error}</span>
         ) : (
           <span className="mt-0.5 block text-sm text-ink-soft">
-            {job.status === "waiting" ? "Next in line" : job.status === "reading" ? "Reading the pages" : "Checking each clause, usually 20 to 60 seconds"}
+            {job.status === "waiting" ? "Next in line" : job.stage ? PHASE[job.stage] : "Waiting for the completed review. No live phase has been reported."}
           </span>
         )}
       </span>

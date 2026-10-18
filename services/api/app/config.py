@@ -17,6 +17,15 @@ DISCLAIMER = "This is an automated review to help you prepare. It is not legal a
 # and Firestore caps vector indexes at 2048 dimensions.
 EMBED_DIM = 768
 
+# Owner-approved enforcement: gross standard prices, excluding promotional credits/discounts.
+# USD per million tokens; multiplication by tokens yields integer-micro-dollar cost after rounding up.
+ACCOUNT_DAILY_LIMIT_MICROS = 1_000_000
+ENFORCEMENT_PRICES = {
+    "gemini-3.8-flash": ("1.50", "7.50"),
+    "gemini-3.5-flash": ("1.50", "9.00"),
+    "gemini-embedding-2": ("0.20", "0"),
+}
+
 # USD per 1M tokens: (input, output).
 # Source: https://cloud.google.com/vertex-ai/generative-ai/pricing, fetched 2026-10-18 09:15 +08.
 # - gemini-3.8-flash: introductory $0.75 in / $3.75 out per 1M tokens through 2026-12-31;

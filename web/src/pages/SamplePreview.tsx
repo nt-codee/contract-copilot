@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { listSamples, reviewSample, samplePdfUrl } from "../api";
+import type { ReviewStage } from "../api";
 import Reader from "../components/Reader";
 import type { ReaderState } from "../components/Reader";
 import Progress from "../components/Progress";
@@ -25,6 +26,7 @@ export default function SamplePreview() {
   const [pages, setPages] = useState<number | null>(null);
   const [readerState, setReaderState] = useState<ReaderState>("loading");
   const [busy, setBusy] = useState(false);
+  const [stage, setStage] = useState<ReviewStage>();
   const [earlier, setEarlier] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,11 +65,13 @@ export default function SamplePreview() {
   async function review() {
     if (!sample) return;
     setError(null);
+    setStage(undefined);
+    setEarlier(null);
     setBusy(true);
     window.scrollTo(0, 0);
     const start = Date.now();
     try {
-      const r = await reviewSample(sample.id);
+      const r = await reviewSample(sample.id, false, setStage);
       // Prefer the server’s execution source: copying a cached sample creates a new timestamp.
       const old = r.sample_opening
         ? r.sample_opening !== "fresh"
@@ -90,7 +94,7 @@ export default function SamplePreview() {
     if (next) navigate(`/sample/${next.id}`);
   }
 
-  if (busy && sample) return <Progress subject={sample.title} earlier={earlier} />;
+  if (busy && sample) return <Progress subject={sample.title} earlier={earlier} stage={stage} />;
 
   if (samples && !sample)
     return (

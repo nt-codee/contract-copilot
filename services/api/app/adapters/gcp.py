@@ -6,6 +6,8 @@ SDKs are imported lazily inside constructors so CLOUD=local LLM=fake never loads
 from __future__ import annotations
 
 import logging
+import copy
+import math
 import os
 import random
 import threading
@@ -18,6 +20,7 @@ from typing import Iterator
 from pydantic import ValidationError
 
 from app.config import EMBED_DIM, Settings
+from app.budget import BudgetError, cost_micros
 from app.models import AuditEvent, CompanyDoc, Identity, Invite, Member, ReviewResult, User, Workspace
 from app.ports import (ChatMessage, Chunk, CompanyChunk, InvalidToken, LLMUsage, PdfPart, T, ToolCall,
                        ToolSpec, UpstreamError)
@@ -137,6 +140,11 @@ class GeminiLLM:
     fallback_model = ""  # set from LLM_FALLBACK_MODEL in __init__
     _local = threading.local()  # which model answered the current thread's last call
 
+    def with_budget(self, account):
+        scoped = copy.copy(self)
+        scoped._account_budget = account
+        return scoped
+
     def __init__(self, settings: Settings):
         from google import genai
 
@@ -162,6 +170,8 @@ class GeminiLLM:
         )
 
     def _call(self, purpose: str, contents, config):
+        if getattr(self, "_account_budget", None) is not None:
+            return self._metered_call(purpose, contents, config)
         self.calls += 1
         t0 = time.monotonic()
         resp = None
@@ -205,6 +215,70 @@ class GeminiLLM:
                  um.prompt_token_count if um else "?", um.candidates_token_count if um else "?",
                  um.thoughts_token_count if um else "?")
         return resp
+
+    def _metered_call(self, purpose, contents, config):
+        """Exactly one reservation per actual HTTP attempt; no hidden SDK generation retries."""
+        from google.genai import types
+
+        account = self._account_budget
+        self.calls += 1
+        caps = {"agent": 4096, "review": 16384, "transcribe": 32768, "negotiation": 4096, "boxes": 2048}
+        if purpose not in caps:
+            account.fail(BudgetError(503, "budget_unavailable", "This AI operation has no bounded budget. Please try again later."))
+        opts = config.http_options
+        single = config.model_copy(update={"max_output_tokens": caps[purpose], "candidate_count": 1,
+                                           "automatic_continuation": False,
+                                           "automatic_function_calling": types.AutomaticFunctionCallingConfig(disable=True),
+                                           "http_options": _retry_options(1, opts.timeout)})
+        model, remaining, attempt, quota = self.model, call_attempts(purpose), 0, 0
+        group = remaining
+        self._local.answered = model
+        while True:
+            account.require()
+            try:
+                cost_micros(model, 0)  # reject unknown prices before even requesting an unbilled count
+                generation = types.GenerationConfig(**{k: v for k, v in single.model_dump(exclude_none=True).items()
+                                                         if k in types.GenerationConfig.model_fields})
+                count = self._client.models.count_tokens(model=model, contents=contents,
+                    config=types.CountTokensConfig(system_instruction=single.system_instruction, tools=single.tools,
+                                                   generation_config=generation,
+                                                   http_options=_retry_options(1, opts.timeout)))
+                tokens = count.total_tokens
+                if type(tokens) is not int or tokens <= 0:
+                    raise ValueError("unknown input token count")
+            except BudgetError as exc:
+                account.fail(exc)
+            except Exception:
+                account.fail(BudgetError(503, "budget_unavailable", "AI token accounting is unavailable. Please try again later."))
+            reservation = account.reserve(model, tokens, caps[purpose])
+            try:
+                resp = self._client.models.generate_content(model=model, contents=contents, config=single)
+            except Exception as exc:
+                # A failed/timeout attempt can be billed: its entire reservation remains held.
+                remaining -= 1
+                if attempt == 0 and self.fallback_model and purpose in FALLBACK_PURPOSES and stalled(exc):
+                    model, contents = self.fallback_model, _foreign_turns(contents)
+                    group = max(1, call_attempts(purpose) - 1)
+                attempt += 1
+                retryable = getattr(exc, "code", None) in RETRY_STATUSES or stalled(exc)
+                if remaining and retryable:
+                    time.sleep(min(2 ** min(attempt, 3), 20))
+                    continue
+                if getattr(exc, "code", None) == 429 and quota < len(QUOTA_BACKOFF_S):
+                    time.sleep(QUOTA_BACKOFF_S[quota])
+                    quota += 1
+                    remaining = group
+                    continue
+                raise _upstream_failure(f"gemini {purpose} call", exc,
+                                        "The AI service did not respond. Please try again in a minute.") from exc
+            usage = resp.usage_metadata
+            # No refund for absent/partial usage, even on a syntactically successful response.
+            observed = [getattr(usage, k, None) for k in
+                        ("prompt_token_count", "candidates_token_count", "thoughts_token_count")]
+            if all(type(n) is int and n >= 0 for n in observed):
+                account.settle(reservation, model, observed[0], observed[1] + observed[2])
+            self._local.answered = model
+            return resp
 
     def _usage(self, resp, purpose: str = "") -> LLMUsage:
         um = resp.usage_metadata
@@ -302,10 +376,40 @@ class GeminiEmbedder:
                                     location=settings.embed_location,
                                     http_options=_retry_options(EMBED_ATTEMPTS, EMBED_TIMEOUT_MS))
 
+    def with_budget(self, account):
+        scoped = copy.copy(self)
+        scoped._account_budget = account
+        return scoped
+
     def _one(self, text: str, task: str) -> tuple[list[float], int]:
         from google.genai import types
 
         self.calls += 1
+        account = getattr(self, "_account_budget", None)
+        if account is not None:
+            # Text-only tokenizer upper bound: one token per UTF-8 byte plus 1024 for fixed task framing.
+            # This intentionally exceeds observed text token counts; no 4-chars/token underestimate.
+            bound = len(text.encode("utf-8")) + 1024
+            for attempt in range(EMBED_ATTEMPTS):
+                hold = account.reserve(self.model, bound)
+                try:
+                    r = self._client.models.embed_content(model=self.model, contents=text,
+                        config=types.EmbedContentConfig(output_dimensionality=self.dim, task_type=task,
+                                                       http_options=_retry_options(1, EMBED_TIMEOUT_MS)))
+                    break
+                except Exception as exc:
+                    if attempt + 1 < EMBED_ATTEMPTS and (getattr(exc, "code", None) in RETRY_STATUSES or stalled(exc)):
+                        time.sleep(min(2 ** (attempt + 1), 20))
+                        continue
+                    raise
+            emb = r.embeddings[0]
+            observed = getattr(getattr(emb, "statistics", None), "token_count", None)
+            if isinstance(observed, (int, float)) and math.isfinite(observed) and observed >= 0:
+                tokens = math.ceil(observed)
+                account.settle(hold, self.model, tokens)
+            else:
+                tokens = bound  # no observed usage: keep reservation in full
+            return list(emb.values), tokens
         r = self._client.models.embed_content(
             model=self.model, contents=text,
             config=types.EmbedContentConfig(output_dimensionality=self.dim, task_type=task),
@@ -319,6 +423,8 @@ class GeminiEmbedder:
         try:
             with ThreadPoolExecutor(max_workers=min(EMBED_WORKERS, max(len(texts), 1))) as pool:
                 results = list(pool.map(lambda t: self._one(t, task), texts))
+        except BudgetError:
+            raise
         except Exception as e:
             raise _upstream_failure("gemini embedding", e,
                                     "Search is unavailable right now. Please try again in a minute.") from e
@@ -578,6 +684,23 @@ class FirestoreIndex:
                           owner=d.get("owner", owner))
             out.append((chunk, 1.0 - float(d.get("vector_distance", 1.0))))
         return out
+
+    @staticmethod
+    def _chunk(s, owner):
+        d = s.to_dict()
+        return Chunk(id=s.id, review_id=d["review_id"], filename=d["filename"], page=d["page"],
+                     text=d["text"], clause_type=d.get("clause_type"), finding_id=d.get("finding_id"),
+                     owner=d.get("owner", owner), embedding=list(d.get("embedding") or []))
+
+    def keyword(self, query: str, limit: int, *, owner: str) -> list[tuple[Chunk, float]]:
+        from app.keyword import rank
+        # Scan real indexed chunks of this workspace, not only finding excerpts. No new index required.
+        chunks = [self._chunk(s, owner) for s in self._col.where(filter=_eq("owner", owner)).stream()]
+        return rank(chunks, query, limit)
+
+    def chunks(self, review_id: str, *, owner: str) -> list[Chunk]:
+        q = self._col.where(filter=_eq("owner", owner)).where(filter=_eq("review_id", review_id))
+        return [self._chunk(s, owner) for s in q.stream()]
 
     def delete_review(self, review_id: str, *, owner: str) -> None:
         q = self._col.where(filter=_eq("owner", owner)).where(filter=_eq("review_id", review_id))

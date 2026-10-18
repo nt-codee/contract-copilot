@@ -57,7 +57,9 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
      with a long notice window, the vendor owning work the reader paid for). A high finding MUST fill
      "consequence": one sentence naming what actually happens to the reader under this contract's own
      terms (an amount, a lock-in period, a right lost), with the clause number. If you cannot name one,
-     it is medium; a high without a consequence is shown as medium.
+     it is medium. A missing or unverifiable consequence field is incomplete evidence, not proof that
+     the contract contains no consequence. Use the verified quote as evidence of explicit loss of pay,
+     mandatory payment or loss of an exit right; do not invent an amount to fill the field.
    - medium: one-sided but common; worth asking about. Most terms in an ordinary, mildly one-sided
      contract are medium.
    - low: minor drafting point.
@@ -83,7 +85,9 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
    (law, case, playbook, company), the ref EXACTLY as the tool returned it, and the words you relied on.
    Cite only what a tool returned; a ref you did not receive is discarded. Use [] when nothing fits.
    Law is context for the reader, not a verdict: write "Malaysian courts generally allow only
-   reasonable compensation under s.75", never "this is illegal" or "you should".
+   reasonable compensation under s.75", never "this is illegal" or "you should". Reasonable
+   compensation and proof of actual loss are different questions: use the retrieved authority's
+   words on proof, not a general assumption that every damages claim requires actual loss.
 8. policy_breach: only when the quoted clause directly conflicts with a rule that search_company
    returned. Then cite that company result with the rule's own words copied exactly as its excerpt, and
    write one sentence naming the rule. A related or merely similar rule is not a breach: use "". A breach
@@ -145,7 +149,25 @@ REVIEW_RULES = """\
 15. CROSS-CLAUSE. Before you write that a clause locks the reader in, leaves them no remedy or makes them
     bear a whole loss, read the rest of the contract: a right to end on notice, a liability cap, a duty of
     reasonable care or another remedy changes that. Say what the clause does and what else applies;
-    never state the worst case as certain.
+    never state the worst case as certain. Put the applicable exception in the primary assertion,
+    including the first sentence, headline and summary: "Outside the break right in clause X, ...".
+    Do not first assert unconditional liability and then append a contradictory caveat. A break right
+    exercisable only after a stated period must retain both that condition and its notice period.
+16. SILENCE IS NOT PERMISSION. A restriction on one party does not prove the other is legally free to
+    act without restriction. Say "the clause does not state a matching restriction", then propose
+    reciprocal wording. Assignment of rights and transfer of obligations are distinct: do not infer
+    that obligations can be transferred freely from silence or permission to assign rights. Absence
+    of this agreement's confidentiality promise does not establish freedom from every other legal
+    duty. An express contractual permission may be described as what this agreement permits, not a
+    conclusion that every use or disclosure is lawful. Check the actor and scope of the permission.
+17. AUTHORITY AND PROPOSALS. A playbook's balanced term is a proposed negotiation position, not a
+    statutory mandate. Do not write "must by law" based only on a playbook. For statutory claims name
+    the applicability condition and any material source-version limitation in the claim itself,
+    including headline and summary; an automatically appended caveat does not cure overstatement.
+    Distinguish the contract's demanded payment from what a court may award. Where retrieved s75 or
+    Cubic Electronics text permits reasonable compensation without proving actual loss, do not say
+    courts allow only compensation for actual loss or require the claimant to prove actual loss.
+    Do not infer that ordinary damages or a different jurisdiction follow that same proof rule.
 """
 
 CLAUSE_TYPES_HEADING = """

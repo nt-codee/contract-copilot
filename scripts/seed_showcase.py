@@ -176,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     token = os.environ.get(args.token_env, "").strip()
     c = Client(args.base_url, token, args.workspace_id.strip())
     if not token:
-        print(f"note: {args.token_env} is empty; fine for a CLOUD=local server, rejected by a deployed one", file=sys.stderr)
+        print(f"note: {args.token_env} is empty; new AI work requires an admin token on local and deployed servers", file=sys.stderr)
 
     for line in seed_policies(c, policies):
         print(line, flush=True)

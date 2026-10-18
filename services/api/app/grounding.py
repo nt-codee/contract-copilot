@@ -142,6 +142,83 @@ def unsupported_terms(text: str, contract: str) -> list[str]:
     return out
 
 
+# A one-way restriction is not an affirmative permission for the other party. These checks cover
+# categorical permission claims only; they do not infer the legal default from contractual silence.
+_ASSIGN = r"\b(?:assign(?:s|ed|ing)?|transfer(?:s|red|ring)?|delegat(?:e|es|ed|ing)|menyerahhak\w*|memindah\w*)\b"
+_USE = r"\b(?:us(?:e|es|ed|ing)|disclos\w*|shar\w*|mengguna\w*|mendedah\w*|berkongsi)\b"
+_UNRESTRICTED = re.compile(r"\bfreely\b|\bfree (?:to|of)\b|\bwithout (?:any )?(?:restriction|consent)|"
+                           r"\bunrestricted\b|\btanpa (?:sebarang )?(?:sekatan|persetujuan)|\bbebas\b", re.I)
+_LEGAL_FREEDOM = re.compile(r"\b(?:legally|lawfully) free\b|\bsah di sisi undang-undang\b", re.I)
+_DUTIES = re.compile(r"\bobligations?\b|\bduties\b|\b(?:obligasi|kewajipan|tanggungjawab)\b", re.I)
+_PARTY = re.compile(r"\b(discloser|recipient|vendor|customer|client|owner|hirer|tenant|landlord|"
+                    r"pihak pendedah|penerima|pembekal|pelanggan|penyewa)\b", re.I)
+_PARTY_EN = {"pihak pendedah": "discloser", "penerima": "recipient", "pembekal": "vendor",
+             "pelanggan": "customer", "penyewa": "tenant"}
+
+
+def unsupported_permission(text: str, contract: str) -> bool:
+    """Narrowly reject unrestricted permission inferred from silence, not requests for new terms.
+
+    Positive contractual permission can support 'may assign rights'; it cannot establish freedom
+    from every other legal restriction. Assignment of duties needs its own positive wording.
+    """
+    if not _UNRESTRICTED.search(text) or re.search(
+            r"\b(?:not|never|cannot)\s+(?:(?:legally|lawfully)\s+)?free(?:ly)?\b|"
+            r"\bdoes not (?:allow|permit)\b", text, re.I):
+        return False
+    action = _ASSIGN if re.search(_ASSIGN, text, re.I) else _USE
+    if not re.search(action, text, re.I):
+        return False
+    if _LEGAL_FREEDOM.search(text):
+        return True
+    needs_duties = action == _ASSIGN and bool(_DUTIES.search(text))
+    actors = _PARTY.findall(text[:re.search(action, text, re.I).start()])
+    actor = _PARTY_EN.get(actors[-1].lower(), actors[-1].lower()) if actors else None
+    # A no-duty statement ('not obliged ...') and a ban ('may not ...') are not permissions.
+    permission = re.compile(rf"\b(?:may|can|boleh|is permitted to|is entitled to|is free to)\s+"
+                            rf"(?:freely\s+)?{action}\b[^.\n]*", re.I)
+    for m in permission.finditer(contract):
+        line = re.split(r"[.\n]", contract[:m.start()])[-1]
+        parties = _PARTY.findall(line)
+        source_actor = _PARTY_EN.get(parties[-1].lower(), parties[-1].lower()) if parties else None
+        if actor and actor != source_actor:
+            continue
+        scope = re.sub(r"without (?:any )?(?:prior )?(?:written )?consent|tanpa persetujuan", "", m.group(0),
+                       flags=re.I)
+        if re.search(r"\b(?:consent|only|subject to|provided|unless|except|persetujuan|hanya|tertakluk|"
+                     r"melainkan|kecuali)\b", scope, re.I):
+            continue
+        if not needs_duties or _DUTIES.search(m.group(0)):
+            return False
+    return True
+
+
+_REQUIRES_ACTUAL_LOSS = re.compile(
+    r"\bonly\b[^.]{0,70}\b(?:for |proven |proved )?actual loss\b|"
+    r"\b(?:must|needs? to|has to|required to)\s+(?:be\s+)?(?:prove[dn]?|show|establish)\b[^.]{0,30}actual loss|"
+    r"\bactual loss\b[^.]{0,30}\bmust be (?:proved|proven)\b", re.I)
+_NO_PROOF_REQUIRED = re.compile(
+    r"whether or not actual (?:damage or )?loss is proved|"
+    r"irrespective of whether actual (?:damage or )?loss (?:is|or damage is) prov(?:en|ed)|"
+    r"without (?:proving|proof of) (?:the )?actual loss", re.I)
+
+
+def qualify_loss_proof(sentence: str, cited: str) -> str | None:
+    """Correct an actual-loss prerequisite only when the retrieved authority expressly contradicts it.
+
+    Ordinary damages/proof statements with other sources are left alone. No source or unseen
+    subsection is supplied here; the sentence below follows the explicit reasonable-compensation
+    text already provided in this finding's citations.
+    """
+    flat = " ".join(cited.split())
+    if (re.search(r"reasonable compensation", flat, re.I) and _NO_PROOF_REQUIRED.search(flat)
+            and _REQUIRES_ACTUAL_LOSS.search(sentence)
+            and not re.search(r"\b(?:without|need not|not required|whether or not)\b", sentence, re.I)):
+        return ("The cited authority allows reasonable compensation up to the stipulated sum even without "
+                "proof of actual loss; the full amount is not automatic.")
+    return None
+
+
 # ---- splitting and joining ------------------------------------------------------------------
 
 _SENT = re.compile(r"(?<=[.!?])\s+(?=[A-Z\"'(])")
@@ -219,13 +296,30 @@ def ground_finding(f: Finding, contract: str, numbers: set[str], jurisdiction: s
     allowed = numbers | numbers_in(cited) | _word_numbers(cited) | numbers_in(f.quote)
 
     def bad_why(s: str) -> bool:
-        return bool(ungrounded_numbers(s, allowed) or unsupported_terms(s, contract))
+        return bool(ungrounded_numbers(s, allowed) or unsupported_terms(s, contract)
+                    or unsupported_permission(s, contract))
 
     why, gone = _strip_sentences(f.why_risky, bad_why)
     for s in gone:
         removed.append(_removed(f"Explanation: {s}", f.title, f.page))
     if gone:
         f.why_risky = why or FALLBACK_WHY
+
+    corrected = []
+    for s in sentences(f.why_risky):
+        replacement = qualify_loss_proof(s, cited)
+        if replacement:
+            removed.append(_removed(f"Explanation: {s}", f.title, f.page, "citation_scope"))
+        corrected.append(replacement or s)
+    f.why_risky = " ".join(corrected)
+    # 'standard' is a proposal, but a legal assertion embedded in it still needs faithful support.
+    standards = []
+    for s in sentences(f.standard):
+        replacement = qualify_loss_proof(s, cited)
+        if replacement:
+            removed.append(_removed(f"Standard: {s}", f.title, f.page, "citation_scope"))
+        standards.append(replacement or s)
+    f.standard = " ".join(standards)
 
     ask = f.suggested_ask
     alt = _ALT.get(jurisdiction or "")
@@ -248,7 +342,8 @@ def ground_finding(f: Finding, contract: str, numbers: set[str], jurisdiction: s
 def ground_missing(m: MissingClause, contract: str, jurisdiction: str | None,
                    removed: list[RemovedClaim]) -> None:
     """Missing clauses describe what is absent, so only contract features are checked here."""
-    why, gone = _strip_sentences(m.why_it_matters, lambda s: bool(unsupported_terms(s, contract)))
+    why, gone = _strip_sentences(m.why_it_matters, lambda s: bool(unsupported_terms(s, contract)
+                                                               or unsupported_permission(s, contract)))
     for s in gone:
         removed.append(_removed(f"Missing clause ({m.title}): {s}", m.title, None))
     if gone:
@@ -268,7 +363,7 @@ def ground_missing(m: MissingClause, contract: str, jurisdiction: str | None,
 def ground_summary(summary: list[str], contract: str, removed: list[RemovedClaim]) -> list[str]:
     keep = []
     for s in summary:
-        if unsupported_terms(s, contract):
+        if unsupported_terms(s, contract) or unsupported_permission(s, contract):
             removed.append(_removed(f"Summary: {s}", None, None))
         else:
             keep.append(s)

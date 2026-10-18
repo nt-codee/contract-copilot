@@ -24,8 +24,8 @@ def tok(uid, domain=None):
 def world(api, services):
     """A demo workspace with one reviewed sample and one policy, plus a real company that must stay invisible."""
     anon = TestClient(api)
-    review = anon.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
     admin = TestClient(api, headers=bearer(ROOT))
+    review = admin.post("/api/reviews/sample/demo-01", headers={"X-Workspace-Id": "demo"}).json()
     doc = admin.post("/api/company/docs", files={"file": ("kopi-kita-policy.pdf", PDF, "application/pdf")},
                      headers={"X-Workspace-Id": "demo"}).json()
     real = TestClient(api, headers=bearer(tok("ann", "acme.test")))
@@ -157,7 +157,8 @@ def test_a_guest_cannot_become_the_seeder(world):
         assert is_blocked(r)  # even with CLOUD=local, where an anonymous caller could seed with this header
     r = world["anon"].post("/api/company/docs", files={"file": ("seed.pdf", PDF, "application/pdf")},
                            headers={"X-Workspace-Id": "demo"})
-    assert r.status_code == 200  # the offline seeder (no X-Guest) still works
+    assert r.status_code == 401  # every new paid HTTP call needs sign-in, including local seed headers
+    assert r.json()["error"]["code"] == "sign_in_required"
 
 
 def test_upload_is_refused_before_the_body_is_read(world):
