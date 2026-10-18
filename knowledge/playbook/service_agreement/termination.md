@@ -23,8 +23,11 @@ When and how the contract can be ended before its natural end, and what each sid
 - **High:** the vendor may end for convenience on very short notice (under 30 days) a service that the
   customer's records or operations sit on (hosting, SaaS, payroll, patient or customer data) and gives
   no transition help; the customer cannot move in that time.
+- **High:** the vendor may end for any reason on short notice (under 30 days) while the customer may
+  end only for the vendor's breach, or not at all: the customer can lose the service suddenly yet stays
+  bound itself. Flag the vendor's exit and the customer's breach-only exit as two findings.
 - **Medium:** the vendor may end on very short notice (for example 7 days) without cause, while the
-  customer needs months.
+  customer also has a right to end without cause but needs months to switch.
 - **Medium:** no cure period or notice: one late or disputed payment, even a small one, lets the vendor
   end the contract or suspend the service at once.
 - **Medium:** the customer's data is deleted on termination with no export window.

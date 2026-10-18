@@ -68,6 +68,13 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
    covers. A cap of 3 to 6 months' fees, for example, is Medium in the playbook, not High.
    Do NOT flag a clause that matches the playbook's balanced position. A fair contract may have zero
    high findings; that is a correct answer.
+   ASYMMETRIC TERMINATION: when the other side may end the contract for any reason on short notice and
+   the reader may end it only for the other side's breach (or not at all), that is high: the reader can
+   lose the service suddenly yet stays bound. Write two findings, never one merged: the other side's
+   exit (quote it) and the reader's breach-only exit (quote it); each consequence names both clause
+   numbers. A breach-only exit for the reader on a term longer than a year, or one that renews, is a
+   finding in its own right even when the other side has no quick exit. Equal rights for both sides
+   (the same reasons and notice) are balanced: do not flag them.
 4. "quote" MUST be copied character for character from the contract text, in the original language,
    from a single [PAGE n] block, and "page" MUST be that n. Quote the shortest span that shows the
    problem, ideally one sentence, 8 to 60 words. Never paraphrase, translate, merge sentences from

@@ -108,6 +108,14 @@ got better (`hp-02-used-car`, 5 of 5) and one worse (`msa-09-bm-cleaning`, 3 of 
 now rated medium where the key says high, and the customer's breach-only exit was not flagged). That run has **not
 yet been independently assessed**, so the FAIL above still stands.
 
+A further fix rated one-sided termination from the contract's own clauses (other side may leave on short notice for any
+reason while you may leave only for breach). On backend `a0bfe59` the same eight contracts found
+**[29 of 29 expected issues](eval/results/20261018T181919Z.md)** (`msa-09-bm-cleaning` back to 5 of 5), but with **2 false
+highs**, both on `msa-04-scanned`: its 7-day vendor exit and 90-day customer exit were each rated high where the key says
+medium. Those two findings do not carry the consequence sentence the new rule adds, so they appear to be the model's own
+rating in this run rather than the new rule; this is inferred, not traced. Runs vary: the previous run on the same
+contract rated termination medium.
+
 [Earlier runs](../../eval/results) remain available. Running `scripts/eval.py` makes paid model calls; reproduce it
 only with configured access and an explicit budget.
 

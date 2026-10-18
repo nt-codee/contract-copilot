@@ -19,11 +19,11 @@ import pymupdf
 
 from app import calibration, dates, grounding, prompts, provenance, quotes, restraint
 from app.dates import add_months
-from app.agent import Toolbox, Trace, fill_cited, run_agent
+from app.agent import CITATION_EXCERPT, Toolbox, Trace, fill_cited, run_agent
 from app.audit import Audit
 from app.config import DEMO_OWNER, DISCLAIMER, Settings, estimate_cost
 from app.knowledge import _STOP as STOPWORDS
-from app.knowledge import Knowledge, LawEntry
+from app.knowledge import Knowledge, LawEntry, clip
 from app.playbook_overrides import PlaybookOverrideStore
 from app.models import (
     RISK_ORDER, Citation, CompanyDoc, Finding, KeyDate, LLMBoxes, LLMCitation, LLMFinding, LLMKeyDate,
@@ -843,9 +843,15 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
     n_before = len(removed)
     kept_summary = grounding.ground_review(findings, missing, model_summary, pages, jurisdiction, removed)
     contract_text, numbers = "\n".join(pages), grounding.contract_numbers(pages)
+    contract_type = out.contract_type if options.contract_type == "auto" else options.contract_type
+    pb = svc.kb.playbook_entry(contract_type, "termination")
+    termination_cite = (Citation(kind="playbook", ref=pb.ref, title=pb.title, excerpt=clip(pb.balanced, CITATION_EXCERPT))
+                        if pb else None)
+    severity_notes: list[str] = []
     overall, headline, kept_summary = calibration.calibrate_review(
         findings, consequences, kept_summary, out.verdict.headline.strip(), pages, removed,
-        lambda s: not grounding.ungrounded_numbers(s, numbers) and not grounding.unsupported_terms(s, contract_text))
+        lambda s: not grounding.ungrounded_numbers(s, numbers) and not grounding.unsupported_terms(s, contract_text),
+        contract_type=contract_type, termination_citation=termination_cite, notes=severity_notes)
     findings.sort(key=lambda f: (RISK_ORDER[f.risk], f.page))  # demoted findings move down
     for i, f in enumerate(findings, start=1):
         f.id = f"f{i}"
@@ -869,7 +875,8 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
     n_cites = sum(len(f.citations) for f in findings)
     trace.add("verify", "Checked every quote against the contract and every source against the library",
               f"kept {len(findings)} findings and {n_cites} sources; dropped {dropped} unsupported findings "
-              f"and {dropped_cites} unverified sources; removed {n_grounding} statements not found in the contract",
+              f"and {dropped_cites} unverified sources; removed {n_grounding} statements not found in the contract"
+              + "".join(f"; {n}" for n in severity_notes),
               (time.monotonic() - t_verify) * 1000, start=t_verify)
     key_dates = build_key_dates(out.key_dates, findings, page_count, pages)
     if len(headline) > 160:
@@ -892,7 +899,7 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
     earlier = svc.store.runs_of(chash, owner=owner)  # newest first
     result = ReviewResult(
         id=review_id, created_at=datetime.now(timezone.utc), filename=filename, sample_id=sample_id,
-        contract_type=out.contract_type if options.contract_type == "auto" else options.contract_type, language=out.language.strip().lower()[:5] or "en",
+        contract_type=contract_type, language=out.language.strip().lower()[:5] or "en",
         pages=page_count, parties=out.parties,
         verdict=Verdict(overall_risk=overall, headline=headline, summary=summary),
         findings=findings, missing_clauses=missing,

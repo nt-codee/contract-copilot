@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from app.models import Finding, RemovedClaim
+from app.models import Citation, Finding, RemovedClaim, Verification
 from app.grounding import unsupported_permission
 
 # ---- severity -------------------------------------------------------------------------------------
@@ -175,6 +175,194 @@ def quoted_consequence(quote: str, pages: list[str]) -> bool:
         _EXIT_PAYMENT.search(sentence) and _EXIT_PAYMENT_TRIGGER.search(sentence)
         for sentence in re.split(r"[.!?]", flat)))
 
+# ---- asymmetric termination -----------------------------------------------------------------------
+# One side may end the agreement for any reason on short notice while the reader may end it only for a
+# breach (or not at all): the reader can lose the service suddenly yet stays bound. A recognised high-risk
+# pattern (playbook service_agreement/termination). Detected from the contract text only, and applied
+# only to contract types whose reader is the customer of a vendor.
+
+ASYMMETRY_TYPES = ("service_agreement",)
+SHORT_NOTICE_DAYS = 30  # "very short notice (under 30 days)" in the playbook
+LONG_TERM_MONTHS = 12  # a breach-only exit on a term longer than this, or one that renews, locks the reader in
+_OTHER = (r"(?:the\s+)?(?:vendor|supplier|service provider|provider|contractor|pembekal|penyedia(?:\s+perkhidmatan)?|"
+          r"kontraktor)")
+_OTHER_EXIT = re.compile(rf"\b{_OTHER}\s+(?:may|boleh|shall be entitled to|is entitled to)\s+(?:at any time\s+)?"
+                         r"(?:terminate|end|menamatkan)\b[^.]*", re.I)
+_ANY_REASON = re.compile(r"\bfor any reason\b|\bany reason whatsoever\b|\bwithout (?:cause|reason|giving (?:any )?reasons?)\b|"
+                         r"\bfor (?:its )?convenience\b|\bat any time\b|\batas apa-apa sebab\b|\btanpa (?:sebab|alasan)\b|"
+                         r"\bpada bila-bila masa\b", re.I)
+_BREACH = re.compile(r"breach|pelanggaran|melanggar|insolven|liquidat|default|fails? to pay|gagal membayar|muflis", re.I)
+_READER_EXIT = re.compile(rf"\b{READER}\s+(?:(?:may|boleh|can)\s+)?(?:(?:only|hanya)\s+)?(?:(?:may|boleh|can)\s+)?"
+                          r"(?:terminate|end|menamatkan)\b[^.]*", re.I)
+_RENEWS = re.compile(r"\brenew(?:s|ed)?\s+automatically\b|\bautomatic(?:ally)?\s+renew|\bauto-?renew|"
+                     r"\b(?:diperbaharui|dilanjutkan|disambung)\s+secara\s+automatik\b", re.I)
+_TERM_LEN = re.compile(r"\b(?:initial\s+term|term\s+of|for\s+a\s+(?:fixed\s+)?period\s+of|tempoh\s+awal|"
+                       r"tempoh\s+perjanjian|untuk\s+suatu\s+tempoh)\b[^.]{0,80}?\(?(\d{1,3})\)?\s*"
+                       r"(months?|years?|bulan|tahun)\b", re.I)
+_AFTER_END = re.compile(r"^[^.]{0,40}\b(?:after|following|selepas)\s+(?:the\s+)?(?:termination|expiry|penamatan|tamat)",
+                        re.I)
+_DAYS = {"day": 1, "hari": 1, "week": 7, "minggu": 7, "month": 30, "bulan": 30}
+
+
+def _flat(s: str) -> str:
+    return " ".join(s.split()).casefold()
+
+
+@dataclass(frozen=True)
+class Clause:
+    text: str  # the contract's words, whitespace collapsed
+    page: int  # 1-based
+    clause: str | None
+
+
+@dataclass(frozen=True)
+class Termination:
+    """How each side may end the agreement, read from the contract."""
+    other_exit: Clause | None = None  # the other side may end for any reason on short notice
+    other_notice: str = ""  # "7 days"
+    reader_breach_exit: Clause | None = None  # the reader may end only for the other side's breach
+    reader_has_convenience_exit: bool = False
+    term: str = ""  # "renews automatically" or "runs 24 months"; "" when short or not stated
+
+    @property
+    def asymmetric(self) -> bool:
+        return self.other_exit is not None and not self.reader_has_convenience_exit
+
+    @property
+    def lock_in(self) -> bool:
+        return (self.reader_breach_exit is not None and not self.reader_has_convenience_exit
+                and (bool(self.term) or self.asymmetric))
+
+    def consequence(self, about: Clause) -> str:
+        where = lambda c: f"clause {c.clause}" if c.clause else "the contract"  # noqa: E731
+        if about == self.other_exit:
+            yours = (f"you may end it only for the vendor's breach ({where(self.reader_breach_exit)})"
+                     if self.reader_breach_exit else "the contract gives you no matching right to end it")
+            return (f"{where(about).capitalize()} lets the vendor end the agreement for any reason on "
+                    f"{self.other_notice}' notice, while {yours}: you can lose the service at short notice "
+                    f"yet stay bound yourself.")
+        term = f"the term {self.term}" if self.term else "the vendor can still leave on short notice"
+        return (f"{where(about).capitalize()} lets you end the agreement only for the vendor's breach, and "
+                f"{term}: outside a breach you stay bound until the term ends.")
+
+
+_STOP = re.compile(r"\.(?=\s|$)")
+
+
+def _sentence(text: str, start: int) -> str:
+    """The sentence holding text[start], without a leading clause number; whitespace collapsed."""
+    s = max(text.rfind(". ", 0, start) + 2 if text.rfind(". ", 0, start) >= 0 else 0, text.rfind("\n", 0, start) + 1)
+    head = _HEAD_NO.sub("", text[s:start], count=1)
+    stop = _STOP.search(text, start)
+    return " ".join((head + text[start:stop.end() if stop else len(text)]).split())
+
+
+def _notice_days(part: str) -> tuple[int, str] | None:
+    n = _NOTICE.search(part)
+    if not n:
+        return None
+    unit = n.group(2).lower().rstrip("s")
+    days = int(n.group(1)) * _DAYS.get(unit, 1)
+    return days, f"{n.group(1)} {_UNIT.get(n.group(2).lower(), n.group(2).lower())}"
+
+
+def _term(pages: list[str]) -> str:
+    for text in pages:
+        if _RENEWS.search(text):
+            return "renews automatically"
+    for text in pages:
+        for m in _TERM_LEN.finditer(text):
+            if _AFTER_END.search(text[m.end():m.end() + 60]):
+                continue  # a survival period after the agreement ends, not its term
+            unit = m.group(2).lower()
+            months = int(m.group(1)) * (12 if unit.startswith(("year", "tahun")) else 1)
+            if months > LONG_TERM_MONTHS:
+                return f"runs {m.group(1)} {_UNIT.get(unit, unit)}"
+    return ""
+
+
+def read_termination(pages: list[str]) -> Termination:
+    other, notice, reader = None, "", None
+    for pno, text in enumerate(pages, start=1):
+        for m in _OTHER_EXIT.finditer(text):
+            part = m.group(0)
+            nd = _notice_days(part)
+            if other is None and _ANY_REASON.search(part) and not _BREACH.search(part) and nd and \
+                    nd[0] < SHORT_NOTICE_DAYS:
+                other, notice = Clause(_sentence(text, m.start()), pno, _clause_at(text, m.start())), nd[1]
+        for m in _READER_EXIT.finditer(text):
+            if reader is None and _BREACH.search(m.group(0)):
+                reader = Clause(_sentence(text, m.start()), pno, _clause_at(text, m.start()))
+    # any exit of the reader's that needs no breach counts, even one with a fee (that is a separate finding)
+    free = convenience_exit(pages) is not None or any(
+        not _BREACH.search(m.group(0)) for text in pages for m in _READER_EXIT.finditer(text))
+    return Termination(other_exit=other, other_notice=notice, reader_breach_exit=reader,
+                       reader_has_convenience_exit=free, term=_term(pages))
+
+
+_READER_SIDE = re.compile(rf"\b{READER}\b[^.]{{0,40}}?\b(?:terminat\w*|end|leave|menamatkan|ditamatkan)\b", re.I)
+
+
+def _about_reader_exit(f: Finding) -> bool:
+    """A termination finding that quotes the reader's own exit (or the lack of one)."""
+    return f.clause_type == "termination" and bool(_READER_SIDE.search(f.quote))
+
+
+def _covers(f: Finding, c: Clause | None) -> bool:
+    if c is None or f.clause_type != "termination":
+        return False
+    q, s = _flat(f.quote), _flat(c.text)
+    return bool(q) and f.page == c.page and (q in s or s in q)
+
+
+LOCK_IN_TITLE = "Exit only for the vendor's breach"
+
+
+def lock_in_finding(t: Termination, fid: str, citation: Citation | None) -> Finding:
+    c = t.reader_breach_exit
+    assert c is not None
+    return Finding(
+        id=fid, clause_type="termination", title=LOCK_IN_TITLE, risk="high", quote=c.text, page=c.page,
+        clause_ref=c.clause,
+        why_risky=("You can end the agreement only if the vendor breaches it, so otherwise you stay bound. "
+                   + t.consequence(c)),
+        standard=("Balanced terms let the customer end the agreement without a reason on reasonable notice, "
+                  "paying for work done up to that date, with the same notice for both sides."),
+        suggested_ask=("Please add a right for us to end the agreement without a reason on 30 days' written "
+                       "notice, paying for services delivered up to that date."),
+        baseline_ref="service_agreement/termination", citations=[citation] if citation else [],
+        verification=Verification(quote_match="normalised"))
+
+
+def calibrate_termination(findings: list[Finding], pages: list[str], contract_type: str | None,
+                          citation: Citation | None = None, notes: list[str] | None = None) -> set[str]:
+    """Rate asymmetric termination high and flag the reader's breach-only exit; returns the ids of findings
+    whose high rating rests on this contract's termination clauses (their consequence is stated here)."""
+    if contract_type not in ASYMMETRY_TYPES:
+        return set()
+    t = read_termination(pages)
+    held: set[str] = set()
+    for f in findings:
+        about = (t.other_exit if t.asymmetric and _covers(f, t.other_exit) else
+                 t.reader_breach_exit if t.lock_in and _covers(f, t.reader_breach_exit) else None)
+        if about is None:
+            continue
+        held.add(f.id)
+        if f.risk != "high":
+            if notes is not None:
+                notes.append(f"'{f.title}' rated high: asymmetric termination ({f.risk} from the model)")
+            f.risk = "high"
+            if (c := t.consequence(about)) not in f.why_risky:
+                f.why_risky = f"{f.why_risky.rstrip()} {c}".strip()
+    if t.lock_in and not any(_covers(f, t.reader_breach_exit) or _about_reader_exit(f) for f in findings):
+        f = lock_in_finding(t, f"f{len(findings) + 1}", citation)
+        findings.append(f)
+        held.add(f.id)
+        if notes is not None:
+            notes.append(f"added '{f.title}': you may end only for breach and {t.term or 'the vendor may end at will'}")
+    return held
+
+
 # ---- remedies -------------------------------------------------------------------------------------
 
 _ABSOLUTE = re.compile(r"\bdisclaims? (?:all|any|every)\b|\b(?:all|any) responsibility\b|\bno (?:remedy|recourse|"
@@ -242,11 +430,16 @@ def calibrate_finding(f: Finding, exit_: Exit | None, remedy: str | None, remove
 
 
 def calibrate_review(findings: list[Finding], consequences: dict[str, str], summary: list[str], headline: str,
-                     pages: list[str], removed: list[RemovedClaim], grounded) -> tuple[str, str, list[str]]:
+                     pages: list[str], removed: list[RemovedClaim], grounded, *, contract_type: str | None = None,
+                     termination_citation: Citation | None = None,
+                     notes: list[str] | None = None) -> tuple[str, str, list[str]]:
     """Severity, wording and the verdict. `consequences` maps finding id -> the model's consequence;
-    `grounded(text)` is True when a sentence states only contract facts. Returns (overall, headline, summary)."""
+    `grounded(text)` is True when a sentence states only contract facts. Returns (overall, headline, summary).
+    With `contract_type`, asymmetric termination is rated from the contract's own clauses first
+    (calibrate_termination); `notes` collects what that changed."""
+    held = calibrate_termination(findings, pages, contract_type, termination_citation, notes)
     for f in findings:
-        if f.risk == "high":
+        if f.risk == "high" and f.id not in held:
             c = consequences.get(f.id, "").strip()
             if (not c or not grounded(c)) and not quoted_consequence(f.quote, pages):
                 f.risk = "medium"
