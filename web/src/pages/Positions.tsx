@@ -8,6 +8,14 @@ import type { PlaybookItem } from "../types";
 import { useSession } from "../useSession";
 
 const TYPE: Record<string, string> = { nda: "NDA", service_agreement: "Service agreement", employment: "Employment", tenancy: "Tenancy", hire_purchase: "Hire purchase" };
+/** Library text is markdown; show it as plain sentences. */
+const clean = (s: string) => s.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/`([^`]+)`/g, "$1").replace(/^\s*"|"\s*$/g, "").replace(/\s+/g, " ").trim();
+const lines = (s: string) => s.split(/\n/).map((l) => l.replace(/^\s*[-*]\s+/, "")).join("\n").split(/\n(?=\S)/).map(clean).filter(Boolean);
+/** "High: a notice window..." -> ["high", "a notice window..."] */
+const tagged = (f: string): [string | null, string] => {
+  const m = clean(f).match(/^(High|Medium|Low):\s*(.*)$/i);
+  return m ? [m[1].toLowerCase(), m[2]] : [null, clean(f)];
+};
 const CLAUSE = (c: string) => c.replace(/_/g, " ").replace(/^\w/, (x) => x.toUpperCase());
 
 /** The mark an overridden position carries everywhere. */
@@ -101,18 +109,37 @@ function Position({ item, canEdit, onEdit, onReverted }: { item: PlaybookItem; c
       <dl className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr]">
         <div>
           <dt className="tab text-ink-mute">Balanced looks like</dt>
-          <dd className="mt-1 text-[0.98rem] text-ink">{item.standard}</dd>
+          <dd className="mt-1 text-[0.98rem] text-ink">
+            {lines(item.standard).length > 1 ? (
+              <ul className="space-y-1">
+                {lines(item.standard).map((l) => (
+                  <li key={l} className="flex gap-2">
+                    <span aria-hidden="true" className="mt-[0.55em] h-[2px] w-2.5 shrink-0 bg-low" />
+                    <span>{l}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              clean(item.standard)
+            )}
+          </dd>
         </div>
         <div>
           <dt className="tab text-ink-mute">Push back on</dt>
           <dd className="mt-1">
             <ul className="space-y-1 text-[0.95rem] text-ink">
-              {item.red_flags.slice(0, 5).map((f) => (
-                <li key={f} className="flex gap-2">
-                  <span aria-hidden="true" className="mt-[0.55em] h-[2px] w-2.5 shrink-0 bg-high" />
-                  <span>{f}</span>
-                </li>
-              ))}
+              {item.red_flags.slice(0, 5).map((f) => {
+                const [level, text] = tagged(f);
+                return (
+                  <li key={f} className="flex gap-2">
+                    <span aria-hidden="true" className={`mt-[0.55em] h-[2px] w-2.5 shrink-0 ${level === "low" ? "bg-low" : level === "medium" ? "bg-medium-box" : "bg-high"}`} />
+                    <span>
+                      {level && <span className={`tab mr-1.5 ${level === "high" ? "text-high" : level === "medium" ? "text-medium" : "text-low"}`}>{level}</span>}
+                      {text}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           </dd>
         </div>
@@ -120,7 +147,7 @@ function Position({ item, canEdit, onEdit, onReverted }: { item: PlaybookItem; c
       {item.ask && (
         <p className="mt-4 border-l-4 border-ink bg-paper-soft px-3 py-2 text-[0.95rem] text-ink">
           <span className="tab block">Ask for</span>
-          {item.ask}
+          {clean(item.ask)}
         </p>
       )}
       {item.note && <p className="mt-3 text-[0.92rem] text-ink-soft">Note: {item.note}</p>}
@@ -157,9 +184,9 @@ function Position({ item, canEdit, onEdit, onReverted }: { item: PlaybookItem; c
 }
 
 function Editor({ item, onCancel, onSaved }: { item: PlaybookItem; onCancel: () => void; onSaved: (i: PlaybookItem) => void }) {
-  const [standard, setStandard] = useState(item.standard);
-  const [flags, setFlags] = useState(item.red_flags.join("\n"));
-  const [ask, setAsk] = useState(item.ask);
+  const [standard, setStandard] = useState(lines(item.standard).join("\n"));
+  const [flags, setFlags] = useState(item.red_flags.map(clean).join("\n"));
+  const [ask, setAsk] = useState(clean(item.ask));
   const [note, setNote] = useState(item.note);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

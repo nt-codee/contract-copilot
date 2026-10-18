@@ -370,3 +370,35 @@ export async function pdfHeaders(): Promise<Record<string, string>> {
   const { authHeaders } = await import("./session");
   return authHeaders();
 }
+
+export async function deleteReview(id: string): Promise<void> {
+  if (MOCK) {
+    await wait(400);
+    return;
+  }
+  return request<void>(`/api/reviews/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+/** Downloads the review as a JSON file, sending sign-in headers. */
+export async function exportReview(id: string, filename: string): Promise<void> {
+  let blob: Blob;
+  if (MOCK) {
+    const m = await import("./mocks");
+    blob = new Blob([JSON.stringify(m.mockReview, null, 2)], { type: "application/json" });
+  } else {
+    const res = await send(`/api/reviews/${encodeURIComponent(id)}/export`);
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as Partial<ApiErrorBody> | null;
+      throw new ApiError(body?.error?.code ?? "unknown", body?.error?.message ?? "The export did not finish. Try again.");
+    }
+    blob = await res.blob();
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename.replace(/\.pdf$/i, "")}-review.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

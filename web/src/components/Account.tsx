@@ -76,6 +76,7 @@ export default function Account({ slim = false, compact = false }: { slim?: bool
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const [delError, setDelError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -125,8 +126,9 @@ export default function Account({ slim = false, compact = false }: { slim?: bool
       await signOut();
       setDone(`Your data was deleted (${n} items).`);
       navigate("/");
-    } catch {
+    } catch (e) {
       setDeleting(false);
+      setDelError(e instanceof Error ? e.message : "Your data was not deleted. Try again.");
     }
   }
 
@@ -176,7 +178,7 @@ export default function Account({ slim = false, compact = false }: { slim?: bool
             </div>
           )}
           <div className="my-1 border-t border-paper-line" />
-          <button role="menuitem" onClick={() => { setOpen(false); setConfirm(true); }} className="flex min-h-[44px] w-full items-center px-4 text-left text-high hover:bg-high-tint">
+          <button role="menuitem" onClick={() => { setOpen(false); setDelError(null); setConfirm(true); }} className="flex min-h-[44px] w-full items-center px-4 text-left text-high hover:bg-high-tint">
             Delete my data
           </button>
           <button role="menuitem" onClick={() => { setOpen(false); void signOut(); navigate("/"); }} className="flex min-h-[44px] w-full items-center px-4 text-left hover:bg-paper-soft">
@@ -190,6 +192,7 @@ export default function Account({ slim = false, compact = false }: { slim?: bool
           <h2 id="del-title" className="display text-[1.5rem] text-ink">Delete my data?</h2>
           <p className="mt-3 text-ink">This removes everything for your account: your uploads, your reviews, your company documents and your activity. It cannot be undone.</p>
           <p className="mt-2 text-[0.95rem] text-ink-soft">Workspaces you share with others keep the reviews other people ran.</p>
+          {delError && <p role="alert" className="mt-4 rounded-[3px] bg-high-tint px-3 py-2 font-medium text-high">{delError}</p>}
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" className="btn bg-high text-white hover:bg-[#8f1e18]" onClick={() => void doDelete()} disabled={deleting}>
               {deleting ? "Deleting…" : "Delete everything"}

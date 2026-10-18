@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { draftNegotiation, getReview, pdfUrl } from "../api";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { deleteReview, draftNegotiation, exportReview, getReview, pdfUrl } from "../api";
+import { canManage } from "../session";
+import { useSession } from "../useSession";
 import DraftDialog from "../components/DraftDialog";
 import FindingItem from "../components/FindingItem";
 import Reader from "../components/Reader";
@@ -209,6 +211,7 @@ export default function Review() {
     <>
       <KeyDates review={review} items={items} onPick={pick} />
       <Tail review={review} />
+      <Manage review={review} />
     </>
   );
   const dialog = (
@@ -398,5 +401,67 @@ function Tail({ review }: { review: ReviewResult }) {
         <p className="mt-2 text-[0.95rem] text-ink-soft">{review.disclaimer}</p>
       </footer>
     </>
+  );
+}
+
+/** Export, and delete for the person who ran it or a workspace owner/admin. Signed-in only. */
+function Manage({ review }: { review: ReviewResult }) {
+  const s = useSession();
+  const navigate = useNavigate();
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState<"" | "export" | "delete">("");
+  const [error, setError] = useState<string | null>(null);
+  if (!s.user) return null;
+  const mayDelete = canManage(s) || review.created_by === s.user.uid;
+  return (
+    <section aria-label="This review" className="border-t border-paper-line px-5 py-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          className="btn-line !min-h-[44px] px-4"
+          disabled={busy !== ""}
+          onClick={async () => {
+            setBusy("export");
+            setError(null);
+            await exportReview(review.id, review.filename).catch((e: Error) => setError(e.message));
+            setBusy("");
+          }}
+        >
+          {busy === "export" ? "Exporting…" : "Export the review"}
+        </button>
+        {mayDelete &&
+          (confirm ? (
+            <>
+              <button
+                type="button"
+                className="btn !min-h-[44px] bg-high px-4 text-white hover:bg-[#8f1e18]"
+                disabled={busy !== ""}
+                onClick={async () => {
+                  setBusy("delete");
+                  setError(null);
+                  try {
+                    await deleteReview(review.id);
+                    navigate("/library");
+                  } catch (e) {
+                    setError((e as Error).message);
+                    setBusy("");
+                  }
+                }}
+              >
+                {busy === "delete" ? "Deleting…" : "Delete this review"}
+              </button>
+              <button type="button" className="btn-line !min-h-[44px] px-4" onClick={() => setConfirm(false)}>
+                Keep it
+              </button>
+            </>
+          ) : (
+            <button type="button" className="inline-flex min-h-[44px] items-center px-2 font-semibold text-high underline underline-offset-4" onClick={() => setConfirm(true)}>
+              Delete…
+            </button>
+          ))}
+      </div>
+      {confirm && <p className="mt-2 text-[0.9rem] text-ink-soft">The review, its uploaded file and its search entries are removed. This cannot be undone.</p>}
+      {error && <p role="alert" className="mt-2 font-medium text-high">{error}</p>}
+    </section>
   );
 }

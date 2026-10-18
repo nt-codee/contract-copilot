@@ -19,6 +19,20 @@ export type ClauseType =
   | "data_protection"
   | "assignment"
   | "warranty"
+  | "probation"
+  | "working_hours"
+  | "leave"
+  | "notice_period"
+  | "salary_deductions"
+  | "deposit"
+  | "rent_review"
+  | "repairs"
+  | "early_termination"
+  | "interest_rate"
+  | "repossession"
+  | "guarantor"
+  | "insurance"
+  | "fees_charges"
   | "other";
 
 export interface Finding {
@@ -384,8 +398,6 @@ export interface Overview {
   tokens: { in: number; out: number };
   dropped_unverified: { quotes: number; citations: number };
   upcoming_deadlines: { date: string; kind: string; contract_type: string; days_left: number }[];
-  /** claims removed by reason per day, when the server reports it */
-  removed_by_day?: { date: string; quote_not_found?: number; source_not_retrieved?: number; no_company_citation?: number; wrong_jurisdiction?: number }[];
 }
 
 export interface AdminUserRow {

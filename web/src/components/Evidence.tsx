@@ -101,7 +101,7 @@ function Body({ target, reviewId, onClose, headRef }: { target: EvidenceTarget; 
                 {entry?.citation && <p className="mt-1 font-doc text-ink-soft">{entry.citation}</p>}
                 <blockquote className="mt-4 font-doc text-[1.06rem] leading-[1.65] text-ink">
                   <span className="hl" style={{ ["--hl" as string]: box.fill, borderBottom: `2px solid ${box.edge}` }}>
-                    {c.excerpt.replace(/\*\*/g, "")}
+                    {c.excerpt.replace(/\*\*([^*]+)\*\*/g, "$1").replace(/(^|\s)[-*]\s+/g, "$1").replace(/\s+/g, " ").trim()}
                   </span>
                 </blockquote>
                 {entry?.plain && (

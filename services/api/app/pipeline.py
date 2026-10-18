@@ -279,7 +279,7 @@ def verify_findings(raw: list[LLMFinding], pages: list[str],
         hit = verify_quote_detail(f.quote, f.page, pages)
         if hit is None:
             dropped += 1
-            log.info("dropped unverified finding: %r p%s", f.title, f.page)
+            log.info("dropped unverified finding on p%s (%s)", f.page, f.clause_type)
             removed.append(RemovedClaim(kind="finding", reason="quote_not_found",
                                         text=f"{f.title}: {f.quote}", page=f.page, finding_title=f.title))
             continue
@@ -361,7 +361,7 @@ def build_key_dates(raw: list[LLMKeyDate], findings: list[Finding], page_count: 
     out: list[KeyDate] = []
     for k in raw:
         if not 1 <= k.page <= page_count or not k.label.strip():
-            log.info("dropped key date %r (page %s)", k.label, k.page)
+            log.info("dropped key date on page %s (%s)", k.page, k.kind)
             continue
         out.append(KeyDate(label=k.label.strip(), kind=k.kind, date=compute_date(k.base_date, k.months, k.days),
                            rule=k.rule.strip() or None, page=k.page,
@@ -606,6 +606,9 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
     # the jurisdiction fixed during research wins over the model's final word; both default to "my"
     jurisdiction = agent.jurisdiction or out.jurisdiction.strip().lower()
     jurisdiction = jurisdiction if jurisdiction in ("my", "sg", "other") else "my"
+    if agent.outlined:
+        trace.steps[0].detail = " | ".join(x for x in (trace.steps[0].detail, "long contract: planned from an outline, "
+                                                       "reviewed in full") if x)
     if agent.governing_law:
         trace.steps[0].detail = " | ".join(
             x for x in (trace.steps[0].detail, f"governing law: {agent.governing_law} -> {jurisdiction}") if x)

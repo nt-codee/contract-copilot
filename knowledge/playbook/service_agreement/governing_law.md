@@ -15,7 +15,11 @@ court makes any dispute slower and more expensive for the smaller side.
 
 ## Red flags
 - **High:** the law and exclusive courts of a country where neither party operates.
-- **Medium:** the vendor's home law and exclusive courts when the vendor is much larger and abroad.
+- **High:** a foreign law and exclusive foreign courts although the service is performed entirely in the
+  customer's own country, especially when the customer must bear its own travel and legal costs. Suing
+  over a local delivery in a distant court is not realistic for an SME.
+- **Medium:** the vendor's home law and exclusive courts when the vendor is much larger and abroad, but
+  the service is not delivered in the customer's country, or the courts are nearby.
 - **Medium:** a mismatch: one country's law but another country's courts.
 - **Low:** no governing law clause.
 

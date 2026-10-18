@@ -17,11 +17,16 @@ When and how the contract can be ended before its natural end, and what each sid
 - Prepaid fees for services not yet delivered are refunded when the vendor is at fault.
 
 ## Red flags
-- **High:** the customer may not end early for any reason, or must pay all remaining fees for the
-  whole term as an "early termination fee".
+- **High:** the customer may not end early for any reason, or may end only for the vendor's uncured
+  material breach, or must pay all remaining fees for the whole term as an "early termination fee".
+  It is worse when the vendor can end for convenience while the customer is locked in.
+- **High:** the vendor may end for convenience on very short notice (under 30 days) a service that the
+  customer's records or operations sit on (hosting, SaaS, payroll, patient or customer data) and gives
+  no transition help; the customer cannot move in that time.
 - **Medium:** the vendor may end on very short notice (for example 7 days) without cause, while the
   customer needs months.
-- **Medium:** no cure period: one minor late payment lets the vendor end the contract at once.
+- **Medium:** no cure period or notice: one late or disputed payment, even a small one, lets the vendor
+  end the contract or suspend the service at once.
 - **Medium:** the customer's data is deleted on termination with no export window.
 - **Low:** no exit-assistance wording; ask for a data export at minimum.
 

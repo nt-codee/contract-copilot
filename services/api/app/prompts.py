@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 AGENT_SYSTEM = """\
 You review vendor contracts for small and medium business founders in Malaysia and Singapore who
 have no lawyer. You are not giving legal advice; you are helping the reader prepare questions for
@@ -64,11 +66,13 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
    from a single [PAGE n] block, and "page" MUST be that n. Quote the shortest span that shows the
    problem, ideally one sentence, 8 to 60 words. Never paraphrase, translate, merge sentences from
    different places, or add ellipses. Findings whose quote cannot be found are discarded automatically.
-   clause_type: use the clause type of the playbook file whose red flag the clause matches, taken from
-   the list under "CLAUSE TYPES" for your contract type; use "other" only when no file fits. Never use a
-   clause type from another contract type's list (for example early_termination is for tenancy and hire
-   purchase; in a service agreement an early termination fee belongs under "termination", and a
-   discretionary surcharge under "payment").
+   clause_type: use the clause type of the playbook file whose red flag the clause matches, from the
+   list under "CLAUSE TYPES" for your contract type. A clause that has a file in that list must use that
+   clause type: an early termination fee in a service agreement is "termination" and a discretionary
+   surcharge is "payment" (early_termination, fees_charges, interest_rate and deposit belong to tenancy,
+   hire purchase and employment). A clause with no file in your list, for example a non-solicitation,
+   non-compete or assignment clause in a service agreement, takes its clause type from the full list
+   of clause types, judged by general market practice. Use "other" only when no clause type fits.
 5. missing_clauses: protections the playbook expects that the contract does not contain at all.
 6. baseline_ref: the playbook FILE you compared against, e.g. "nda/liability.md", or "".
 7. citations: for a finding, list the sources a tool returned in this session that support it: kind
@@ -115,9 +119,60 @@ def contract_text(pages: list[str]) -> str:
     return f"The contract has {len(pages)} pages.\n\n{body}"
 
 
-def agent_system(pages: list[str], max_tools: int, vocabulary: dict[str, list[str]] | None = None) -> str:
-    """The system prompt. `vocabulary` maps each contract type to the clause types its playbook covers."""
-    text = AGENT_SYSTEM.format(contract=contract_text(pages), max_tools=max_tools)
+# Long contracts: the planning turn (which only decides the contract type, the governing law and which
+# lookups to run) reads an outline instead of the full text. On the live endpoint the time to read a prompt
+# grows steeply above about 6,000 tokens and varies a lot (8,200 tokens: 16 s, 17 s, 48 s; 4,700 tokens: 2-6 s),
+# and a 15-page contract (11,000 tokens in the planning turn) did not answer within 150 s. The review call
+# still gets the whole contract, because every quote must be copied from it.
+OUTLINE_THRESHOLD_CHARS = 24_000  # about 7,000 tokens; shorter contracts are sent whole
+OUTLINE_FIRST_PAGE_CHARS = 1_200  # parties and recitals
+OUTLINE_CLAUSE_CHARS = 60  # the start of each numbered sub-clause: enough to see what it is about
+OUTLINE_LAW_CHARS = 500  # a governing-law or forum paragraph, in full
+OUTLINE_LAW_PARAS = 4
+_LAW_PARA = re.compile(r"governed by|governing law|exclusive jurisdiction|submits? to the .{0,30}jurisdiction|"
+                       r"bidang kuasa eksklusif|tertakluk kepada undang-undang|mengikut undang-undang", re.I)
+_HEADING = re.compile(r"^(?:\d{1,2}[.)]?\s+)?[A-Z][A-Z0-9 ,&/\-]{3,}$")
+_NUMBERED = re.compile(r"^\d{1,2}(?:\.\d{1,2}){1,3}[.)]?\s")
+
+
+def contract_outline(pages: list[str]) -> str | None:
+    """A condensed, page-tagged outline of a long contract, or None when the contract is short enough.
+
+    Page 1 (the parties), every heading, the first words of every numbered sub-clause, and up to four
+    governing-law or forum paragraphs in full: about a third of a long contract's text."""
+    if sum(len(p) for p in pages) <= OUTLINE_THRESHOLD_CHARS:
+        return None
+    blocks: list[str] = []
+    law_left = OUTLINE_LAW_PARAS
+    for n, text in enumerate(pages, start=1):
+        kept: list[str] = []
+        if n == 1:
+            kept.append(" ".join(text.split())[:OUTLINE_FIRST_PAGE_CHARS])
+        else:
+            for para in re.split(r"\n\s*\n|\n(?=\s*\d+(?:\.\d+)*[.)]?\s)", text):
+                flat = " ".join(para.split()).lstrip("# ")
+                if not flat:
+                    continue
+                if law_left and _LAW_PARA.search(flat):
+                    kept.append(flat[:OUTLINE_LAW_CHARS])
+                    law_left -= 1
+                elif _HEADING.match(flat) or (len(flat) <= 60 and _NUMBERED.match(flat) is None and flat[:1].isdigit()):
+                    kept.append(flat)
+                elif _NUMBERED.match(flat):
+                    kept.append(flat[:OUTLINE_CLAUSE_CHARS] + (" ..." if len(flat) > OUTLINE_CLAUSE_CHARS else ""))
+        blocks.append(f"[PAGE {n}]\n" + "\n".join(kept))
+    return (f"The contract has {len(pages)} pages. It is long, so this is an OUTLINE for planning: the parties, every "
+            "heading, the first words of every numbered clause, and the governing-law and forum paragraphs. You will "
+            "get the full text when you write the review; use read_page(n) if you need a page in full now.\n\n"
+            + "\n\n".join(blocks))
+
+
+def agent_system(pages: list[str], max_tools: int, vocabulary: dict[str, list[str]] | None = None,
+                 outline: bool = False) -> str:
+    """The system prompt. `vocabulary` maps each contract type to the clause types its playbook covers.
+    With `outline`, a long contract is replaced by its outline (a short one is always sent whole)."""
+    contract = (contract_outline(pages) if outline else None) or contract_text(pages)
+    text = AGENT_SYSTEM.format(contract=contract, max_tools=max_tools)
     if vocabulary:
         lines = "\n".join(f"- {ctype}: {', '.join(clauses)}" for ctype, clauses in sorted(vocabulary.items()))
         text += CLAUSE_TYPES_HEADING.format(vocabulary=lines)

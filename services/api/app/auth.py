@@ -76,6 +76,18 @@ class Actor:
 
 
 def get_actor(request: Request) -> Actor:
+    """Resolve the caller and the active workspace (from `X-Workspace-Id`). See `_resolve`."""
+    return _resolve(request, use_header=True)
+
+
+def get_account_actor(request: Request) -> Actor:
+    """For routes about the ACCOUNT, not a workspace (`/api/me`, `/api/workspaces`, accepting an invite, delete my
+    data): `X-Workspace-Id` is ignored, so a client whose remembered workspace is stale (it was removed, or it
+    left) can still load who it is and recover, instead of getting 403 `not_a_member` from every call."""
+    return _resolve(request, use_header=False)
+
+
+def _resolve(request: Request, *, use_header: bool) -> Actor:
     """Resolve the caller and the active workspace.
 
     `X-Workspace-Id: demo` selects the demo workspace for writing and is honoured only for a platform
@@ -86,6 +98,8 @@ def get_actor(request: Request) -> Actor:
     user = current_user(request)
     admin = is_admin(user, settings)
     wanted = request.headers.get(WORKSPACE_HEADER, "").strip()
+    if not use_header:
+        wanted = ""
     if wanted == DEMO_OWNER:
         if admin or (user is None and settings.cloud == "local"):
             return Actor(user, DEMO_OWNER, None, admin, seeding=True)

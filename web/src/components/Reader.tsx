@@ -149,7 +149,7 @@ export default function Reader({ url, items, selected, focus, onSelect, onLocate
   const marksOn = (p: number) => items.filter((m) => m.f.page === p);
 
   return (
-    <div ref={paneRef} className={`relative flex gap-5 ${compact ? "" : "h-full overflow-y-auto px-5 py-6"}`}>
+    <div ref={paneRef} tabIndex={compact ? undefined : 0} role={compact ? undefined : "region"} aria-label={compact ? undefined : "Document pages"} className={`relative flex gap-5 outline-offset-[-4px] ${compact ? "" : "h-full overflow-y-auto px-5 py-6"}`}>
       {!compact && (
         <nav aria-label="Pages" className="sticky top-0 hidden w-14 shrink-0 self-start lg:block">
           <p className="tab mb-2 text-center !text-[0.75rem] text-desk-text">Page</p>

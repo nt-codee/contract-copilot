@@ -7,7 +7,7 @@ import Dashboard from "../components/Dashboard";
 import { SignInButton } from "../components/Account";
 import { ApiError, SIGN_IN_CODE } from "../api";
 import { useSession } from "../useSession";
-import HeroPreview from "../components/HeroPreview";
+import HeroVisual from "../components/HeroVisual";
 import Progress from "../components/Progress";
 import { contractTypeLabel, languageLabel } from "../format";
 import type { ReviewResult, ReviewSummary, Sample } from "../types";
@@ -140,20 +140,28 @@ export default function Home() {
         </>
       )}
       {!session.user && <YourContracts reviews={reviews} label="Sample workspace" />}
-      {!session.user && <section aria-labelledby="promise" className="mx-auto grid max-w-[1240px] gap-x-16 px-5 pb-16 pt-8 [grid-template-areas:'head'_'copy'_'preview'] sm:px-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:content-center lg:pb-24 lg:pt-16 lg:[grid-template-areas:'head_preview'_'copy_preview']">
-        <div className="self-end text-white [grid-area:head]">
+      {!session.user && <section aria-labelledby="promise" className="mx-auto grid max-w-[1240px] gap-x-16 px-5 pb-20 pt-8 [grid-template-areas:'head'_'copy'_'preview'] sm:px-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:content-center lg:pb-28 lg:pt-16 lg:[grid-template-areas:'head_preview'_'copy_preview']">
+        <div className="reveal self-end text-white [grid-area:head]" style={{ ["--d" as string]: "0s" }}>
           <p className="tab text-desk-text">For founders who sign without a lawyer</p>
           <h1 id="promise" className="display mt-3 text-[2.25rem] sm:mt-4 sm:text-[3.5rem]">
             Your vendor’s contract, marked up before you sign.
           </h1>
+          {/* The five contract types it knows, as tabs on a file. */}
+          <ul aria-label="Contracts it reviews" className="mt-6 flex flex-wrap gap-2">
+            {["NDAs", "Service agreements", "Employment and freelance", "Tenancy", "Hire purchase"].map((t) => (
+              <li key={t} className="tab rounded-t-[3px] border-b-2 border-high-box bg-white/10 px-2.5 py-1.5 !text-[0.78rem] text-white">
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="mt-12 self-center [grid-area:preview] lg:mt-0">
-          <HeroPreview />
+        <div className="mt-14 self-center [grid-area:preview] lg:mt-0">
+          <HeroVisual />
         </div>
-        <div className="text-white [grid-area:copy] lg:mt-0">
+        <div className="reveal text-white [grid-area:copy] lg:mt-0" style={{ ["--d" as string]: "0.12s" }}>
           <p className="mt-5 max-w-xl text-[1.1rem] text-desk-text sm:text-[1.2rem]">
-            Upload an NDA, a service agreement, an employment or freelance contract, a tenancy or a hire purchase agreement. In about a minute you see its pages with every risky clause boxed, what it
-            means in plain words, what to ask for, and a reply ready to send.
+            In about a minute you see its own pages with every risky clause boxed, what it means in plain words, what to ask
+            for, and a reply ready to send.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button

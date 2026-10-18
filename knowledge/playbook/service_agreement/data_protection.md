@@ -26,7 +26,14 @@ what its vendors do with the data.
 - **High:** the vendor may use the personal data for its own purposes (marketing, training products,
   selling insights).
 - **Medium:** breach notice only "as soon as practicable" with no outer limit, or none at all.
-- **Medium:** data may be stored or transferred anywhere without notice.
+- **High:** **sensitive personal data** (patient or health records, financial or identity data) may be stored
+  or processed in any country, and the location can change without notice. In Malaysia, PDPA 2010
+  section 129 limits sending personal data abroad (library entry `my-pdpa2010-s129`); Singapore's PDPA
+  2012 has a similar transfer-limitation rule (section 26, not yet in the library). The customer stays
+  answerable to its patients or customers for where the data goes.
+- **Medium:** ordinary (non-sensitive) data may be stored or transferred anywhere without notice.
+- **Medium:** on exit the customer's data can be exported only in the vendor's own file format, or only
+  for a fee, which makes it costly to move to another provider.
 - **Low:** security described only in general terms; ask for a summary of measures.
 
 ## Suggested ask

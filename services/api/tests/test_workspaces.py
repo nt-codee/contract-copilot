@@ -315,3 +315,18 @@ def test_search_ranks_a_keyword_hit_above_a_merely_near_vector(client, services,
     assert hits and hits[0]["review_id"] == r["id"] and "Delaware" in hits[0]["text"]
     scores = [h["score"] for h in hits]
     assert scores == sorted(scores, reverse=True)
+
+
+def test_account_routes_ignore_a_stale_workspace_header(mk):
+    """A client whose remembered workspace is stale (removed, or left) must still be able to load who it is."""
+    ana, ben = mk("ana", "acme.test"), mk("ben", "acme.test")
+    wid = my_ws(ana)[0]["workspace"]["id"]
+    my_ws(ben)
+    assert ana.delete(f"/api/workspaces/{wid}/members/ben").status_code == 204
+    stale = {"X-Workspace-Id": wid}
+    assert ben.get("/api/reviews", headers=stale).json()["error"]["code"] == "not_a_member"  # workspace routes still check
+    me = ben.get("/api/me", headers=stale)
+    assert me.status_code == 200 and [w["workspace"]["kind"] for w in me.json()["workspaces"]] == ["personal"]
+    assert ben.get("/api/workspaces", headers=stale).status_code == 200
+    inv = ana.post(f"/api/workspaces/{wid}/invites").json()
+    assert ben.post(f"/api/invites/{inv['code']}/accept", headers=stale).status_code == 200  # rejoin while stale

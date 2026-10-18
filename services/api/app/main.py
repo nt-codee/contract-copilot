@@ -27,9 +27,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app import admin, pipeline, routes_knowledge, workspaces
 from app.adapters import build_services
 from app.audit import now as audit_now
-from app.auth import (SIGN_IN_MESSAGE, Actor, get_actor, require_admin, require_policy_manager,
+from app.auth import (SIGN_IN_MESSAGE, Actor, get_account_actor, get_actor, require_admin, require_policy_manager,
                       require_writer)
 from app.config import DEMO_OWNER, Settings
+from app.security import SecurityHeaders, UploadLimit, clean_filename, static_headers
 from app.models import (AuditEvent, CompanyDoc, Identity, Invite, Member, NegotiationDraft, ReviewResult,
                         ReviewSummary, Sample, SearchHit, User, Workspace, WorkspaceRef)
 from app.pipeline import Services, UserError
@@ -106,6 +107,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     settings = settings or Settings()
     svc = services or build_services(settings)
     limiter = RateLimiter(settings.rate_limit_per_hour)
+    user_limiter = RateLimiter(settings.rate_limit_user_per_hour)
     sample_locks: dict[tuple[str, str], threading.Lock] = defaultdict(threading.Lock)
     negotiation_cache: dict[str, NegotiationDraft] = {}
 
@@ -141,13 +143,27 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     @app.exception_handler(Exception)
     async def _unhandled(_: Request, e: Exception):
         log.exception("unhandled error")
-        return _err(500, "internal_error", "Something went wrong on our side. Please try again.")
+        resp = _err(500, "internal_error", "Something went wrong on our side. Please try again.")
+        # this response is built outside the middleware stack, so it gets the security headers here
+        for k, v in static_headers(settings.csp_mode, settings.identity_web_config):
+            resp.headers[k.decode()] = v.decode()
+        resp.headers["cache-control"] = "no-store"
+        return resp
 
     # ---- helpers -------------------------------------------------------------------------
-    def check_rate(request: Request) -> None:
+    def check_rate(request: Request, actor: Actor | None = None) -> None:
+        """Model-spending actions: per IP address for everyone, and per signed-in user on top (so one account
+        cannot spread across many addresses). Verified platform admins (ADMIN_EMAILS) are exempt from both: they
+        seed and refresh the demo workspace, which is many reviews at once."""
+        if actor is not None and actor.admin:
+            return
         if not limiter.allow(client_ip(request)):
             raise UserError(429, "rate_limited",
                             f"You have reached the limit of {limiter.per_hour} reviews per hour. "
+                            "Please try again later.")
+        if actor is not None and actor.uid and not user_limiter.allow(actor.uid):
+            raise UserError(429, "rate_limited",
+                            f"You have reached the limit of {user_limiter.per_hour} reviews per hour. "
                             "Please try again later.")
 
     def load_samples() -> list[dict]:
@@ -184,6 +200,8 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
 
     # Refuse an anonymous upload before reading its body (the route re-checks authoritatively).
     app.add_middleware(EarlySignIn)
+    app.add_middleware(UploadLimit, paths=EarlySignIn.PATHS, max_bytes=settings.max_bytes)
+    app.add_middleware(SecurityHeaders, csp_mode=settings.csp_mode, identity_web_config=settings.identity_web_config)
 
     # ---- routes --------------------------------------------------------------------------
     # Cloud Run's frontend reserves paths ending in "z" (/healthz 404s there), so prod probes /api/health.
@@ -205,7 +223,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
             raise UserError(404, "auth_not_configured", "Sign-in is not set up on this server.") from None
 
     @app.get("/api/me", response_model=User)
-    def me(actor: Actor = Depends(get_actor)):
+    def me(actor: Actor = Depends(get_account_actor)):
         """Who am I, my workspaces and roles. The web calls this on load; it is also where last_seen and
         `signed_in` are recorded."""
         if actor.user is None:
@@ -222,7 +240,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         return workspaces.user_view(svc, u, actor.admin, stored)
 
     @app.post("/api/me/delete")
-    def delete_me(actor: Actor = Depends(get_actor)):
+    def delete_me(actor: Actor = Depends(get_account_actor)):
         """Delete everything this user owns. Their own audit events go too; one `deleted_my_data` line stays."""
         if actor.user is None:
             raise UserError(401, "sign_in_required", SIGN_IN_MESSAGE)
@@ -240,7 +258,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         return svc.audit.for_workspace(actor.owner, limit, actor=only)
 
     # ---- reviews -------------------------------------------------------------------------
-    async def read_pdf_upload(request: Request, file: UploadFile) -> bytes:
+    async def read_pdf_upload(request: Request, file: UploadFile, actor: Actor) -> bytes:
         """Read an uploaded PDF within the size cap, validate it, and spend one rate-limit slot."""
         declared = request.headers.get("content-length")
         if declared and declared.isdigit() and int(declared) > settings.max_bytes + 64 * 1024:
@@ -250,14 +268,14 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         data = await file.read(settings.max_bytes + 1)
         # validate before spending a rate-limit slot on a file we would reject anyway
         pipeline.validate_pdf(data, settings).close()
-        check_rate(request)
+        check_rate(request, actor)
         return data
 
     @app.post("/api/reviews", response_model=ReviewResult)
     async def create_review(request: Request, file: UploadFile = File(...), actor: Actor = Depends(get_actor)):
         require_writer(actor)
-        data = await read_pdf_upload(request, file)
-        name = file.filename or "contract.pdf"
+        data = await read_pdf_upload(request, file, actor)
+        name = clean_filename(file.filename, "contract.pdf")
         result = await run_in_threadpool(pipeline.review, svc, data, name, None, actor.owner, actor.uid)
         note(actor, "uploaded_contract", result.id, name,
                          {"bytes": len(data), "pages": result.pages})
@@ -268,8 +286,8 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     @app.post("/api/company/docs", response_model=CompanyDoc)
     async def add_company_doc(request: Request, file: UploadFile = File(...), actor: Actor = Depends(get_actor)):
         require_policy_manager(actor)
-        data = await read_pdf_upload(request, file)
-        doc = await run_in_threadpool(pipeline.add_company_doc, svc, data, file.filename or "document.pdf",
+        data = await read_pdf_upload(request, file, actor)
+        doc = await run_in_threadpool(pipeline.add_company_doc, svc, data, clean_filename(file.filename, "document.pdf"),
                                       actor.owner)
         note(actor, "uploaded_policy", doc.id, doc.filename, {"pages": doc.pages})
         return doc
@@ -318,7 +336,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
                     result = pipeline.copy_review(svc, shared, pdf, actor.owner, actor.uid)
                     pipeline.audit_review(svc, actor.audit_actor, result, copied_from_sample=sample_id)
                     return result
-            check_rate(request)
+            check_rate(request, actor)
             result = pipeline.review(svc, pdf, path.name, sample_id=sample_id, owner=actor.owner,
                                     created_by=actor.uid)
             pipeline.audit_review(svc, actor.audit_actor, result, sample_id=sample_id)
@@ -404,7 +422,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         return workspaces.with_count(svc, ws), member
 
     @app.get("/api/workspaces", response_model=list[WorkspaceRef])
-    def list_workspaces(actor: Actor = Depends(get_actor)):
+    def list_workspaces(actor: Actor = Depends(get_account_actor)):
         return workspaces.refs_for(svc, need_user(actor).uid)
 
     @app.get("/api/workspaces/{workspace_id}", response_model=Workspace)
@@ -489,7 +507,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         return workspaces.create_invite(svc, workspace_id, role)
 
     @app.post("/api/invites/{code}/accept", response_model=WorkspaceRef)
-    def accept_invite(code: str, actor: Actor = Depends(get_actor)):
+    def accept_invite(code: str, actor: Actor = Depends(get_account_actor)):
         return workspaces.accept_invite(svc, code, need_user(actor))
 
     @app.get("/api/workspaces/{workspace_id}/overview")

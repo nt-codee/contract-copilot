@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { formatDay } from "../dates";
 import type { Overview } from "../types";
-import { Bars, C, Legend, Panel, PerDay, Removed, RiskStack, Stat } from "./Charts";
+import { Bars, C, Legend, Panel, PerDay, RiskStack, Stat } from "./Charts";
 
 const TYPE: Record<string, string> = { nda: "NDA", service_agreement: "Service agreement", employment: "Employment", tenancy: "Tenancy", hire_purchase: "Hire purchase" };
 const KIND: Record<string, string> = { law: "Law", case: "Court cases", playbook: "Usual terms", company: "Company rules" };
@@ -14,7 +14,6 @@ export default function OverviewPanels({ o, days, admin }: { o: Overview; days: 
   const byType = Object.entries(o.by_contract_type).map(([t, n]) => ({ type: TYPE[t] ?? t, count: n }));
   const risk = [{ label: "All contracts", ...o.by_risk }];
   const kinds = Object.entries(o.citations_by_kind).map(([k, v]) => ({ kind: KIND[k] ?? k, count: v }));
-  const removed = (o.dropped_unverified.quotes ?? 0) + (o.dropped_unverified.citations ?? 0);
 
   return (
     <div className="space-y-5">
@@ -74,11 +73,7 @@ export default function OverviewPanels({ o, days, admin }: { o: Overview; days: 
 
       <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
         <Panel title="Verification: points removed because they could not be confirmed" summary={`${o.dropped_unverified.quotes} quotes and ${o.dropped_unverified.citations} sources removed.`}>
-          {o.removed_by_day ? (
-            <Removed data={o.removed_by_day as unknown as Record<string, string | number>[]} />
-          ) : (
-            <p className="text-ink-soft">{removed} removed in this period.</p>
-          )}
+          <Bars data={[{ reason: "Words not in the contract", count: o.dropped_unverified.quotes }, { reason: "Source not in our library", count: o.dropped_unverified.citations }]} labelKey="reason" valueKey="count" color={C.ink} width={170} />
           <p className="mt-2 text-[0.9rem] text-ink-soft">
             {o.dropped_unverified.quotes} quotes not found in the contract · {o.dropped_unverified.citations} sources not in the library. None of them reached a user.
           </p>

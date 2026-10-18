@@ -44,18 +44,29 @@ One click turns the findings into a reply to the vendor, with one ask per issue,
 | **A reader, not a report.** Boxes are drawn on the real PDF, on the exact words, so you can check every claim yourself. | <img src="docs/public/screens/reader.png" alt="Contract page with highlighted clauses and the finding panel" width="520"> |
 | **Citations that are real.** Each finding links Malaysian or Singapore law, or a case, taken from a library where every entry keeps its source URL and the quoted text. | <img src="docs/public/screens/citation.png" alt="A Contracts Act 1950 entry with its text and a link to the official source" width="520"> |
 | **Your own rules, applied.** Upload your company's contracting policy once (owners and admins do this). Reviews flag the clauses that break it and quote the rule. | <img src="docs/public/screens/rules.png" alt="The company rules page: each rule with the contracts that break it" width="520"> |
-| **Dates that matter.** The last day to cancel before an auto-renewal, and other deadlines, collected across your contracts. | <img src="docs/public/screens/dates.png" alt="Home page with the number of contracts reviewed and the coming deadlines" width="520"> |
+| **Dates that matter.** The last day to cancel before an auto-renewal, and other deadlines, collected across your contracts. | <img src="docs/public/screens/dates.png" alt="The summary of a reviewed contract: overall risk, the headline, and the key date, the end of the initial term" width="520"> |
 | **Search every contract your company has reviewed.** Describe the situation in your own words and get the clause and its page. Results blend meaning (vector) with exact words and phrases (keyword). | <img src="docs/public/screens/library.png" alt="Library search results for the phrase cancel early" width="520"> |
 | **A reply ready to send.** One ask per issue, numbered to match the flags on the contract. Edit it, copy it, or open it in your email. | <img src="docs/public/screens/reply.png" alt="The drafted reply to the vendor" width="520"> |
 
 Also: it reads scanned, image-only PDFs and contracts written in Bahasa Malaysia, and explains them in English.
 
-<!-- screens: round 4 -->
-
 ### Teams, accounts and trust
 
 The public demo needs no login: anyone can open the sample reviews, draft a reply, search and browse the law library. Uploading
 a contract or a policy, and deleting anything, needs sign-in.
+
+The screens below show a signed-in workspace, with sample data: a made-up company ("Kopi Kita Sdn Bhd"), invented people and invented contracts.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/public/screens/team-overview.png" alt="The admin usage dashboard: reviews per day, overall risk, most flagged clauses, company rules broken most, and laws cited most, with counts and timings only" width="100%"><br><sub><b>Dashboards, aggregates only.</b> Usage, risk mix, flagged clauses and citations. Counts and timings, never contract text.</sub></td>
+<td width="50%"><img src="docs/public/screens/team-evidence.png" alt="Side-by-side evidence view: the contract page with a boxed renewal clause on the left, the company's contracting policy on the right" width="100%"><br><sub><b>Evidence, side by side.</b> The boxed clause in the contract next to the company rule it is checked against.</sub></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/public/screens/team-activity.png" alt="The Activity page: a dated list of who reviewed, uploaded, exported and deleted what, with the model and knowledge-base version on each review" width="100%"><br><sub><b>An audit trail.</b> Who did what and when, with the model and knowledge-base version on each review.</sub></td>
+<td width="50%" align="center"><img src="docs/public/screens/team-account.png" alt="The account menu in the sidebar: signed-in user, a switch between the company workspace and a personal one, delete my data, and sign out" width="260"><br><sub><b>Workspaces and your data.</b> Switch workspace, delete your data, sign out.</sub></td>
+</tr>
+</table>
 
 | | |
 |---|---|

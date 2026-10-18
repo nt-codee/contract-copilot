@@ -20,6 +20,9 @@ that.
 ## Red flags
 - **High:** confidentiality that lasts "in perpetuity", "indefinitely" or "forever" for **all**
   information, not only trade secrets. The receiver then carries the risk of breach for ever.
+- **Medium:** the secrecy duty covers only information disclosed in a short window (for example the first
+  year) or ends after 1-2 years even for trade secrets and business-critical information, and the
+  receiver may then use or pass it on freely.
 - **Medium:** a 5-year or longer period for ordinary business information, especially when only one
   side is bound.
 - **Medium:** the clock starts only when the discloser says so, or restarts every time new

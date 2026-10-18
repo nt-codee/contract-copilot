@@ -386,6 +386,7 @@ class AgentOutcome:
     jurisdiction: str | None = None  # my | sg | other when it was fixed during research
     governing_law: str | None = None
     jurisdiction_source: str | None = None  # "tool" (set_jurisdiction) or "majority" (of the search_law calls)
+    outlined: bool = False  # the planning turn read an outline because the contract is long
 
 
 def _lock_jurisdiction(tools: Toolbox, calls: list[ToolCall]) -> tuple[list[ToolCall], list[ToolCall]]:
@@ -453,7 +454,10 @@ def _timed(tools: Toolbox):
 
 def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
               max_turns: int = MAX_TURNS, max_tool_calls: int = MAX_TOOL_CALLS) -> AgentOutcome:
-    system = prompts.agent_system(pages, max_tool_calls, clause_vocabulary(tools.kb))
+    vocabulary = clause_vocabulary(tools.kb)
+    system = prompts.agent_system(pages, max_tool_calls, vocabulary)  # the whole contract: the review call
+    plan_system = prompts.agent_system(pages, max_tool_calls, vocabulary, outline=True)  # planning turns
+    outlined = plan_system != system
     usage = LLMUsage(model=llm.model)
     messages = [ChatMessage(role="user", text=prompts.AGENT_START)]
     known: dict[str, list[Citation]] = {}
@@ -463,7 +467,7 @@ def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
 
     while turns < max_turns and n_calls < max_tool_calls and wants_pages:
         try:
-            reply, u = llm.chat(system=system, messages=messages, tools=TOOLS, purpose="agent",
+            reply, u = llm.chat(system=plan_system, messages=messages, tools=TOOLS, purpose="agent",
                                 force_tools=(turns == 0))
         except UpstreamError:
             if turns == 0:
@@ -507,4 +511,4 @@ def run_agent(llm: LLM, tools: Toolbox, pages: list[str], trace: Trace, *,
               f"{len(out.findings)} candidate findings", (time.monotonic() - t0) * 1000)
     return AgentOutcome(review=out, known=known, usage=usage, turns=turns, tool_calls=n_calls,
                         jurisdiction=tools.jurisdiction, governing_law=tools.governing_law,
-                        jurisdiction_source=tools.jurisdiction_source)
+                        jurisdiction_source=tools.jurisdiction_source, outlined=outlined)

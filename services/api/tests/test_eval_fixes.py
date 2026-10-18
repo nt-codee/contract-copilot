@@ -73,7 +73,9 @@ def test_prompt_defines_all_contract_types_and_the_rules():
         assert f'- "{t}":' in text and f"- {t}: " in text  # defined, and its clause types listed
     assert "freelance" in text and "personal loans" in text  # the routing the answer keys expect
     assert "assign\n   exactly that level" in text  # severity comes from the playbook's red-flag tag
-    assert "an early termination fee belongs under" in text.replace("\n   ", " ")
+    flat = text.replace("\n   ", " ")
+    assert "an early termination fee in a service agreement is \"termination\"" in flat
+    assert "non-solicitation, non-compete or assignment clause in a service agreement" in flat  # no file: full list
     heading = "CLAUSE TYPES (the playbook has one file"
     assert heading in text and heading not in prompts.agent_system(PAGES, 16)  # the list is added with the vocabulary
 
@@ -141,3 +143,39 @@ def test_quota_errors_wait_and_retry_but_other_errors_do_not(monkeypatch):
     with pytest.raises(UpstreamError):
         llm._call("review", [], None)
     assert len(attempts) == 1 and sleeps == []
+
+
+# ---- red-flag lines added after the second live run ---------------------------------------------------------
+
+NEW_LINES = [
+    ("nda/governing_law", "High", "distant country (outside Asia-Pacific"),
+    ("service_agreement/governing_law", "High", "performed entirely in the"),
+    ("service_agreement/data_protection", "High", "sensitive personal data"),
+    ("service_agreement/data_protection", "Medium", "vendor's own file format"),
+    ("service_agreement/termination", "High", "may end only for the vendor's uncured"),
+    ("service_agreement/termination", "High", "under 30 days"),
+    ("service_agreement/termination", "Medium", "or suspend the service at once"),
+    ("nda/liability", "High", "excluded altogether"),
+    ("nda/term", "Medium", "short window"),
+    ("tenancy/auto_renewal", "High", "automatic renewal for 2 years or more"),
+    ("employment/payment", "High", "no interest on late payment"),
+]
+
+
+@pytest.mark.parametrize("ref,level,snippet", NEW_LINES)
+def test_new_red_flag_is_tagged_and_visible_to_the_agent(ref, level, snippet):
+    view = " ".join(playbook_view(KB.playbook[ref]).split())
+    i = view.lower().find(snippet.lower())
+    assert i >= 0, (ref, snippet)
+    assert view.rfind("**", 0, i) > 0 and f"**{level}:**" in view[max(0, i - 700): i + 1]  # a tagged line, right level
+
+
+def test_law_entries_named_in_the_playbook_exist():
+    import re
+
+    ids = {e.id for e in KB.law}
+    named = set()
+    for ref, e in KB.playbook.items():
+        named |= {m for m in re.findall(r"`((?:my|sg)-[a-z0-9-]+)`", e.text)}
+    assert {"my-pdpa2010-s129", "my-case-cimb-v-bourke"} <= named
+    assert named <= ids, named - ids

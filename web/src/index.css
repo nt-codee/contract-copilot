@@ -79,14 +79,10 @@
   }
 }
 
-/* --- Motion: four moments only (see src/motion.ts). CSS here is the hero's
-   preview of moment 1; everything else is the Web Animations API. --- */
-
-/* Hero: highlight sweeps, bracket draws, flag drops, note slides in. */
-@keyframes sweep { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
-@keyframes draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+/* --- Motion: the app's four moments are the Web Animations API (src/motion.ts). CSS here is the
+   home hero only (HeroVisual) plus the first-load reveal and card lift below. --- */
 @keyframes drop { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
-@keyframes note { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+/* Static highlight on quoted text (Evidence, Library, Company): set --hl to the risk fill. */
 .hl {
   background-image: linear-gradient(var(--hl), var(--hl));
   background-repeat: no-repeat;
@@ -94,10 +90,6 @@
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
-.hero-play .hl { animation: sweep 0.9s ease-in-out var(--d, 0s) both; }
-.hero-play .bracket { transform-origin: top; animation: draw 0.35s ease-out var(--d, 0s) both; }
-.hero-play .flag { animation: drop 0.3s ease-out var(--d, 0s) both; }
-.hero-play .note { animation: note 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) var(--d, 0s) both; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -107,21 +99,161 @@
   }
 }
 
-/* The desk: a faint ledger grid under soft light, so pages sit on something.
-   Off on the review screen, where the contract needs a calm field. */
+/* The desk. Layers, back to front: the blue-back cloth, a reading lamp pooled top right,
+   shade gathering bottom left, paper grain, then (in ::before) a ledger grid that fades out
+   away from the lamp. The shell switches it off on the review screen by dropping the class:
+   the contract reader keeps a calm, plain field. `.desk-calm` lays a plain field inside a page.
+   Measured worst pixel behind desk text (grain speck under the lamp): white 7.6:1, desk-text 5.0:1 (tools: /tmp/cc-ui2/contrast.mjs). */
 .desk-bg {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
   background-color: #1e3a6e;
   background-image:
-    radial-gradient(1100px 520px at 80% -8%, rgba(255, 255, 255, 0.075), transparent 62%),
-    radial-gradient(900px 600px at -12% 105%, rgba(8, 18, 42, 0.42), transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: auto, auto, 32px 32px, 32px 32px;
-  background-attachment: fixed;
-  min-height: 100vh;
+    url("./assets/grain.svg"),
+    radial-gradient(ellipse 60% 50% at 82% -6%, rgba(132, 168, 232, 0.15), transparent 72%),
+    radial-gradient(ellipse 45% 38% at 60% 18%, rgba(255, 214, 160, 0.045), transparent 70%),
+    radial-gradient(ellipse 70% 60% at -10% 110%, rgba(8, 18, 42, 0.5), transparent 70%),
+    linear-gradient(180deg, transparent 55%, rgba(10, 24, 54, 0.35));
+  background-size: 180px 180px, auto, auto, auto, auto;
 }
-/* Paper cards lift a little on hover. */
-.lift { transition: transform 0.18s ease, box-shadow 0.18s ease; }
-.lift:hover { transform: translateY(-2px); box-shadow: 0 2px 6px rgba(5,15,40,.18), 0 22px 44px -18px rgba(5,15,40,.6); }
+.desk-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(196, 210, 238, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 210, 238, 0.07) 1px, transparent 1px),
+    linear-gradient(rgba(196, 210, 238, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 210, 238, 0.035) 1px, transparent 1px);
+  background-size: 160px 160px, 160px 160px, 32px 32px, 32px 32px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 1100px at 75% 0, #000 25%, transparent 85%);
+  mask-image: radial-gradient(ellipse 90% 1100px at 75% 0, #000 25%, transparent 85%);
+}
+.desk-calm {
+  background: #1e3a6e;
+}
+
+/* First-load reveal: blocks rise into place in order of --d. */
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.reveal { animation: rise 0.5s cubic-bezier(0.3, 0.7, 0.2, 1) var(--d, 0s) both; }
+
+/* Cards you can open lift a little on hover and keyboard focus. */
+.lift { transition: transform 0.18s cubic-bezier(0.3, 0.7, 0.2, 1), box-shadow 0.18s ease; }
+.lift:hover,
+.lift:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 2px 6px rgba(5, 15, 40, 0.18), 0 26px 48px -20px rgba(5, 15, 40, 0.65);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lift:hover,
+  .lift:focus-visible { transform: none; }
+}
+
+/* Hero visual: boxes draw left to right, flags slide out, the finding card rises. */
+@keyframes box-in { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes card-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.hero-run .hv-box { animation: box-in 0.55s cubic-bezier(0.3, 0.7, 0.2, 1) var(--d, 0s) both; }
+.hero-run .hv-flag { animation: drop 0.3s ease-out var(--d, 0s) both; }
+.hero-run .hv-card { animation: card-in 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) var(--d, 0s) both; }
 /* Charts are summarised in text for screen readers; keep their SVG out of the tab order. */
 .chart svg, .chart .recharts-wrapper { outline: none; }
+
+/* --- Page depth for the non-review pages. In the components layer: class selectors beat preflight's
+   element rules (h1, p), and any Tailwind utility on the same element still wins. Tailwind drops a
+   class here until a page uses it. --- */
+@layer components {
+
+/* Page head: on the page's outer wrapper. A soft lamp-lit band rises behind the eyebrow, title
+   and lede and fades out before the content; no hard edge, so it suits any head height. */
+.page-head { position: relative; isolation: isolate; }
+.page-head::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 26rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 0, rgba(132, 168, 232, 0.12), transparent 75%),
+    linear-gradient(180deg, rgba(8, 18, 42, 0.18), transparent 70%);
+  border-radius: 0 0 24px 24px;
+}
+/* Eyebrow: the tab voice with a red flag tick, the same mark as the primary button. */
+.page-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #c4d2ee;
+  font-stretch: 75%;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+.page-eyebrow::before {
+  content: "";
+  width: 4px;
+  height: 0.95rem;
+  border-radius: 0 2px 2px 0;
+  background: #d93a2b;
+}
+.page-title {
+  margin-top: 0.75rem;
+  color: #fff;
+  font-size: 2.1rem;
+  font-stretch: 118%;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+}
+@media (min-width: 640px) { .page-title { font-size: 2.6rem; } }
+.page-lede { margin-top: 0.75rem; max-width: 42rem; color: #c4d2ee; font-size: 1.05rem; }
+
+/* Surface: layered paper. Contact + near + ambient shadow, a lit top edge, and a faint fall-off
+   to the bottom so a long sheet does not read as a flat white slab. Replaces `sheet`. */
+.surface {
+  border-radius: 3px;
+  background: linear-gradient(180deg, #ffffff 60%, #fafbfd);
+  box-shadow: inset 0 1px 0 #ffffff, theme("boxShadow.page");
+}
+/* Panel: a surface with a header band; clips the band to the corners. */
+.panel {
+  border-radius: 3px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 60%, #fafbfd);
+  box-shadow: theme("boxShadow.page");
+}
+/* Header band: a file-tab strip across the top of a panel. Text #44506A on #F0F3F8 is 7.6:1. */
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(180deg, #f5f7fa, #eef2f7);
+  border-bottom: 1px solid #dce2ec;
+  box-shadow: inset 0 1px 0 #ffffff;
+  color: #44506a;
+  font-stretch: 75%;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+@media (min-width: 640px) { .panel-head { padding-inline: 2rem; } }
+/* Soft divider between list rows: a rule that fades out at both ends. Replaces `divide-y divide-paper-line`. */
+.divide-soft > * + * {
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, #dce2ec 6%, #dce2ec 94%, transparent) 1;
+}
+/* Soft divider as a single rule (replaces `border-t border-paper-line` inside a surface). */
+.rule-soft {
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, #dce2ec 6%, #dce2ec 94%, transparent) 1;
+}
+}

@@ -27,11 +27,23 @@ log = logging.getLogger("cc.gcp")
 # stalls for 45 s is abandoned and retried, at most 3 tries (waits 2 s, 4 s). Embeddings get 5 tries.
 LLM_ATTEMPTS = 3
 EMBED_ATTEMPTS = 5
-GENERATE_TIMEOUT_MS = 35_000  # review call: normally 5-15 s
-AGENT_TIMEOUT_MS = 20_000  # tool-planning turn: normally 3-4 s, so a stall retries quickly
+# Per-call time budget: a base for a normal contract, plus time for each 1,000 input tokens above a free
+# allowance, up to a cap. A fixed budget cut off long contracts: msa-10 (15 pages, 11,000 input tokens in
+# the planning turn) was cancelled at 20 s every time ("499 The operation was cancelled"), while a stalled
+# call on a normal contract should still be abandoned and retried within a few tens of seconds.
+GENERATE_TIMEOUT_MS = 75_000  # review call, normal contract: 5-38 s (outputs 2-3k tokens). Cloud Run logs showed
+# this call hitting Vertex 504 DEADLINE_EXCEEDED three times in a row at the old 35 s cap, so one longer try
+# (two at most) beats three short ones that all end the same way.
+REVIEW_ATTEMPTS = 2
+AGENT_TIMEOUT_MS = 20_000  # tool-planning turn, normal contract: 3-4 s, so a stall retries quickly
 TRANSCRIBE_TIMEOUT_MS = 120_000  # a whole scanned PDF in one call legitimately takes longer
 EMBED_TIMEOUT_MS = 30_000
-RETRY_STATUSES = [429, 500, 503, 504]
+FREE_TOKENS = {"agent": 4_000, "review": 6_000}  # input size the base budget already covers
+MS_PER_1K_TOKENS = {"agent": 2_500, "review": 2_000}
+MAX_TIMEOUT_MS = {"agent": 60_000, "review": 120_000}
+CHARS_PER_TOKEN = 3.5  # conservative for English and Bahasa Malaysia; the real count is only known after the call
+# 499 is what the server answers when our own deadline expires, so it is retried like a timeout.
+RETRY_STATUSES = [429, 499, 500, 503, 504]
 EMBED_WORKERS = 8
 QUOTA_BACKOFF_S = (6, 12, 24)  # extra waits after a 429 that survived the SDK retries (adds at most ~42 s)
 
@@ -44,6 +56,28 @@ def _retry_options(attempts: int = LLM_ATTEMPTS, timeout_ms: int = GENERATE_TIME
         retry_options=types.HttpRetryOptions(attempts=attempts, initial_delay=2.0, max_delay=20.0,
                                              exp_base=2.0, http_status_codes=RETRY_STATUSES),
     )
+
+
+def call_timeout_ms(purpose: str, size_chars: int) -> int:
+    """The time budget of one generate call, from what it sends. Scanned-PDF transcription is fixed."""
+    if purpose == "transcribe":
+        return TRANSCRIBE_TIMEOUT_MS
+    kind = "agent" if purpose == "agent" else "review"
+    base = AGENT_TIMEOUT_MS if kind == "agent" else GENERATE_TIMEOUT_MS
+    extra_tokens = max(0.0, size_chars / CHARS_PER_TOKEN - FREE_TOKENS[kind])
+    return int(min(base + extra_tokens / 1000 * MS_PER_1K_TOKENS[kind], MAX_TIMEOUT_MS[kind]))
+
+
+def _chars(system: str, contents) -> int:
+    """Characters sent: the system prompt plus every text part, function call and function response."""
+    total = len(system)
+    for c in contents:
+        for p in (getattr(c, "parts", None) or [c]):
+            total += len(getattr(p, "text", None) or "")
+            for fn in (getattr(p, "function_call", None), getattr(p, "function_response", None)):
+                if fn is not None:
+                    total += len(str(getattr(fn, "args", None) or getattr(fn, "response", None) or ""))
+    return total
 
 
 def _upstream_failure(what: str, e: Exception, user_message: str) -> UpstreamError:
@@ -67,14 +101,14 @@ class GeminiLLM:
         # Optional: write each raw response to RECORD_DIR/<purpose>.json, to refresh test fixtures.
         self._record_dir = os.environ.get("RECORD_DIR") or None
 
-    def _config(self, system: str, purpose: str = "", **extra):
+    def _config(self, system: str, purpose: str = "", size_chars: int = 0, **extra):
         from google.genai import types
 
-        timeout = (TRANSCRIBE_TIMEOUT_MS if purpose == "transcribe"
-                   else AGENT_TIMEOUT_MS if purpose == "agent" else GENERATE_TIMEOUT_MS)
+        timeout = call_timeout_ms(purpose, size_chars)
+        attempts = LLM_ATTEMPTS if purpose in ("agent", "transcribe") else REVIEW_ATTEMPTS
         return types.GenerateContentConfig(
             system_instruction=system,
-            http_options=_retry_options(LLM_ATTEMPTS, timeout),
+            http_options=_retry_options(attempts, timeout),
             thinking_config=types.ThinkingConfig(thinking_level=self._thinking) if self._thinking else None,
             **extra,
         )
@@ -117,8 +151,9 @@ class GeminiLLM:
         """One function-calling turn. We run the loop ourselves, so automatic calling is off."""
         from google.genai import types
 
+        contents = [self._content(m) for m in messages]
         config = self._config(
-            system, purpose,
+            system, purpose, _chars(system, contents),
             tool_config=types.ToolConfig(function_calling_config=types.FunctionCallingConfig(
                 mode="ANY" if force_tools else "AUTO")),
             tools=[types.Tool(function_declarations=[
@@ -126,7 +161,7 @@ class GeminiLLM:
                                           parameters_json_schema=t.parameters) for t in tools])],
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         )
-        resp = self._call(purpose, [self._content(m) for m in messages], config)
+        resp = self._call(purpose, contents, config)
         cands = resp.candidates or []
         if not cands or cands[0].content is None:
             log.warning("gemini %s returned no content (finish_reason=%s)", purpose,
@@ -165,7 +200,8 @@ class GeminiLLM:
             else types.Part.from_text(text=p)
             for p in parts
         ]
-        config = self._config(system, purpose, response_mime_type="application/json", response_schema=schema)
+        config = self._config(system, purpose, _chars(system, contents),
+                              response_mime_type="application/json", response_schema=schema)
         resp = self._call(purpose, contents, config)
 
         text = resp.text or ""
@@ -175,7 +211,9 @@ class GeminiLLM:
         try:
             parsed = resp.parsed if isinstance(resp.parsed, schema) else schema.model_validate_json(text)
         except ValidationError as e:
-            log.error("gemini %s returned an unexpected shape: %s", purpose, str(e)[:500])
+            # error locations and types only: the full message echoes the model's output, which holds contract text
+            log.error("gemini %s returned an unexpected shape: %s", purpose,
+                      "; ".join(f"{'.'.join(map(str, x['loc']))}:{x['type']}" for x in e.errors())[:500])
             raise UpstreamError("The AI service returned an unexpected answer. Please try again.") from e
         return parsed, self._usage(resp)
 
@@ -313,10 +351,16 @@ class IdentityPlatformVerifier:
         try:
             claims = id_token.verify_firebase_token(token, self._request, audience=self._project)
         except Exception as e:  # ValueError for a bad/expired token; transport errors fall here too
-            log.info("token rejected: %s", str(e)[:200])
-            raise InvalidToken(str(e)) from None
+            # Never log the exception text: google-auth puts the token itself in some messages
+            # ("Wrong number of segments in token: <token>", "Can't parse segment: <segment>").
+            log.info("token rejected: %s", type(e).__name__)
+            raise InvalidToken("token rejected") from None
         if not claims:
             raise InvalidToken("token not verified")
+        # verify_firebase_token checks the signature (Google's securetoken keys), expiry and audience; also pin the issuer.
+        if claims.get("iss") != f"https://securetoken.google.com/{self._project}":
+            log.info("token rejected: wrong issuer")
+            raise InvalidToken("wrong issuer")
         uid = claims.get("user_id") or claims.get("sub")
         email = claims.get("email")
         if not uid or not email:

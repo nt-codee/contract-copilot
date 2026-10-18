@@ -13,8 +13,11 @@ Whether the tenancy rolls into a new term unless someone gives notice. This is c
 - A shop-lot **option to renew** is clear on the rent and the notice date.
 
 ## Red flags
-- **High:** An **automatic renewal for 2 years or more**, with a notice window of **90 days or more** and notice only by registered post.
+- **High:** An **automatic renewal for 2 years or more**, which locks the tenant into a further full term
+  unless it gives notice early. A notice window of **90 days or more**, or notice only by registered post,
+  makes it worse.
 - **High:** Renewal at a rent chosen by the landlord (see `rent_review.md`) with no right to leave.
+- **Medium:** Automatic renewal for a shorter term (1 year) with a notice window of 60 days or more.
 - **Medium:** Only the landlord may decide not to renew.
 - **Medium:** Renewal triggered simply by the tenant staying on, at a higher holding-over rent such as double.
 - **Low:** A 60-day notice window with a reminder; acceptable but worth diarising.

@@ -27,6 +27,10 @@ to do.
   realistic loss.
 - **High:** the receiver must pay the discloser's legal costs on an indemnity basis, plus damages,
   for any alleged breach, without the discloser having to prove loss.
+- **High:** the receiver's liability for misusing or leaking the information is excluded altogether,
+  while the discloser still gives indemnities. The NDA then gives no remedy for its own breach. In
+  Malaysia a clause that leaves no remedy at all can be void under Contracts Act section 29 (library
+  entry `my-case-cimb-v-bourke`), but nobody should have to litigate that to be protected.
 - **Medium:** only one side is liable; the other side's breaches have no consequence.
 - **Medium:** the receiver indemnifies the discloser for "all losses" connected with the NDA.
 

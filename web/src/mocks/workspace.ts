@@ -187,13 +187,6 @@ export async function mockOverview(n: number, admin: boolean): Promise<Overview>
       { date: "2026-12-01", kind: "notice_deadline", contract_type: "service_agreement", days_left: 44 },
       { date: "2027-01-31", kind: "renewal", contract_type: "service_agreement", days_left: 105 },
     ],
-    removed_by_day: days(n).map((date, i) => ({
-      date,
-      quote_not_found: i % 5 === 0 ? k : 0,
-      source_not_retrieved: i % 4 === 1 ? k : 0,
-      no_company_citation: i % 9 === 2 ? 1 : 0,
-      wrong_jurisdiction: i % 11 === 3 ? 1 : 0,
-    })),
   };
 }
 

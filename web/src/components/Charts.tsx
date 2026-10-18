@@ -104,42 +104,6 @@ export function Bars({ data, labelKey, valueKey, color = C.ink, width = 160 }: {
   );
 }
 
-export const REASON_LABEL: Record<string, string> = {
-  quote_not_found: "Words not in the contract",
-  source_not_retrieved: "Source not in our library",
-  no_company_citation: "Company rule not shown",
-  wrong_jurisdiction: "Law from the wrong country",
-};
-const REASON_COLOR: Record<string, string> = { quote_not_found: C.ink, source_not_retrieved: C.desk, no_company_citation: C.medium, wrong_jurisdiction: C.mute };
-
-/** Claims removed by verification, per day, stacked by reason. */
-export function Removed({ data }: { data: Record<string, string | number>[] }) {
-  const keys = Object.keys(REASON_LABEL).filter((k) => data.some((d) => Number(d[k] ?? 0) > 0));
-  return (
-    <>
-      <ResponsiveContainer width="100%" height={170}>
-        <BarChart accessibilityLayer={false} data={data} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
-          <CartesianGrid vertical={false} stroke={C.line} />
-          <XAxis dataKey="date" {...axis} tickFormatter={shortDay} interval="preserveStartEnd" minTickGap={24} />
-          <YAxis {...axis} allowDecimals={false} axisLine={false} />
-          <Tooltip {...tooltip} labelFormatter={(l) => shortDay(String(l))} />
-          {keys.map((k) => (
-            <Bar key={k} dataKey={k} stackId="x" name={REASON_LABEL[k]} fill={REASON_COLOR[k]} isAnimationActive={false} />
-          ))}
-        </BarChart>
-      </ResponsiveContainer>
-      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.85rem] text-ink-soft">
-        {keys.map((k) => (
-          <li key={k} className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-[1px]" style={{ background: REASON_COLOR[k] }} />
-            {REASON_LABEL[k]}
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-}
-
 export function Trend({ data, keyName }: { data: Record<string, string | number>[]; keyName: string }) {
   return (
     <ResponsiveContainer width="100%" height={140}>

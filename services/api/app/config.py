@@ -77,7 +77,10 @@ class Settings:
     web_dist: Path = field(default_factory=lambda: Path(_env("WEB_DIST", "/app/web/dist")))
     data_dir: Path = field(default_factory=lambda: Path(_env("DATA_DIR", "/tmp/cc-data")))
     dev_cors: bool = field(default_factory=lambda: _env("DEV_CORS", "") == "1")
-    rate_limit_per_hour: int = field(default_factory=lambda: int(_env("RATE_LIMIT_PER_HOUR", "10")))
+    rate_limit_per_hour: int = field(default_factory=lambda: int(_env("RATE_LIMIT_PER_HOUR", "10")))  # per IP address
+    rate_limit_user_per_hour: int = field(default_factory=lambda: int(_env("RATE_LIMIT_USER_PER_HOUR", "30")))  # per signed-in user
+    # Content-Security-Policy: report-only (default), enforce, or off. Report-only never blocks anything.
+    csp_mode: str = field(default_factory=lambda: _env("CSP_MODE", "report-only"))
 
     # Auth. ADMIN_EMAILS is comma-separated and comes from a secret Pulumi config, never a committed file.
     admin_emails: frozenset[str] = field(default_factory=lambda: frozenset(

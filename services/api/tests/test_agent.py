@@ -350,9 +350,9 @@ def test_retry_options():
 
     o = _retry_options()
     r = o.retry_options
-    assert o.timeout == 35_000  # a stalled generate call is abandoned and retried
+    assert o.timeout == 75_000  # the review call's base budget; scaled by size, see test_long_contracts
     assert (r.attempts, r.initial_delay, r.max_delay, r.exp_base) == (3, 2.0, 20.0, 2.0)
-    assert sorted(r.http_status_codes) == [429, 500, 503, 504]
+    assert sorted(r.http_status_codes) == [429, 499, 500, 503, 504]  # 499: our own deadline expired
     assert _retry_options(5, 30_000).retry_options.attempts == 5
 
 

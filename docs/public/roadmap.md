@@ -12,7 +12,7 @@ is mostly content.
 | Then | Tenancy and office leases, supplier and distribution agreements | still business-to-business, same user |
 | Later (consumer) | Hire purchase and car loans, home loans, insurance policies, medical consent | different users and laws (MY Hire Purchase Act 1967, Financial Services Act 2013, Consumer Protection Act 1999; SG Hire-Purchase Act). These need a clear line between information and regulated financial or medical advice |
 
-Platform items that come with scale: accounts and per-company workspaces, which replace the
-single demo tenant; licensed access to full judgments (MLJ/CLJ, Supreme Court permission for commercial
+Google sign-in and per-company workspaces (roles, invites, an audit trail) are already built. Platform items that come
+with scale: licensed access to full judgments (MLJ/CLJ, Supreme Court permission for commercial
 reuse); more jurisdictions (Indonesia, Thailand, Philippines, Vietnam), with the BM support pattern extended to their
 languages; and integrations with e-signature and document storage tools.

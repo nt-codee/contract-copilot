@@ -153,7 +153,7 @@ def test_identity_platform_verifier_checks_the_project_audience(monkeypatch):
         if token == "expired":
             raise ValueError("Token expired")
         return {"user_id": "u9", "email": "Z@Example.test", "email_verified": True, "name": "Zed",
-                "picture": "http://x/p.png"}
+                "picture": "http://x/p.png", "iss": "https://securetoken.google.com/contract-copilot-abc26"}
 
     monkeypatch.setattr(id_token, "verify_firebase_token", fake)
     fb = gcp.IdentityPlatformVerifier(Settings())

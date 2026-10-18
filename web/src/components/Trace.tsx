@@ -105,6 +105,7 @@ export default function Trace({ steps, seconds }: { steps: TraceStep[]; seconds:
                   {s.ms != null && <span className="normal-case"> · {(s.ms / 1000).toFixed(1)} s</span>}
                 </span>
                 <span className="block text-[0.95rem] leading-snug text-ink">{s.summary}</span>
+                {!d && s.detail && <span className="mt-1 block text-[0.88rem] text-ink-soft">{s.detail.replace(/ -> \w+$/, "")}</span>}
                 {d && asked(d.args) && (
                   <span className="mt-1 block text-[0.88rem] text-ink-soft">
                     Looked up {asked(d.args)}

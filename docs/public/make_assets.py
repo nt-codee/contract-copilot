@@ -4,10 +4,16 @@
 # ///
 """Rebuild the README images from files in this repo.
 
-    uv run docs/public/make_assets.py
+    uv run docs/public/make_assets.py [--shots DIR] [--chart-only]
 
-Needs the product screenshots in web/screenshots/r3 (kept in the working repo, not in the public export),
-so the generated images are committed under docs/public. Numbers in the chart come from the newest
+The signed-out screens come from the live site: run `node docs/public/shoot_live.mjs DIR` first, then pass DIR
+here (default /tmp/live-shots). The signed-in screens (account menu, admin overview, activity) come from
+`node docs/public/shoot_app.mjs DIR` (default /tmp/app-shots, pass it with --app). They use the app's offline
+sample data: invented people and a made-up company. The evidence view and the company-rules page are taken from
+web/screenshots/r4/signed-in-mock when that folder exists.
+
+The source screenshots live in the working repo and not in the public export, so the generated images are
+committed under docs/public. Numbers in the chart come from the newest
 eval/results/*.json, nothing is typed in by hand.
 """
 from __future__ import annotations
@@ -23,7 +29,13 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "docs" / "public"
-SHOTS = ROOT / "web" / "screenshots" / "r3"
+MOCK_SHOTS = ROOT / "web" / "screenshots" / "r4" / "signed-in-mock"
+APP = Path("/tmp/app-shots")
+if "--app" in __import__("sys").argv:
+    APP = Path(__import__("sys").argv[__import__("sys").argv.index("--app") + 1])
+SHOTS = Path("/tmp/live-shots")
+if "--shots" in __import__("sys").argv:
+    SHOTS = Path(__import__("sys").argv[__import__("sys").argv.index("--shots") + 1])
 
 INK, REDLINE, AMBER, PAPER = "#121A2B", "#B3261E", "#C98A00", "#F6F2E9"
 MUTED = "#5B6577"
@@ -80,23 +92,37 @@ def banner() -> None:
 
 
 def screens() -> None:
-    """Resize product screenshots to a README-friendly width."""
+    """Crop and resize the live product screens to a README-friendly width."""
     (OUT / "screens").mkdir(exist_ok=True)
-    # (source, output name, crop box in source pixels or None)
-    for src, name, box in (("review-selected-1440", "reader", None), ("review-draft-1440", "reply", None),
-                           ("home-1440", "dates", (0, 60, 1440, 390)),
-                           ("knowledge-entry-1440", "citation", (0, 0, 1440, 900)),
-                           ("rules-1440", "rules", (0, 0, 1440, 1000)),
-                           ("library-1440", "library", (0, 0, 1440, 900))):
-        im = Image.open(SHOTS / f"{src}.png").convert("RGB")
+    # (source folder, source name, output name, crop box in source pixels or None)
+    jobs = (
+        (SHOTS, "review-selected-1440", "reader", None),
+        (SHOTS, "review-draft-1440", "reply", None),
+        (SHOTS, "review-1440", "dates", (979, 0, 1440, 410)),   # the verdict card with its key date
+        (SHOTS, "knowledge-entry-1440", "citation", None),
+        (SHOTS, "library-1440", "library", (0, 0, 1440, 1100)),
+        (MOCK_SHOTS, "rules-1440", "rules", (0, 0, 1440, 1100)),
+        # signed in, sample data
+        (APP, "account-menu-1440", "team-account", (0, 320, 320, 900)),   # sidebar with the account / workspace menu
+        (APP, "admin-1440", "team-overview", (0, 0, 1440, 1100)),         # usage dashboard, aggregates only
+        (MOCK_SHOTS, "evidence-1440", "team-evidence", None),             # contract beside the company rule it breaks
+        (APP, "activity-1440", "team-activity", (0, 0, 1440, 1000)),      # audit trail
+    )
+    for folder, src, name, box in jobs:
+        f = folder / f"{src}.png"
+        if not f.exists():
+            print(f"skip {name}: {f} not found")
+            continue
+        im = Image.open(f).convert("RGB")
         if box:
             im = im.crop((box[0], box[1], box[2], min(box[3], im.height)))
-        im = im.resize((1100, round(im.height * 1100 / im.width)), Image.LANCZOS)
+        if im.width > 1100:
+            im = im.resize((1100, round(im.height * 1100 / im.width)), Image.LANCZOS)
         im.save(OUT / "screens" / f"{name}.png", optimize=True)
 
 
 def newest_eval() -> tuple[Path, dict]:
-    p = sorted((ROOT / "eval" / "results").glob("*.json"))[-1]
+    p = ROOT / "eval" / "results" / "20261018T075234Z.json"  # pinned to the run the README quotes
     return p, json.loads(p.read_text())
 
 
