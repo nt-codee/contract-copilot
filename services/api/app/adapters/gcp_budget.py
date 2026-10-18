@@ -1,5 +1,12 @@
 """Atomic shared account/day ledger; one counter and separate idempotent reservation documents."""
 import hashlib
+import random
+import threading
+import time
+
+# Shared across request-scoped ledgers, bounded in memory. Keep provider calls parallel;
+# only serialize the short reservation/settlement transactions for an account.
+_ACCOUNT_LOCKS = tuple(threading.RLock() for _ in range(64))
 
 
 class FirestoreBudgetLedger:
@@ -16,9 +23,26 @@ class FirestoreBudgetLedger:
         account = self._col.document(self.key(reservation.uid, reservation.day))
         return account, account.collection("reservations").document(reservation.id)
 
-    def reserve(self, reservation, limit):
+    def _transaction(self, callback, reservation, *args):
         from google.cloud import firestore
-        return firestore.transactional(self._reserve)(self._db.transaction(), reservation, limit)
+        from google.api_core.exceptions import Aborted
+        lock = _ACCOUNT_LOCKS[int(hashlib.sha256(reservation.uid.encode()).hexdigest(), 16) % len(_ACCOUNT_LOCKS)]
+        with lock:
+            for attempt in range(3):
+                try:
+                    return firestore.transactional(callback)(self._db.transaction(), reservation, *args)
+                except (Aborted, ValueError) as exc:
+                    # The SDK wraps exhausted ABORTED retries in ValueError. Retry only that
+                    # transient failure, with the SAME idempotent reservation; never bypass a cap.
+                    cause = exc
+                    while cause is not None and not isinstance(cause, Aborted):
+                        cause = cause.__cause__
+                    if cause is None or attempt == 2:
+                        raise
+                    time.sleep(random.uniform(.05, .15) * (2 ** attempt))
+
+    def reserve(self, reservation, limit):
+        return self._transaction(self._reserve, reservation, limit)
 
     def _reserve(self, tx, reservation, limit):
         account, hold = self._refs(reservation)
@@ -35,8 +59,7 @@ class FirestoreBudgetLedger:
         return True
 
     def settle(self, reservation, actual_micros):
-        from google.cloud import firestore
-        firestore.transactional(self._settle)(self._db.transaction(), reservation, actual_micros)
+        self._transaction(self._settle, reservation, actual_micros)
 
     def _settle(self, tx, reservation, actual_micros):
         account, hold = self._refs(reservation)
