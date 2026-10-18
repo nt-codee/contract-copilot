@@ -26,7 +26,7 @@ means in plain English, the law that applies, and a reply to the vendor that is 
 
 ## See it work
 
-Watch the 3-minute demo: [docs/public/demo.mp4](docs/public/demo.mp4).
+Watch the 3-minute demo: [watch on Google Drive](https://drive.google.com/file/d/1KztL52YcRw1_XKTOd6A3fr5pkWpoL8yx/view).
 
 A software subscription agreement, reviewed. Each coloured box sits on the words in the vendor's PDF; the panel explains the clause,
 shows what a balanced term looks like, and quotes the company rule it breaks.
