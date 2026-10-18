@@ -37,6 +37,11 @@ COPY --from=web /web/dist /app/web/dist
 RUN useradd --create-home --uid 10001 app && mkdir -p /tmp/cc-data && chown app /tmp/cc-data
 USER app
 
+# APP_VERSION is set at runtime by the Cloud Run service (scripts/deploy.sh passes the image tag); this
+# build arg only gives a locally built image a value: docker build --build-arg APP_VERSION=$(git rev-parse --short HEAD)
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION}
+
 ENV PATH="/app/.venv/bin:$PATH" \
     PORT=8080 \
     SAMPLES_DIR=/app/samples/contracts \

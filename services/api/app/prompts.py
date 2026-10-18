@@ -14,16 +14,20 @@ STAGE 1: RESEARCH (one turn)
 Your tools:
 - search_playbook(contract_type, clause_type): the balanced, market-standard position for one clause
   type. This is what you compare the contract against.
+- set_jurisdiction(governing_law, jurisdiction): fixes which country's law applies. Call it once, first.
 - search_law(query, jurisdiction, clause_type): Malaysian ("my") or Singapore ("sg") statutes and
   cases that bear on a clause.
 - search_company(query): the reader's own company rules and policies, if they uploaded any.
 - read_page(n): the text of one contract page. The whole contract is already above; use this rarely.
 You get ONE round of lookups, so plan every lookup up front and emit ALL the calls in this single
-turn (they run in parallel). First decide the contract type and the governing-law jurisdiction (my, sg,
-or other; my if unclear) from the contract above. Then call: search_playbook for every clause type you
-may flag, search_law for the areas where a rule may matter (penalties and fixed damages, restraint of
-trade, exclusion of liability, personal data, limitation periods; only with "my" or "sg", skip it for
-another jurisdiction), and search_company for the same topics. Do not repeat a search. You have at
+turn (they run in parallel). First read the governing-law clause and call set_jurisdiction(governing_law, jurisdiction)
+exactly once in this turn: jurisdiction is "my" for Malaysian law, "sg" for Singapore law, "other" for
+any other law, and "my" if the contract names none. A Malaysian contract is judged on Malaysian law and a
+Singapore contract on Singapore law, never the other way round; search_law uses the country you set
+here whatever jurisdiction you give it. For a contract under another country's law, search_law checks
+Malaysian law only as a fallback. Then call: search_playbook for every clause type you may flag,
+search_law for the areas where a rule may matter (penalties and fixed damages, restraint of trade,
+exclusion of liability, personal data, limitation periods), and search_company for the same topics. Do not repeat a search. You have at
 most {max_tools} tool calls in total. After the results come back you write the review; there is no
 second round.
 
@@ -31,7 +35,8 @@ STAGE 2: THE REVIEW (you will be asked for it once the lookups are back)
 1. contract_type: "nda" (non-disclosure / confidentiality agreement, including "perjanjian
    kerahsiaan"), "service_agreement" (services, SaaS, master services, consulting), or "other".
 2. language: ISO 639-1 code of the contract text ("en", "ms", ...). parties: names as the contract uses them.
-   jurisdiction: "my", "sg" or "other" from the governing-law clause; "my" if unclear.
+   jurisdiction: "my", "sg" or "other" from the governing-law clause; "my" if unclear. If the research
+   says the governing law was fixed, use exactly that jurisdiction.
 3. Flag every clause that departs from the playbook against the reader (the customer / the receiving or
    weaker party), plus anything unusual or hidden. Risk:
    - high: could cost a lot of money, lock the reader in, or take away rights they would expect
@@ -89,11 +94,13 @@ def agent_system(pages: list[str], max_tools: int) -> str:
     return AGENT_SYSTEM.format(contract=contract_text(pages), max_tools=max_tools)
 
 
-def research_transcript(steps: list[tuple[str, dict, str]]) -> str:
+def research_transcript(steps: list[tuple[str, dict, str]], fixed: str | None = None) -> str:
     """The tool calls so far and what they returned, as the final call's context."""
     if not steps:
         return "RESEARCH SO FAR: you made no tool calls, so there are no sources to cite."
     out = ["RESEARCH SO FAR (the only sources you may cite are the refs shown here):"]
+    if fixed:
+        out.append(fixed)
     for name, args, result in steps:
         out.append(f"### {name}({', '.join(f'{k}={v!r}' for k, v in args.items())})\n{result}")
     return "\n\n".join(out)

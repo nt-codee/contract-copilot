@@ -48,6 +48,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv("WEB_DIST", str(dist))
     monkeypatch.setenv("KNOWLEDGE_DIR", str(make_knowledge_dir(tmp_path)))
     monkeypatch.setenv("RATE_LIMIT_PER_HOUR", "10")
+    monkeypatch.setenv("ADMIN_EMAILS", "Root@Example.test, other-admin@example.test")
     return tmp_path
 
 
@@ -56,9 +57,40 @@ def services(env):
     return build_services(Settings())
 
 
+ALICE = "test:alice:alice@example.test"
+BOB = "test:bob:bob@example.test"
+ROOT = "test:root:root@example.test"  # listed in ADMIN_EMAILS (case-insensitively)
+
+
+def bearer(token: str) -> dict[str, str]:
+    return {"Authorization": f"Bearer {token}"}
+
+
 @pytest.fixture
-def client(services):
-    return TestClient(create_app(services.settings, services))
+def api(services):
+    return create_app(services.settings, services)
+
+
+@pytest.fixture
+def client(api):
+    """Signed in as alice. Most tests exercise the product as a signed-in user in their own workspace."""
+    return TestClient(api, headers=bearer(ALICE))
+
+
+@pytest.fixture
+def anon(api):
+    """No Authorization header: the public demo visitor."""
+    return TestClient(api)
+
+
+@pytest.fixture
+def bob(api):
+    return TestClient(api, headers=bearer(BOB))
+
+
+@pytest.fixture
+def admin(api):
+    return TestClient(api, headers=bearer(ROOT))
 
 
 @pytest.fixture

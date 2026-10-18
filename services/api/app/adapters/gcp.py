@@ -9,14 +9,16 @@ import logging
 import os
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Iterator
 
 from pydantic import ValidationError
 
 from app.config import EMBED_DIM, Settings
-from app.models import CompanyDoc, ReviewResult
-from app.ports import (ChatMessage, Chunk, CompanyChunk, LLMUsage, PdfPart, T, ToolCall, ToolSpec,
-                       UpstreamError)
+from app.models import AuditEvent, CompanyDoc, Identity, Invite, Member, ReviewResult, User, Workspace
+from app.ports import (ChatMessage, Chunk, CompanyChunk, InvalidToken, LLMUsage, PdfPart, T, ToolCall,
+                       ToolSpec, UpstreamError)
 
 log = logging.getLogger("cc.gcp")
 
@@ -240,55 +242,179 @@ def _firestore_client(settings: Settings):
     return firestore.Client(project=settings.gcp_project, database=settings.firestore_db)
 
 
+def _eq(field: str, value):
+    from google.cloud.firestore_v1.base_query import FieldFilter
+
+    return FieldFilter(field, "==", value)
+
+
+def _delete_refs(db, refs: list) -> int:
+    for start in range(0, len(refs), 400):  # Firestore batch limit is 500 writes
+        batch = db.batch()
+        for r in refs[start:start + 400]:
+            batch.delete(r)
+        batch.commit()
+    return len(refs)
+
+
+def _iso(dt: datetime) -> str:
+    """Prefix-comparable with the ISO strings pydantic stores in `created_at` / `at`."""
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+
+
+# ---- auth ---------------------------------------------------------------------------------------
+
+
+class _CachedRequest:
+    """google-auth transport that remembers GET responses (the Identity Platform signing certs) for `ttl` seconds,
+    so a verification is a local signature check, not a network call."""
+
+    def __init__(self, ttl: float = 3600.0):
+        from google.auth.transport import requests as google_requests
+
+        self._inner = google_requests.Request()
+        self._ttl = ttl
+        self._cache: dict[str, tuple[float, object]] = {}
+
+    def __call__(self, url, method="GET", body=None, headers=None, timeout=120, **kwargs):
+        if method == "GET":
+            hit = self._cache.get(url)
+            if hit and time.monotonic() - hit[0] < self._ttl:
+                return hit[1]
+        resp = self._inner(url, method=method, body=body, headers=headers, timeout=timeout, **kwargs)
+        if method == "GET" and getattr(resp, "status", 200) == 200:
+            self._cache[url] = (time.monotonic(), resp)
+        return resp
+
+
+class IdentityPlatformVerifier:
+    """Verifies a Google Cloud Identity Platform ID token: issuer https://securetoken.google.com/<project>,
+    audience <project>. google-auth's `verify_firebase_token` performs exactly that check."""
+
+    def __init__(self, settings: Settings):
+        self._project = settings.gcp_project
+        self._request = _CachedRequest()
+
+    def verify(self, token: str) -> Identity:
+        from google.oauth2 import id_token
+
+        try:
+            claims = id_token.verify_firebase_token(token, self._request, audience=self._project)
+        except Exception as e:  # ValueError for a bad/expired token; transport errors fall here too
+            log.info("token rejected: %s", str(e)[:200])
+            raise InvalidToken(str(e)) from None
+        if not claims:
+            raise InvalidToken("token not verified")
+        uid = claims.get("user_id") or claims.get("sub")
+        email = claims.get("email")
+        if not uid or not email:
+            raise InvalidToken("token has no uid or email")
+        return Identity(uid=str(uid), email=str(email), name=claims.get("name"),
+                        photo_url=claims.get("picture"), email_verified=bool(claims.get("email_verified")),
+                        hd=(str(claims["hd"]).lower() if claims.get("hd") else None))
+
+
+# ---- reviews ------------------------------------------------------------------------------------
+
+
 def _to_firestore(review: ReviewResult) -> dict:
     """Firestore rejects arrays of arrays: store each box [x0,y0,x1,y1] as a map."""
     d = review.model_dump(mode="json")
     for f in d["findings"]:
-        f["boxes"] = [dict(zip(("x0", "y0", "x1", "y1"), b)) for b in f.get("boxes", [])]
+        f["boxes"] = [_box_to_map(b) for b in f.get("boxes", [])]
+        for c in f.get("citations", []):  # company citations carry boxes too
+            c["boxes"] = [_box_to_map(b) for b in c.get("boxes", [])]
     return d
+
+
+def _box_to_map(b: list[float]) -> dict:
+    return dict(zip(("x0", "y0", "x1", "y1"), b))
+
+
+def _box_from_map(b) -> list[float]:
+    return [b["x0"], b["y0"], b["x1"], b["y1"]] if isinstance(b, dict) else b
 
 
 def _from_firestore(d: dict) -> ReviewResult:
     d = dict(d)
     d["findings"] = [
-        {**f, "boxes": [[b["x0"], b["y0"], b["x1"], b["y1"]] if isinstance(b, dict) else b
-                        for b in f.get("boxes", [])]}
+        {**f, "boxes": [_box_from_map(b) for b in f.get("boxes", [])],
+         "citations": [{**c, "boxes": [_box_from_map(b) for b in c.get("boxes", [])]}
+                       for c in f.get("citations", [])]}
         for f in d.get("findings", [])
     ]
     return ReviewResult.model_validate(d)
 
 
 class FirestoreReviewStore:
+    """Collection `reviews`. Every read filters on the `owner` field. Owner-scoped lists sort in memory
+    (one workspace is small), which avoids a composite index for equality + order."""
+
     COLLECTION = "reviews"
 
     def __init__(self, settings: Settings):
-        self._col = _firestore_client(settings).collection(self.COLLECTION)
+        self._db = _firestore_client(settings)
+        self._col = self._db.collection(self.COLLECTION)
 
     def save(self, review: ReviewResult) -> None:
         self._col.document(review.id).set(_to_firestore(review))
 
-    def get(self, review_id: str) -> ReviewResult | None:
+    def get(self, review_id: str, *, owner: str) -> ReviewResult | None:
         snap = self._col.document(review_id).get()
-        return _from_firestore(snap.to_dict()) if snap.exists else None
+        if not snap.exists:
+            return None
+        d = snap.to_dict()
+        return _from_firestore(d) if d.get("owner") == owner else None
 
-    def list(self, limit: int = 50) -> list[ReviewResult]:
+    def _owned(self, owner: str, *extra) -> list[ReviewResult]:
+        q = self._col.where(filter=_eq("owner", owner))
+        for e in extra:
+            q = q.where(filter=e)
+        items = [_from_firestore(s.to_dict()) for s in q.stream()]
+        items.sort(key=lambda r: r.created_at, reverse=True)
+        return items
+
+    def list(self, *, owner: str, limit: int = 50) -> list[ReviewResult]:
+        return self._owned(owner)[:limit]
+
+    def find_by_sample(self, sample_id: str, *, owner: str) -> ReviewResult | None:
+        # newest wins (so ?refresh=1 replaces the cache)
+        found = self._owned(owner, _eq("sample_id", sample_id))
+        return found[0] if found else None
+
+    def runs_of(self, content_hash: str, *, owner: str) -> list[ReviewResult]:
+        return self._owned(owner, _eq("content_hash", content_hash))
+
+    def delete(self, review_id: str, *, owner: str) -> bool:
+        if self.get(review_id, owner=owner) is None:
+            return False
+        self._col.document(review_id).delete()
+        return True
+
+    def delete_owner(self, owner: str) -> list[str]:
+        refs = [s.reference for s in self._col.where(filter=_eq("owner", owner)).stream()]
+        _delete_refs(self._db, refs)
+        return [r.id for r in refs]
+
+    def scan(self, *, limit: int, since: datetime | None = None, owner: str | None = None) -> Iterator[ReviewResult]:
         from google.cloud import firestore
-
-        q = self._col.order_by("created_at", direction=firestore.Query.DESCENDING).limit(limit)
-        return [_from_firestore(s.to_dict()) for s in q.stream()]
-
-    def find_by_sample(self, sample_id: str) -> ReviewResult | None:
         from google.cloud.firestore_v1.base_query import FieldFilter
 
-        # newest wins (so ?refresh=1 replaces the cache); sorted here to avoid a composite index
-        docs = [s.to_dict() for s in self._col.where(filter=FieldFilter("sample_id", "==", sample_id)).stream()]
-        if not docs:
-            return None
-        return _from_firestore(max(docs, key=lambda d: str(d.get("created_at", ""))))
+        if owner is not None:  # one workspace is small: filter and sort in memory, no composite index
+            yield from [r for r in self._owned(owner) if since is None or r.created_at >= since][:limit]
+            return
+        q = self._col
+        if since is not None:
+            q = q.where(filter=FieldFilter("created_at", ">=", _iso(since)))
+        q = q.order_by("created_at", direction=firestore.Query.DESCENDING).limit(limit)
+        for s in q.stream():
+            yield _from_firestore(s.to_dict())
 
 
 class FirestoreIndex:
-    """Collection `chunks`, vector field `embedding` (768 dims, COSINE). The index is created by infra."""
+    """Collection `chunks`, vector field `embedding` (768 dims, COSINE) with an `owner` prefilter.
+
+    Needs the composite vector index (owner ASC, embedding vector), created by infrastructure/gcp/app."""
 
     COLLECTION = "chunks"
     FIELD = "embedding"
@@ -304,33 +430,41 @@ class FirestoreIndex:
             batch = self._db.batch()
             for c in chunks[start:start + 400]:
                 batch.set(self._col.document(c.id), {
-                    "review_id": c.review_id, "filename": c.filename, "page": c.page, "text": c.text,
-                    "clause_type": c.clause_type, "finding_id": c.finding_id,
+                    "owner": c.owner, "review_id": c.review_id, "filename": c.filename, "page": c.page,
+                    "text": c.text, "clause_type": c.clause_type, "finding_id": c.finding_id,
                     self.FIELD: Vector(c.embedding),
                 })
             batch.commit()
 
-    def query(self, vector: list[float], limit: int) -> list[tuple[Chunk, float]]:
+    def query(self, vector: list[float], limit: int, *, owner: str) -> list[tuple[Chunk, float]]:
         from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
         from google.cloud.firestore_v1.vector import Vector
 
-        q = self._col.find_nearest(vector_field=self.FIELD, query_vector=Vector(vector),
-                                   distance_measure=DistanceMeasure.COSINE, limit=limit,
-                                   distance_result_field="vector_distance")
+        q = self._col.where(filter=_eq("owner", owner)).find_nearest(
+            vector_field=self.FIELD, query_vector=Vector(vector),
+            distance_measure=DistanceMeasure.COSINE, limit=limit, distance_result_field="vector_distance")
         out: list[tuple[Chunk, float]] = []
         for s in q.stream():
             d = s.to_dict()
             chunk = Chunk(id=s.id, review_id=d["review_id"], filename=d["filename"], page=d["page"],
-                          text=d["text"], clause_type=d.get("clause_type"), finding_id=d.get("finding_id"))
+                          text=d["text"], clause_type=d.get("clause_type"), finding_id=d.get("finding_id"),
+                          owner=d.get("owner", owner))
             out.append((chunk, 1.0 - float(d.get("vector_distance", 1.0))))
         return out
 
+    def delete_review(self, review_id: str, *, owner: str) -> None:
+        q = self._col.where(filter=_eq("owner", owner)).where(filter=_eq("review_id", review_id))
+        _delete_refs(self._db, [s.reference for s in q.stream()])
+
+    def delete_owner(self, owner: str) -> None:
+        _delete_refs(self._db, [s.reference for s in self._col.where(filter=_eq("owner", owner)).stream()])
 
 
 class FirestoreCompanyStore:
-    """Collections `company_docs` (metadata) and `company_chunks` (text + 768-d `embedding`, COSINE).
+    """Collections `company_docs` (metadata) and `company_chunks` (text + 768-d `embedding`, COSINE),
+    both carrying an `owner` field that every read filters on.
 
-    The vector index on company_chunks.embedding must exist (created by infrastructure/gcp/app).
+    Needs the composite vector index (owner ASC, embedding vector) on company_chunks (infrastructure/gcp/app).
     """
 
     DOCS = "company_docs"
@@ -342,53 +476,204 @@ class FirestoreCompanyStore:
         self._docs = self._db.collection(self.DOCS)
         self._chunks = self._db.collection(self.CHUNKS)
 
-    def put(self, doc: CompanyDoc, chunks: list[CompanyChunk]) -> None:
+    def put(self, doc: CompanyDoc, chunks: list[CompanyChunk], *, owner: str) -> None:
         from google.cloud.firestore_v1.vector import Vector
 
         for start in range(0, len(chunks), 400):
             batch = self._db.batch()
             for c in chunks[start:start + 400]:
                 batch.set(self._chunks.document(c.id), {
-                    "doc_id": c.doc_id, "title": c.title, "page": c.page, "text": c.text,
+                    "owner": owner, "doc_id": c.doc_id, "title": c.title, "page": c.page, "text": c.text,
                     self.FIELD: Vector(c.embedding),
                 })
             batch.commit()
-        self._docs.document(doc.id).set(doc.model_dump(mode="json"))  # last: a doc is listed only when searchable
+        # last: a doc is listed only when searchable
+        self._docs.document(doc.id).set({**doc.model_dump(mode="json"), "owner": owner})
 
-    def list(self) -> list[CompanyDoc]:
-        from google.cloud import firestore
+    @staticmethod
+    def _doc(d: dict) -> CompanyDoc:
+        return CompanyDoc.model_validate({k: v for k, v in d.items() if k != "owner"})
 
-        q = self._docs.order_by("created_at", direction=firestore.Query.DESCENDING)
-        return [CompanyDoc.model_validate(s.to_dict()) for s in q.stream()]
+    def list(self, *, owner: str) -> list[CompanyDoc]:
+        docs = [self._doc(s.to_dict()) for s in self._docs.where(filter=_eq("owner", owner)).stream()]
+        return sorted(docs, key=lambda d: d.created_at, reverse=True)
 
-    def get(self, doc_id: str) -> CompanyDoc | None:
+    def get(self, doc_id: str, *, owner: str) -> CompanyDoc | None:
         snap = self._docs.document(doc_id).get()
-        return CompanyDoc.model_validate(snap.to_dict()) if snap.exists else None
+        if not snap.exists or snap.to_dict().get("owner") != owner:
+            return None
+        return self._doc(snap.to_dict())
 
-    def delete(self, doc_id: str) -> bool:
-        from google.cloud.firestore_v1.base_query import FieldFilter
+    def delete(self, doc_id: str, *, owner: str) -> bool:
+        if self.get(doc_id, owner=owner) is None:
+            return False
+        q = self._chunks.where(filter=_eq("owner", owner)).where(filter=_eq("doc_id", doc_id))
+        _delete_refs(self._db, [s.reference for s in q.stream()])
+        self._docs.document(doc_id).delete()
+        return True
 
-        ref = self._docs.document(doc_id)
-        existed = ref.get().exists
-        refs = [s.reference for s in self._chunks.where(filter=FieldFilter("doc_id", "==", doc_id)).stream()]
-        for start in range(0, len(refs), 400):
-            batch = self._db.batch()
-            for r in refs[start:start + 400]:
-                batch.delete(r)
-            batch.commit()
-        ref.delete()
-        return existed
-
-    def search(self, vector: list[float], limit: int) -> list[tuple[CompanyChunk, float]]:
+    def search(self, vector: list[float], limit: int, *, owner: str) -> list[tuple[CompanyChunk, float]]:
         from google.cloud.firestore_v1.base_vector_query import DistanceMeasure
         from google.cloud.firestore_v1.vector import Vector
 
-        q = self._chunks.find_nearest(vector_field=self.FIELD, query_vector=Vector(vector),
-                                      distance_measure=DistanceMeasure.COSINE, limit=limit,
-                                      distance_result_field="vector_distance")
+        q = self._chunks.where(filter=_eq("owner", owner)).find_nearest(
+            vector_field=self.FIELD, query_vector=Vector(vector),
+            distance_measure=DistanceMeasure.COSINE, limit=limit, distance_result_field="vector_distance")
         out: list[tuple[CompanyChunk, float]] = []
         for s in q.stream():
             d = s.to_dict()
             out.append((CompanyChunk(id=s.id, doc_id=d["doc_id"], title=d["title"], page=d["page"],
                                      text=d["text"]), 1.0 - float(d.get("vector_distance", 1.0))))
         return out
+
+    def delete_owner(self, owner: str) -> list[str]:
+        doc_refs = [s.reference for s in self._docs.where(filter=_eq("owner", owner)).stream()]
+        _delete_refs(self._db, [s.reference for s in self._chunks.where(filter=_eq("owner", owner)).stream()])
+        _delete_refs(self._db, doc_refs)
+        return [r.id for r in doc_refs]
+
+
+# ---- users and the audit trail ----------------------------------------------------------------
+
+
+class FirestoreUserStore:
+    COLLECTION = "users"
+
+    def __init__(self, settings: Settings):
+        self._col = _firestore_client(settings).collection(self.COLLECTION)
+
+    def get(self, uid: str) -> User | None:
+        snap = self._col.document(uid).get()
+        return User.model_validate(snap.to_dict()) if snap.exists else None
+
+    def put(self, user: User) -> None:
+        self._col.document(user.uid).set(user.model_dump(mode="json", exclude={"workspaces", "platform_admin"}))
+
+    def list(self) -> list[User]:
+        return [User.model_validate(s.to_dict()) for s in self._col.stream()]
+
+    def delete(self, uid: str) -> None:
+        self._col.document(uid).delete()
+
+
+class FirestoreWorkspaceStore:
+    """Collections `workspaces`, `workspace_members` (document id `<workspace_id>_<uid>`, with the
+    `workspace_id` and `uid` also stored as fields) and `invites` (document id = the code)."""
+
+    def __init__(self, settings: Settings):
+        self._db = _firestore_client(settings)
+        self._ws = self._db.collection("workspaces")
+        self._mem = self._db.collection("workspace_members")
+        self._inv = self._db.collection("invites")
+
+    @staticmethod
+    def _member_id(workspace_id: str, uid: str) -> str:
+        return f"{workspace_id}_{uid}"
+
+    def get(self, workspace_id: str) -> Workspace | None:
+        snap = self._ws.document(workspace_id).get()
+        return Workspace.model_validate(snap.to_dict()) if snap.exists else None
+
+    def create(self, ws: Workspace) -> bool:
+        from google.api_core.exceptions import AlreadyExists
+
+        try:
+            self._ws.document(ws.id).create(ws.model_dump(mode="json", exclude={"member_count"}))
+            return True
+        except AlreadyExists:
+            return False
+
+    def put(self, ws: Workspace) -> None:
+        self._ws.document(ws.id).set(ws.model_dump(mode="json", exclude={"member_count"}))
+
+    def delete(self, workspace_id: str) -> None:
+        _delete_refs(self._db, [s.reference for s in self._mem.where(filter=_eq("workspace_id", workspace_id)).stream()])
+        _delete_refs(self._db, [s.reference for s in self._inv.where(filter=_eq("workspace_id", workspace_id)).stream()])
+        self._ws.document(workspace_id).delete()
+
+    def find_by_domain(self, domain: str) -> Workspace | None:
+        for s in self._ws.where(filter=_eq("domain", domain.lower())).limit(1).stream():
+            return Workspace.model_validate(s.to_dict())
+        return None
+
+    def list_all(self) -> list[Workspace]:
+        return [Workspace.model_validate(s.to_dict()) for s in self._ws.stream()]
+
+    @staticmethod
+    def _member(d: dict) -> Member:
+        return Member.model_validate({k: v for k, v in d.items() if k != "workspace_id"})
+
+    def get_member(self, workspace_id: str, uid: str) -> Member | None:
+        snap = self._mem.document(self._member_id(workspace_id, uid)).get()
+        return self._member(snap.to_dict()) if snap.exists else None
+
+    def put_member(self, workspace_id: str, member: Member) -> None:
+        self._mem.document(self._member_id(workspace_id, member.uid)).set(
+            {**member.model_dump(mode="json"), "workspace_id": workspace_id})
+
+    def delete_member(self, workspace_id: str, uid: str) -> None:
+        self._mem.document(self._member_id(workspace_id, uid)).delete()
+
+    def members(self, workspace_id: str) -> list[Member]:
+        ms = [self._member(s.to_dict()) for s in self._mem.where(filter=_eq("workspace_id", workspace_id)).stream()]
+        return sorted(ms, key=lambda m: str(m.joined_at or ""))
+
+    def memberships(self, uid: str) -> list[tuple[Workspace, Member]]:
+        out = []
+        for s in self._mem.where(filter=_eq("uid", uid)).stream():
+            d = s.to_dict()
+            ws = self.get(d["workspace_id"])
+            if ws is not None:
+                out.append((ws, self._member(d)))
+        return sorted(out, key=lambda t: str(t[1].joined_at or ""))
+
+    def put_invite(self, invite: Invite) -> None:
+        self._inv.document(invite.code).set(invite.model_dump(mode="json"))
+
+    def get_invite(self, code: str) -> Invite | None:
+        snap = self._inv.document(code).get()
+        return Invite.model_validate(snap.to_dict()) if snap.exists else None
+
+    def delete_invite(self, code: str) -> None:
+        self._inv.document(code).delete()
+
+
+class FirestoreAuditLog:
+    """Collection `audit_events`, one document per event, scoped by `workspace_id`. Append-only: nothing
+    here updates a document; the only deletes are a user's own 'delete my data' (`delete_actor`) and the
+    removal of a workspace whose last member deleted their data (`delete_workspace`).
+
+    Needs composite indexes (workspace_id ASC, at DESC) and (workspace_id ASC, actor ASC, at DESC),
+    created by infrastructure/gcp/app."""
+
+    COLLECTION = "audit_events"
+
+    def __init__(self, settings: Settings):
+        self._db = _firestore_client(settings)
+        self._col = self._db.collection(self.COLLECTION)
+
+    def append(self, event: AuditEvent) -> None:
+        # create() fails if the id exists, so an event can never be overwritten
+        self._col.document(event.id).create(event.model_dump(mode="json"))
+
+    def list_for(self, workspace_id: str, limit: int, *, actor: str | None = None) -> list[AuditEvent]:
+        from google.cloud import firestore
+
+        q = self._col.where(filter=_eq("workspace_id", workspace_id))
+        if actor is not None:
+            q = q.where(filter=_eq("actor", actor))
+        q = q.order_by("at", direction=firestore.Query.DESCENDING).limit(limit)
+        return [AuditEvent.model_validate(s.to_dict()) for s in q.stream()]
+
+    def list_all(self, limit: int) -> list[AuditEvent]:
+        from google.cloud import firestore
+
+        q = self._col.order_by("at", direction=firestore.Query.DESCENDING).limit(limit)
+        return [AuditEvent.model_validate(s.to_dict()) for s in q.stream()]
+
+    def delete_actor(self, actor: str) -> int:
+        return _delete_refs(self._db, [s.reference for s in self._col.where(filter=_eq("actor", actor)).stream()])
+
+    def delete_workspace(self, workspace_id: str) -> int:
+        return _delete_refs(self._db, [s.reference for s in
+                                       self._col.where(filter=_eq("workspace_id", workspace_id)).stream()])

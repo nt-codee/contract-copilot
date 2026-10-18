@@ -11,9 +11,10 @@ import logging
 import math
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from app.deeplinks import load_deeplinks
 from app.models import KnowledgeEntry
 
 log = logging.getLogger("cc.knowledge")
@@ -41,6 +42,12 @@ class LawEntry:
     plain: str
     when: str = ""
     body: str = ""  # the whole markdown body, for the detail view
+    deeplink: str = ""  # link to the exact provision (app/data/deeplinks.json), "" when unknown
+
+    @property
+    def link(self) -> str:
+        """The best link to show: the deep link, else the plain source URL."""
+        return self.deeplink or self.source_url
 
 
 @dataclass(frozen=True)
@@ -64,7 +71,9 @@ class Knowledge:
 
     @classmethod
     def load(cls, knowledge_dir: Path) -> "Knowledge":
-        k = cls(law=load_law(knowledge_dir / "law"), playbook=load_playbook(knowledge_dir / "playbook"))
+        links = load_deeplinks()
+        k = cls(law=[replace(e, deeplink=links.get(e.id, "")) for e in load_law(knowledge_dir / "law")],
+                playbook=load_playbook(knowledge_dir / "playbook"))
         k._build_index()
         log.info("knowledge loaded: %d law entries, %d playbook entries", len(k.law), len(k.playbook))
         return k
@@ -85,6 +94,10 @@ class Knowledge:
 
     def search_law(self, query: str, jurisdiction: str, clause_type: str | None = None,
                    limit: int = TOP_K) -> list[LawEntry]:
+        return [e for e, _ in self.search_law_scored(query, jurisdiction, clause_type, limit)]
+
+    def search_law_scored(self, query: str, jurisdiction: str, clause_type: str | None = None,
+                          limit: int = TOP_K) -> list[tuple[LawEntry, float]]:
         """BM25 over title, citation, text and plain words; x2 when the clause type matches."""
         q = tokens(query)
         n = len(self.law)
@@ -108,7 +121,7 @@ class Knowledge:
             if score > 0:
                 scored.append((score, i))
         scored.sort(key=lambda t: (-t[0], self.law[t[1]].id))
-        return [self.law[i] for _, i in scored[:limit]]
+        return [(self.law[i], s) for s, i in scored[:limit]]
 
     def playbook_entry(self, contract_type: str, clause_type: str) -> PlaybookEntry | None:
         return self.playbook.get(f"{contract_type}/{clause_type}")
@@ -148,7 +161,8 @@ class Knowledge:
 def _law_entry(e: LawEntry, *, with_text: bool) -> KnowledgeEntry:
     return KnowledgeEntry(id=e.id, kind="case" if e.kind == "case" else "law", jurisdiction=e.jurisdiction,
                           title=e.title, citation=e.citation or None, clause_types=list(e.clause_types),
-                          plain=e.plain or None, text=e.body if with_text else None, url=e.source_url or None)
+                          plain=e.plain or None, text=e.body if with_text else None, url=e.source_url or None,
+                          source_url=e.link or None)
 
 
 def _playbook_entry(e: PlaybookEntry, *, with_text: bool) -> KnowledgeEntry:

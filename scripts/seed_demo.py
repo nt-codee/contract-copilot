@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Fill a running instance with demo data so it is not an empty shell. Idempotent. Standard library only.
 
-    python3 scripts/seed_demo.py --base-url https://<service-url> [--refresh]
+    python3 scripts/seed_demo.py --base-url https://<service-url> --token "$ID_TOKEN" [--refresh]
+    python3 scripts/seed_demo.py --base-url http://localhost:8080                  # CLOUD=local server
+
+Fills the shared `demo` workspace. That workspace is read-only for everyone else, so the script needs an
+admin's Identity Platform ID token (--token, or env SEED_ID_TOKEN); a server running with CLOUD=local needs none.
 
 1. Uploads samples/company/kopi-kita-contracting-policy.pdf as a company document, unless a document
    with that filename is already listed.
@@ -16,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -29,9 +34,18 @@ PAUSE_S = 2.0
 TIMEOUT_S = 300
 
 
+TOKEN = ""  # Identity Platform ID token of an admin; empty for a local (CLOUD=local) server
+
+
 def call(method: str, url: str, *, body: bytes | None = None, content_type: str | None = None):
-    """(status, parsed JSON or None). HTTP errors return their status instead of raising."""
+    """(status, parsed JSON or None). HTTP errors return their status instead of raising.
+
+    Every call carries `X-Workspace-Id: demo`: the API honours it for an admin token, or for an anonymous
+    caller only when the server runs with CLOUD=local. Anyone else gets 403."""
     req = urllib.request.Request(url, data=body, method=method)
+    req.add_header("X-Workspace-Id", "demo")
+    if TOKEN:
+        req.add_header("Authorization", f"Bearer {TOKEN}")
     if content_type:
         req.add_header("Content-Type", content_type)
     try:
@@ -91,9 +105,13 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--base-url", required=True)
     ap.add_argument("--refresh", action="store_true", help="re-run each sample review instead of using the cache")
+    ap.add_argument("--token", default=os.environ.get("SEED_ID_TOKEN", ""),
+                    help="Identity Platform ID token of an admin (or env SEED_ID_TOKEN); omit for a CLOUD=local server")
     ap.add_argument("--pause", type=float, default=PAUSE_S, help="seconds between calls (default 2)")
     args = ap.parse_args(argv)
     base = args.base_url.rstrip("/")
+    global TOKEN
+    TOKEN = args.token.strip()
 
     print(seed_policy(base), flush=True)
     status, samples = call("GET", f"{base}/api/samples")

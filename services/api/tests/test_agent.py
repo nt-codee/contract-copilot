@@ -14,6 +14,7 @@ from app.agent import TOOLS, Toolbox, Trace, run_agent, tool_summary
 from app.knowledge import Knowledge
 from app.models import Citation, CompanyDoc, LLMCitation, LLMReview
 from app.pipeline import verify_citations
+from app.workspaces import personal_ws_id
 from app.ports import ChatMessage, ToolCall, UpstreamError
 from conftest import make_knowledge_dir
 from pdfgen import PAGES, make_pdf
@@ -44,7 +45,7 @@ def kb(tmp_path):
 
 @pytest.fixture
 def toolbox(kb):
-    return Toolbox(kb, MemoryCompanyStore(), HashEmbedder(), PAGES)
+    return Toolbox(kb, MemoryCompanyStore(), HashEmbedder(), PAGES, owner="demo")
 
 
 def call(name, **args):
@@ -112,7 +113,7 @@ def test_search_company_with_nothing_uploaded(toolbox):
 
 def _run(llm, kb, **kw):
     trace = Trace()
-    tools = Toolbox(kb, MemoryCompanyStore(), HashEmbedder(), PAGES)
+    tools = Toolbox(kb, MemoryCompanyStore(), HashEmbedder(), PAGES, owner="demo")
     return run_agent(llm, tools, PAGES, trace, **kw), trace
 
 
@@ -186,7 +187,7 @@ def test_first_turn_failure_propagates_later_failure_degrades(kb):
 
 
 def test_tools_declared_for_the_model():
-    assert {t.name for t in TOOLS} == {"search_law", "search_playbook", "search_company", "read_page"}
+    assert {t.name for t in TOOLS} == {"set_jurisdiction", "search_law", "search_playbook", "search_company", "read_page"}
     assert all(t.parameters["type"] == "object" for t in TOOLS)
 
 
@@ -249,7 +250,11 @@ def test_trace_in_agent_run_uses_generated_summaries_and_times(kb):
     llm = ScriptedLLM([[call("search_law", query="penalty liquidated damages", jurisdiction="my")]])
     _, trace = _run(llm, kb)
     assert trace.steps[0].summary == "Checked Malaysian law on penalty clauses"
-    assert trace.steps[0].ms is not None and trace.steps[0].detail == "Contracts Act 1950, s.75"
+    d = json.loads(trace.steps[0].detail)  # what the agent looked up and found, for "show your work"
+    assert trace.steps[0].ms is not None and d["tool"] == "search_law" and d["args"]["jurisdiction"] == "my"
+    assert d["results"][0]["ref"] == "my-contracts-act-s75" and d["results"][0]["kind"] == "law"
+    assert d["results"][0]["title"] == "Contracts Act 1950, s.75" and d["results"][0]["score"] > 0
+    assert d["cited"] == []  # filled in after citation verification
     assert trace.steps[-1].action == "draft_findings"
 
 
@@ -272,7 +277,7 @@ def test_company_upload_list_search_delete(client, services):
     assert [d["id"] for d in client.get("/api/company/docs").json()] == [doc["id"]]
     assert services.blobs.get(f"company/{doc['id']}.pdf") is not None
 
-    tools = Toolbox(services.kb, services.company, services.embedder, PAGES)
+    tools = Toolbox(services.kb, services.company, services.embedder, PAGES, owner=personal_ws_id("alice"))
     out = tools.run(call("search_company", query="vendor liability capped below 12 months of fees"))
     body = json.loads(out.payload)
     assert body["results"][0]["ref"] == f"company:{doc['id']}" and body["results"][0]["page"] == 1

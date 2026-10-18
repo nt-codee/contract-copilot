@@ -27,6 +27,7 @@ gcloud builds submit "$ROOT" --project "$PROJECT_ID" --region "$REGION" --tag "$
 stage 3/5 "pulumi up (app)"
 cd "${GCP}/app"
 pulumi config set image "$IMAGE" --stack demo
+pulumi config set appVersion "$TAG" --stack demo   # becomes APP_VERSION on the service (review provenance)
 pulumi up --yes --stack demo --non-interactive
 
 stage 4/5 "service url"

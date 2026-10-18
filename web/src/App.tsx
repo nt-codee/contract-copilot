@@ -5,6 +5,7 @@ import Review from "./pages/Review";
 import Library from "./pages/Library";
 import Company from "./pages/Company";
 import Knowledge from "./pages/Knowledge";
+import { Privacy, Terms } from "./pages/Legal";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -17,6 +18,8 @@ export default function App() {
         <Route path="/rules" element={<Company />} />
         <Route path="/knowledge" element={<Knowledge />} />
         <Route path="/knowledge/:id" element={<Knowledge />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

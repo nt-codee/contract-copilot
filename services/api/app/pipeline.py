@@ -17,16 +17,19 @@ from datetime import date, datetime, timedelta, timezone
 import pymupdf
 from rapidfuzz import fuzz
 
-from app import prompts
-from app.agent import Toolbox, Trace, run_agent
-from app.config import DISCLAIMER, Settings, estimate_cost
+from app import prompts, provenance
+from app.agent import Toolbox, Trace, fill_cited, run_agent
+from app.audit import Audit
+from app.config import DEMO_OWNER, DISCLAIMER, Settings, estimate_cost
+from app.knowledge import _STOP as STOPWORDS
 from app.knowledge import Knowledge
+from app.playbook_overrides import PlaybookOverrideStore
 from app.models import (
     RISK_ORDER, Citation, CompanyDoc, Finding, KeyDate, LLMBoxes, LLMCitation, LLMFinding, LLMKeyDate,
-    LLMNegotiation, LLMTranscription, Metrics, NegotiationAsk, NegotiationDraft, ReviewResult, SearchHit, Verdict,
+    LLMNegotiation, LLMTranscription, Metrics, NegotiationAsk, NegotiationDraft, RemovedClaim, ReviewResult, SearchHit, Verdict, Verification,
 )
-from app.ports import (LLM, BlobStore, Chunk, CompanyChunk, CompanyStore, Embedder, LLMUsage, PdfPart,
-                       ReviewStore, SearchIndex)
+from app.ports import (LLM, AuthVerifier, BlobStore, Chunk, CompanyChunk, CompanyStore, Embedder, LLMUsage,
+                       PdfPart, ReviewStore, SearchIndex, UserStore, WorkspaceStore)
 
 log = logging.getLogger("cc.pipeline")
 
@@ -55,7 +58,14 @@ class Services:
     index: SearchIndex
     store: ReviewStore
     company: CompanyStore
-    kb: Knowledge
+    kb: Knowledge  # a HybridKnowledge in practice: same search interface, backed by the knowledge store
+    auth: AuthVerifier
+    users: UserStore
+    audit: Audit
+    workspaces: WorkspaceStore
+    kb_version: str  # content hash of knowledge/, computed once at startup
+    prompt_version: str
+    overrides: "PlaybookOverrideStore | None" = None  # workspace playbook overrides (None: defaults only)
 
 
 # ---- 1. validate and extract -----------------------------------------------------------------
@@ -143,15 +153,20 @@ def _clean_span(text: str) -> str:
     return " ".join(text.split())
 
 
-def match_on_page(quote: str, page_text: str) -> str | None:
-    """Return the matching original span of `page_text`, or None."""
+def match_on_page_detail(quote: str, page_text: str) -> tuple[str, str, float] | None:
+    """(matching original span of `page_text`, how it matched, score 0-100), or None.
+
+    How: "exact" = the quote is on the page character for character; "normalised" = only case,
+    whitespace, quotes or dashes differ; "fuzzy" = close enough by the similarity score.
+    """
     nq = normalise(quote)
     np_, idx = _norm_map(page_text)
     if len(nq) < MIN_QUOTE_CHARS or not np_:
         return None
     pos = np_.find(nq)
     if pos >= 0:
-        return _clean_span(page_text[idx[pos]: idx[pos + len(nq) - 1] + 1])
+        span = _clean_span(page_text[idx[pos]: idx[pos + len(nq) - 1] + 1])
+        return span, ("exact" if quote.strip() in page_text else "normalised"), 100.0
     if len(nq) > len(np_):
         return None
     al = fuzz.partial_ratio_alignment(nq, np_, score_cutoff=FUZZY_THRESHOLD)
@@ -163,22 +178,58 @@ def match_on_page(quote: str, page_text: str) -> str | None:
         start -= 1
     while end < len(page_text) and not page_text[end].isspace():
         end += 1
-    return _clean_span(page_text[start:end])
+    return _clean_span(page_text[start:end]), "fuzzy", round(float(al.score), 1)
+
+
+def match_on_page(quote: str, page_text: str) -> str | None:
+    """Return the matching original span of `page_text`, or None."""
+    hit = match_on_page_detail(quote, page_text)
+    return hit[0] if hit else None
+
+
+@dataclass
+class QuoteHit:
+    page: int
+    span: str
+    how: str
+    score: float
+    corrected_from: int | None  # the page the model claimed, when the quote was on a neighbouring page
+
+
+def verify_quote_detail(quote: str, page: int, pages: list[str]) -> QuoteHit | None:
+    """Find `quote` on the claimed page, else on page-1 / page+1."""
+    for candidate in (page, page - 1, page + 1):
+        if 1 <= candidate <= len(pages):
+            hit = match_on_page_detail(quote, pages[candidate - 1])
+            if hit is not None:
+                return QuoteHit(candidate, hit[0], hit[1], hit[2], page if candidate != page else None)
+    return None
 
 
 def verify_quote(quote: str, page: int, pages: list[str]) -> tuple[int, str] | None:
     """Find `quote` on the claimed page, else on page-1 / page+1. Returns (page, exact_span)."""
-    for candidate in (page, page - 1, page + 1):
-        if 1 <= candidate <= len(pages):
-            span = match_on_page(quote, pages[candidate - 1])
-            if span is not None:
-                return candidate, span
-    return None
+    hit = verify_quote_detail(quote, page, pages)
+    return (hit.page, hit.span) if hit else None
 
 
-def verify_citations(raw: list[LLMCitation], known: dict[str, list[Citation]]) -> tuple[list[Citation], int]:
+JURISDICTION_NAME = {"my": "Malaysia", "sg": "Singapore"}
+JURISDICTION_ADJECTIVE = {"my": "Malaysian", "sg": "Singapore"}
+
+
+def fallback_prefix(home: str) -> str:
+    return f"If disputed in {JURISDICTION_NAME.get(home, 'Malaysia')}: "
+
+
+def verify_citations(raw: list[LLMCitation], known: dict[str, list[Citation]], *,
+                     removed: list[RemovedClaim] | None = None,
+                     finding_title: str | None = None, jurisdiction: str | None = None,
+                     home: str = "my") -> tuple[list[Citation], int]:
     """Keep a citation only if a tool returned its ref in this run, and take every displayed field
-    (kind, title, excerpt, url, jurisdiction, page) from that KB record, never from the model."""
+    (kind, title, excerpt, url, jurisdiction, page) from that KB record, never from the model.
+
+    With `jurisdiction` (the review's), a law or case is also dropped unless it is that country's law:
+    a Malaysian contract is not judged on Singapore law, nor the reverse. Under a foreign law
+    ("other") the home country's law is allowed as a fallback and its title says so."""
     kept: list[Citation] = []
     dropped = 0
     for c in raw:
@@ -186,45 +237,96 @@ def verify_citations(raw: list[LLMCitation], known: dict[str, list[Citation]]) -
         if not records:
             dropped += 1
             log.info("dropped unverified citation: %r", c.ref)
+            if removed is not None:
+                removed.append(RemovedClaim(kind="citation", reason="source_not_retrieved", text=c.ref,
+                                            finding_title=finding_title))
             continue
         rec = records[0]
         if rec.kind == "company":  # one document can come back as several passages; keep the first
             rec = next((r for r in records if r.excerpt and c.excerpt.strip()[:40] in r.excerpt), rec)
+        if jurisdiction and rec.kind in ("law", "case"):
+            allowed = home if jurisdiction == "other" else jurisdiction
+            if rec.jurisdiction != allowed:  # judged on the KB record, never on the model's word
+                dropped += 1
+                log.info("dropped citation %r: %s law on a %s contract", c.ref, rec.jurisdiction, jurisdiction)
+                if removed is not None:
+                    removed.append(RemovedClaim(kind="citation", reason="wrong_jurisdiction", text=c.ref,
+                                                finding_title=finding_title))
+                continue
         if any(k.ref == rec.ref and k.page == rec.page for k in kept):
             continue  # the same source cited twice for one finding
-        kept.append(rec.model_copy())
+        rec = rec.model_copy()
+        if jurisdiction == "other" and rec.kind in ("law", "case"):
+            rec.title = fallback_prefix(home) + rec.title
+        kept.append(rec)
     return kept, dropped
 
 
 def verify_findings(raw: list[LLMFinding], pages: list[str],
-                    known: dict[str, list[Citation]] | None = None) -> tuple[list[Finding], int, int]:
+                    known: dict[str, list[Citation]] | None = None, *, kb_version: str | None = None,
+                    removed: list[RemovedClaim] | None = None, jurisdiction: str | None = None,
+                    home: str = "my") -> tuple[list[Finding], int, int]:
     """Quote verification (drop a finding with no real quote) and citation verification.
 
-    Returns (findings, dropped_findings, dropped_citations).
+    Returns (findings, dropped_findings, dropped_citations). Every claim that is removed is appended to
+    `removed` (when given) so the user can see what the model said and verification refused.
     """
     known = known or {}
-    kept: list[tuple[LLMFinding, int, str]] = []
+    removed = removed if removed is not None else []
+    kept: list[tuple[LLMFinding, QuoteHit]] = []
     dropped = 0
     for f in raw:
-        hit = verify_quote(f.quote, f.page, pages)
+        hit = verify_quote_detail(f.quote, f.page, pages)
         if hit is None:
             dropped += 1
             log.info("dropped unverified finding: %r p%s", f.title, f.page)
+            removed.append(RemovedClaim(kind="finding", reason="quote_not_found",
+                                        text=f"{f.title}: {f.quote}", page=f.page, finding_title=f.title))
             continue
-        kept.append((f, hit[0], hit[1]))
-    kept.sort(key=lambda t: (RISK_ORDER[t[0].risk], t[1]))
+        kept.append((f, hit))
+    kept.sort(key=lambda t: (RISK_ORDER[t[0].risk], t[1].page))
     findings: list[Finding] = []
     dropped_citations = 0
-    for i, (f, page, span) in enumerate(kept, start=1):
-        cites, n = verify_citations(f.citations, known)
+    for i, (f, hit) in enumerate(kept, start=1):
+        cites, n = verify_citations(f.citations, known, removed=removed, finding_title=f.title,
+                                    jurisdiction=jurisdiction, home=home)
         dropped_citations += n
         # a policy breach is a claim about the user's own rules: keep it only if one is cited
-        breach = f.policy_breach.strip() if any(c.kind == "company" for c in cites) else ""
+        breach = f.policy_breach.strip()
+        if breach and not any(c.kind == "company" for c in cites):
+            removed.append(RemovedClaim(kind="policy_breach", reason="no_company_citation", text=breach,
+                                        page=hit.page, finding_title=f.title))
+            breach = ""
         findings.append(Finding(
-            id=f"f{i}", clause_type=f.clause_type, title=f.title, risk=f.risk, quote=span, page=page,
+            id=f"f{i}", clause_type=f.clause_type, title=f.title, risk=f.risk, quote=hit.span, page=hit.page,
             why_risky=f.why_risky, standard=f.standard, suggested_ask=f.suggested_ask,
-            baseline_ref=f.baseline_ref or None, citations=cites, policy_breach=breach or None))
+            baseline_ref=f.baseline_ref or None, citations=cites, policy_breach=breach or None,
+            verification=Verification(quote_match=hit.how, score=hit.score,  # type: ignore[arg-type]
+                                      page_corrected_from=hit.corrected_from,
+                                      citations_checked=len(f.citations), kb_version=kb_version)))
     return findings, dropped, dropped_citations
+
+
+def locate_company_boxes(svc: Services, findings: list[Finding], owner: str) -> None:
+    """Company citations: where the excerpt sits on its page of the stored policy PDF (same locator as
+    for contracts). Best effort: a missing PDF, a scan with no text layer or an unmatched excerpt leaves []."""
+    wanted = [c for f in findings for c in f.citations if c.kind == "company" and c.doc_id and c.page]
+    docs: dict[str, pymupdf.Document | None] = {}
+    try:
+        for c in wanted:
+            if c.doc_id not in docs:
+                mine = svc.company.get(c.doc_id, owner=owner) is not None  # never read another workspace's PDF
+                data = svc.blobs.get(f"company/{c.doc_id}.pdf") if mine else None
+                docs[c.doc_id] = pymupdf.open(stream=data, filetype="pdf") if data else None
+            doc = docs[c.doc_id]
+            if doc is not None and 1 <= (c.page or 0) <= doc.page_count:
+                c.boxes = locate_boxes(doc[c.page - 1], c.excerpt.removesuffix("...").rstrip())
+    except Exception:  # boxes are a nicety; never fail the review over them
+        log.exception("locating company citation boxes failed")
+    finally:
+        for d in docs.values():
+            if d is not None:
+                d.close()
 
 
 # ---- 3a. key dates ---------------------------------------------------------------------------
@@ -435,15 +537,16 @@ def chunk_page(text: str, size: int = CHUNK_CHARS) -> list[str]:
 
 
 def build_chunks(review: ReviewResult, pages: list[str]) -> list[Chunk]:
+    owner = review.owner or DEMO_OWNER
     chunks: list[Chunk] = []
     for pno, text in enumerate(pages, start=1):
         for j, c in enumerate(chunk_page(text)):
             chunks.append(Chunk(id=f"{review.id}-p{pno}-{j}", review_id=review.id,
-                                filename=review.filename, page=pno, text=c))
+                                filename=review.filename, page=pno, text=c, owner=owner))
     for f in review.findings:
         chunks.append(Chunk(id=f"{review.id}-{f.id}", review_id=review.id, filename=review.filename,
                             page=f.page, text=f"{f.title}: {f.quote}", clause_type=f.clause_type,
-                            finding_id=f.id))
+                            finding_id=f.id, owner=owner))
     return chunks
 
 
@@ -463,17 +566,19 @@ def index_review(svc: Services, review: ReviewResult, pages: list[str]) -> int:
 # ---- 2 + 5. the review -----------------------------------------------------------------------
 
 
-def review(svc: Services, pdf_bytes: bytes, filename: str, sample_id: str | None = None) -> ReviewResult:
+def review(svc: Services, pdf_bytes: bytes, filename: str, sample_id: str | None = None,
+           owner: str = DEMO_OWNER, created_by: str | None = None) -> ReviewResult:
+    """Review a PDF into workspace `owner`, run by member `created_by`."""
     t0 = time.monotonic()
     doc = validate_pdf(pdf_bytes, svc.settings)
     try:
-        return _review(svc, doc, pdf_bytes, filename, sample_id, t0)
+        return _review(svc, doc, pdf_bytes, filename, sample_id, t0, owner, created_by)
     finally:
         doc.close()
 
 
 def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: str,
-            sample_id: str | None, t0: float) -> ReviewResult:
+            sample_id: str | None, t0: float, owner: str, created_by: str | None) -> ReviewResult:
     page_count = doc.page_count
     trace = Trace()
     t_read = time.monotonic()
@@ -493,12 +598,26 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
               "scanned copy: read with AI text recognition" if scanned else None,
               (time.monotonic() - t_read) * 1000)
 
-    agent = run_agent(svc.llm, Toolbox(svc.kb, svc.company, svc.embedder, pages), pages, trace)
+    home = svc.settings.home_jurisdiction
+    tools = Toolbox(svc.kb, svc.company, svc.embedder, pages, owner=owner, overrides=svc.overrides, home=home)
+    agent = run_agent(svc.llm, tools, pages, trace)
     out = agent.review
     usage.add(agent.usage)
+    # the jurisdiction fixed during research wins over the model's final word; both default to "my"
+    jurisdiction = agent.jurisdiction or out.jurisdiction.strip().lower()
+    jurisdiction = jurisdiction if jurisdiction in ("my", "sg", "other") else "my"
+    if agent.governing_law:
+        trace.steps[0].detail = " | ".join(
+            x for x in (trace.steps[0].detail, f"governing law: {agent.governing_law} -> {jurisdiction}") if x)
 
     t_verify = time.monotonic()
-    findings, dropped, dropped_cites = verify_findings(out.findings, pages, agent.known)
+    removed: list[RemovedClaim] = []
+    kb_version = svc.kb_version  # the same content hash the provenance records
+    findings, dropped, dropped_cites = verify_findings(out.findings, pages, agent.known,
+                                                       kb_version=kb_version, removed=removed,
+                                                       jurisdiction=jurisdiction, home=home)
+    locate_company_boxes(svc, findings, owner)
+    fill_cited(trace.steps, {c.ref for f in findings for c in f.citations})
     if scanned:
         usage.add(boxes_from_llm(svc.llm, doc, findings))
     else:
@@ -509,14 +628,18 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
               f"kept {len(findings)} findings and {n_cites} sources; dropped {dropped} unsupported findings "
               f"and {dropped_cites} unverified sources", (time.monotonic() - t_verify) * 1000)
     key_dates = build_key_dates(out.key_dates, findings, page_count)
-    jurisdiction = out.jurisdiction.strip().lower()
-    jurisdiction = jurisdiction if jurisdiction in ("my", "sg", "other") else "my"
     headline = out.verdict.headline.strip()
     if len(headline) > 160:
         headline = headline[:157].rstrip() + "..."
     summary = [s.strip() for s in out.verdict.summary if s.strip()][:3] or [headline]
+    if jurisdiction == "other":  # the reader must know the law checked is only a fallback
+        law = (agent.governing_law or "a foreign law").rstrip(". ")
+        summary = summary[:2] + [f"This contract is governed by {law}; we check it against "
+                                 f"{JURISDICTION_ADJECTIVE.get(home, 'Malaysian')} law only as a fallback."]
 
     review_id = uuid.uuid4().hex[:12]
+    chash = provenance.content_hash(pdf_bytes)
+    earlier = svc.store.runs_of(chash, owner=owner)  # newest first
     result = ReviewResult(
         id=review_id, created_at=datetime.now(timezone.utc), filename=filename, sample_id=sample_id,
         contract_type=out.contract_type, language=out.language.strip().lower()[:5] or "en",
@@ -526,6 +649,10 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
         metrics=Metrics(latency_ms=0, model=svc.llm.model, dropped_unverified=dropped,
                         dropped_unverified_citations=dropped_cites),
         disclaimer=DISCLAIMER, jurisdiction=jurisdiction, trace=trace.steps, key_dates=key_dates,
+        removed=removed,
+        owner=owner, created_by=created_by, content_hash=chash, previous_review_id=earlier[0].id if earlier else None,
+        provenance=provenance.build(svc.llm.model, svc.kb_version, svc.prompt_version,
+                                    svc.settings.app_version),
     )
 
     svc.blobs.put(f"uploads/{review_id}.pdf", pdf_bytes)
@@ -548,6 +675,109 @@ def _review(svc: Services, doc: pymupdf.Document, pdf_bytes: bytes, filename: st
     )
     svc.store.save(result)
     return result
+
+
+def copy_review(svc: Services, src: ReviewResult, pdf_bytes: bytes, owner: str,
+                created_by: str | None = None) -> ReviewResult:
+    """Put a copy of an already-reviewed bundled sample into `owner`'s workspace. No model call: the
+    findings and their provenance are the original run's; the copy itself cost nothing."""
+    t0 = time.monotonic()
+    chash = provenance.content_hash(pdf_bytes)
+    earlier = svc.store.runs_of(chash, owner=owner)
+    result = src.model_copy(deep=True, update={
+        "id": uuid.uuid4().hex[:12], "created_at": datetime.now(timezone.utc), "owner": owner,
+        "created_by": created_by, "content_hash": chash, "previous_review_id": earlier[0].id if earlier else None})
+    svc.blobs.put(f"uploads/{result.id}.pdf", pdf_bytes)
+    try:
+        with pymupdf.open(stream=pdf_bytes, filetype="pdf") as doc:
+            pages = extract_pages(doc)
+        if not needs_ocr(pages):  # a scanned sample would need a model call to read; skip search for it
+            index_review(svc, result, pages)
+    except Exception:
+        log.exception("indexing the copied sample failed for review %s", result.id)
+    result.metrics = result.metrics.model_copy(update={
+        "latency_ms": int((time.monotonic() - t0) * 1000), "input_tokens": 0, "output_tokens": 0,
+        "cost_usd_est": 0.0})
+    svc.store.save(result)
+    return result
+
+
+def audit_review(svc: Services, actor: str, result: ReviewResult, **extra) -> None:
+    """'reviewed', or 're_reviewed' when the same content was reviewed before in this workspace."""
+    p = result.provenance
+    svc.audit.record(
+        actor, "re_reviewed" if result.previous_review_id else "reviewed", result.id, result.filename,
+        {"model": p.model if p else None, "kb_version": p.kb_version if p else None,
+         "prompt_version": p.prompt_version if p else None, "findings": len(result.findings),
+         "latency_ms": result.metrics.latency_ms, "previous_review_id": result.previous_review_id, **extra},
+        workspace_id=result.owner)
+
+
+def history(svc: Services, review: ReviewResult) -> list[ReviewResult]:
+    """Every run of this content in this workspace, newest first. A review without a hash is its own history."""
+    if not review.content_hash or review.owner is None:
+        return [review]
+    runs = svc.store.runs_of(review.content_hash, owner=review.owner)
+    return runs if any(r.id == review.id for r in runs) else [review, *runs]
+
+
+def delete_review(svc: Services, review_id: str, owner: str) -> ReviewResult:
+    """Remove a review, its PDF and its search chunks. Returns what was removed (for the audit line)."""
+    r = svc.store.get(review_id, owner=owner)
+    if r is None:
+        raise UserError(404, "review_not_found", "We could not find that review.")
+    svc.store.delete(review_id, owner=owner)
+    svc.index.delete_review(review_id, owner=owner)
+    svc.blobs.delete(f"uploads/{review_id}.pdf")
+    return r
+
+
+def _drop_workspace(svc: Services, workspace_id: str) -> tuple[int, int, int]:
+    """Remove everything a workspace holds. Returns (reviews, company docs, audit events) removed."""
+    review_ids = svc.store.delete_owner(workspace_id)
+    svc.index.delete_owner(workspace_id)
+    for rid in review_ids:
+        svc.blobs.delete(f"uploads/{rid}.pdf")
+    doc_ids = svc.company.delete_owner(workspace_id)
+    for did in doc_ids:
+        svc.blobs.delete(f"company/{did}.pdf")
+    events = svc.audit.forget_workspace(workspace_id)
+    svc.workspaces.delete(workspace_id)
+    return len(review_ids), len(doc_ids), events
+
+
+def delete_my_data(svc: Services, uid: str) -> tuple[dict[str, int], list[str]]:
+    """Everything a user owns: the reviews they ran, their audit events, memberships and profile.
+
+    A workspace where they are the only member goes entirely (reviews, PDFs, chunks, policies, events).
+    A workspace with other people keeps its policies and everyone else's reviews. Refuses (409) while
+    they are the only owner of a workspace that has other members. Returns counts and removed review ids."""
+    mine = svc.workspaces.memberships(uid)
+    for ws, m in mine:
+        others = [x for x in svc.workspaces.members(ws.id) if x.uid != uid]
+        if m.role == "owner" and others and not any(x.role == "owner" for x in others):
+            raise UserError(409, "last_owner",
+                            f"You are the only owner of {ws.name}. Make someone else an owner, or remove "
+                            "the other members, before deleting your data.")
+    counts = {"reviews": 0, "company_docs": 0, "workspaces": 0, "audit_events": 0}
+    removed: list[str] = []
+    for ws, _m in mine:
+        if not [x for x in svc.workspaces.members(ws.id) if x.uid != uid]:
+            removed += [r.id for r in svc.store.list(owner=ws.id, limit=1_000_000)]
+            n_rev, n_docs, n_events = _drop_workspace(svc, ws.id)
+            counts["audit_events"] += n_events
+            counts["reviews"] += n_rev
+            counts["company_docs"] += n_docs
+            counts["workspaces"] += 1
+        else:
+            for r in [r for r in svc.store.list(owner=ws.id, limit=1_000_000) if r.created_by == uid]:
+                delete_review(svc, r.id, ws.id)
+                removed.append(r.id)
+                counts["reviews"] += 1
+            svc.workspaces.delete_member(ws.id, uid)
+    counts["audit_events"] += svc.audit.forget(uid)
+    svc.users.delete(uid)
+    return counts, removed
 
 
 # ---- negotiation and search ------------------------------------------------------------------
@@ -599,7 +829,9 @@ def negotiation(svc: Services, review: ReviewResult) -> NegotiationDraft:
          "suggested_ask": f.suggested_ask,
          "where": clause_label(pages[f.page - 1], f.quote, f.page) if 1 <= f.page <= len(pages)
          else f"Page {f.page}",
-         "context": [c.title for c in f.citations if c.kind in ("law", "case")][:2]}
+         # law is context only when it governs the contract; fallback law on a foreign-law contract is not
+         "context": [c.title for c in f.citations if c.kind in ("law", "case")][:2]
+         if review.jurisdiction != "other" else []}
         for f in review.findings if f.risk in ("high", "medium")
     ]
     items += [
@@ -673,10 +905,34 @@ def collapse_hits(hits: list[tuple[Chunk, float]]) -> list[tuple[Chunk, float]]:
     return sorted(out, key=lambda h: h[1], reverse=True)
 
 
-def search(svc: Services, q: str, limit: int = 10) -> list[SearchHit]:
+VECTOR_FETCH = 50  # nearest chunks the keyword pass re-scores
+VECTOR_WEIGHT, KEYWORD_WEIGHT, PHRASE_BOOST = 0.65, 0.35, 0.15
+_WORD = re.compile(r"\w+")
+
+
+def _words(text: str) -> list[str]:
+    return _WORD.findall(normalise(text))
+
+
+def hybrid_score(q_terms: set[str], q_phrase: str, text: str, vector_score: float) -> float:
+    """Vector similarity merged with a keyword pass: the share of query terms found in the passage
+    (normalised, stop words ignored), plus a boost when the whole query appears as an exact phrase."""
+    words = _words(text)
+    kw = len(q_terms & set(words)) / len(q_terms) if q_terms else 0.0
+    phrase = 1.0 if q_phrase and f" {q_phrase} " in f" {' '.join(words)} " else 0.0
+    return VECTOR_WEIGHT * max(vector_score, 0.0) + KEYWORD_WEIGHT * kw + PHRASE_BOOST * phrase
+
+
+def search(svc: Services, q: str, owner: str, limit: int = 10) -> list[SearchHit]:
+    """Hybrid search of one workspace: the nearest chunks by vector, re-scored by keyword overlap and an
+    exact-phrase boost, then de-duplicated per passage."""
     vectors, _ = svc.embedder.embed([q], query=True)
-    # over-fetch: neighbouring chunks and the finding that quotes them crowd the top of the list
-    hits = collapse_hits(svc.index.query(vectors[0], max(limit * 5, 30)))[:limit]
+    near = svc.index.query(vectors[0], max(limit * 5, VECTOR_FETCH), owner=owner)
+    words = _words(q)
+    terms = {w for w in words if w not in STOPWORDS and len(w) > 1}
+    phrase = " ".join(words)
+    scored = [(c, hybrid_score(terms, phrase, c.text, s)) for c, s in near]
+    hits = collapse_hits(scored)[:limit]
     return [
         SearchHit(review_id=c.review_id, filename=c.filename, page=c.page,
                   text=c.text if len(c.text) <= 400 else c.text[:397].rstrip() + "...",
@@ -688,7 +944,7 @@ def search(svc: Services, q: str, limit: int = 10) -> list[SearchHit]:
 # ---- company knowledge base ------------------------------------------------------------------
 
 
-def add_company_doc(svc: Services, pdf_bytes: bytes, filename: str) -> CompanyDoc:
+def add_company_doc(svc: Services, pdf_bytes: bytes, filename: str, owner: str = DEMO_OWNER) -> CompanyDoc:
     """Store a policy PDF, extract (OCR path if scanned), chunk, embed and index it."""
     doc = validate_pdf(pdf_bytes, svc.settings)
     try:
@@ -716,11 +972,13 @@ def add_company_doc(svc: Services, pdf_bytes: bytes, filename: str) -> CompanyDo
     meta = CompanyDoc(id=doc_id, filename=filename or "document.pdf", title=title,
                       created_at=datetime.now(timezone.utc), pages=page_count)
     svc.blobs.put(f"company/{doc_id}.pdf", pdf_bytes)
-    svc.company.put(meta, chunks)
+    svc.company.put(meta, chunks, owner=owner)
     return meta
 
 
-def delete_company_doc(svc: Services, doc_id: str) -> None:
-    if not svc.company.delete(doc_id):
+def delete_company_doc(svc: Services, doc_id: str, owner: str) -> CompanyDoc:
+    doc = svc.company.get(doc_id, owner=owner)
+    if doc is None or not svc.company.delete(doc_id, owner=owner):
         raise UserError(404, "company_doc_not_found", "We could not find that document.")
     svc.blobs.delete(f"company/{doc_id}.pdf")
+    return doc

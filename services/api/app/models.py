@@ -8,12 +8,14 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-ContractType = Literal["nda", "service_agreement", "other"]
+ContractType = Literal["nda", "service_agreement", "employment", "tenancy", "hire_purchase", "other"]
 Risk = Literal["high", "medium", "low"]
 ClauseType = Literal[
     "confidentiality", "term", "termination", "auto_renewal", "liability", "indemnity",
     "ip_ownership", "payment", "governing_law", "dispute_resolution", "non_solicit",
-    "non_compete", "data_protection", "assignment", "warranty", "other",
+    "non_compete", "data_protection", "assignment", "warranty", "probation", "working_hours", "leave",
+    "notice_period", "salary_deductions", "deposit", "rent_review", "repairs", "early_termination",
+    "interest_rate", "repossession", "guarantor", "insurance", "fees_charges", "other",
 ]
 
 CitationKind = Literal["law", "case", "playbook", "company"]
@@ -31,6 +33,25 @@ class Citation(BaseModel):
     excerpt: str
     url: str | None = None
     page: int | None = None
+    source_url: str | None = None  # deep link to the exact provision at the official source
+    boxes: list[list[float]] = Field(default_factory=list)  # company citations: excerpt on `page` of the PDF
+    doc_id: str | None = None  # company document id (GET /api/company/docs/{doc_id}/pdf)
+
+
+class Verification(BaseModel):
+    quote_match: Literal["exact", "normalised", "fuzzy"]
+    score: float | None = None  # fuzzy match score 0-100
+    page_corrected_from: int | None = None
+    citations_checked: int = 0
+    kb_version: str | None = None
+
+
+class RemovedClaim(BaseModel):
+    kind: Literal["finding", "citation", "policy_breach"]
+    reason: Literal["quote_not_found", "source_not_retrieved", "no_company_citation", "wrong_jurisdiction"]
+    text: str
+    page: int | None = None
+    finding_title: str | None = None
 
 
 class TraceStep(BaseModel):
@@ -62,8 +83,10 @@ class KnowledgeEntry(BaseModel):
     citation: str | None = None
     clause_types: list[str] = Field(default_factory=list)
     plain: str | None = None
+    source_url: str | None = None  # deep link to the provision
     text: str | None = None  # full body, markdown; detail endpoint only
     url: str | None = None
+    source_url: str | None = None  # deep link to the provision
 
 
 class CompanyDoc(BaseModel):
@@ -90,6 +113,7 @@ class Finding(BaseModel):
     boxes: list[list[float]] = Field(default_factory=list)
     citations: list[Citation] = Field(default_factory=list)
     policy_breach: str | None = None
+    verification: Verification | None = None
 
 
 class MissingClause(BaseModel):
@@ -115,6 +139,13 @@ class Metrics(BaseModel):
     dropped_unverified_citations: int = 0
 
 
+class Provenance(BaseModel):
+    model: str
+    kb_version: str
+    prompt_version: str
+    app_version: str | None = None
+
+
 class ReviewResult(BaseModel):
     id: str
     created_at: datetime
@@ -132,6 +163,12 @@ class ReviewResult(BaseModel):
     jurisdiction: str | None = None
     trace: list[TraceStep] = Field(default_factory=list)
     key_dates: list[KeyDate] = Field(default_factory=list)
+    removed: list[RemovedClaim] = Field(default_factory=list)  # claims verification removed
+    owner: str | None = None  # workspace_id, or "demo"; None only on reviews stored before workspaces existed
+    created_by: str | None = None  # uid of the member who ran it
+    provenance: Provenance | None = None
+    previous_review_id: str | None = None
+    content_hash: str | None = None
 
 
 def next_deadline(key_dates: list[KeyDate], today: date_type | None = None) -> KeyDate | None:
@@ -167,6 +204,78 @@ class ReviewSummary(BaseModel):
                    contract_type=r.contract_type, overall_risk=r.verdict.overall_risk,
                    headline=r.verdict.headline, finding_counts=counts,
                    next_deadline=next_deadline(r.key_dates, today))
+
+
+Role = Literal["owner", "admin", "member"]
+WorkspaceKind = Literal["company", "personal", "demo"]
+
+
+class Workspace(BaseModel):
+    id: str
+    name: str
+    kind: WorkspaceKind
+    domain: str | None = None  # Google Workspace domain for auto-join, e.g. example.com
+    created_at: datetime | None = None
+    member_count: int | None = None
+
+
+class Member(BaseModel):
+    uid: str
+    email: str
+    name: str | None = None
+    role: Role
+    joined_at: datetime | None = None
+
+
+class Invite(BaseModel):
+    code: str
+    workspace_id: str
+    role: Literal["admin", "member"]
+    expires_at: datetime | None = None
+
+
+class WorkspaceRef(BaseModel):
+    """A workspace the user belongs to, with their role in it."""
+
+    workspace: Workspace
+    role: Role
+
+
+class User(BaseModel):
+    uid: str
+    email: str
+    name: str | None = None
+    photo_url: str | None = None
+    created_at: datetime | None = None
+    last_seen_at: datetime | None = None
+    workspaces: list[WorkspaceRef] = Field(default_factory=list)
+    platform_admin: bool = False  # the email is in ADMIN_EMAILS and verified
+
+
+class Identity(User):
+    """A verified token's user. `email_verified` and `hd` (the Google Workspace domain) are internal."""
+
+    email_verified: bool = False
+    hd: str | None = None
+
+    def public(self) -> User:
+        return User.model_validate(self.model_dump(exclude={"email_verified", "hd"}))
+
+
+AuditAction = Literal["signed_in", "uploaded_contract", "reviewed", "re_reviewed", "drafted_reply",
+                      "viewed_review", "deleted_review", "uploaded_policy", "deleted_policy", "exported",
+                      "deleted_my_data"]
+
+
+class AuditEvent(BaseModel):
+    id: str
+    at: datetime
+    actor: str  # uid, or "demo" for the public demo workspace
+    action: AuditAction
+    target_id: str | None = None
+    target_label: str | None = None
+    detail: dict | None = None
+    workspace_id: str | None = None  # the workspace the action happened in; "demo" for the sample workspace
 
 
 class NegotiationAsk(BaseModel):

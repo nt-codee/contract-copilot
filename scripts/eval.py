@@ -55,6 +55,34 @@ def _matches(expected: dict, result: ReviewResult) -> str | None:
     return None
 
 
+KINDS = ("finding", "citation", "policy_breach")
+
+
+def verification_counts(result: ReviewResult) -> dict:
+    """Claims the model made, per kind: kept (shown) and removed (by verification, in result.removed)."""
+    kept = {"finding": len(result.findings),
+            "citation": sum(len(f.citations) for f in result.findings),
+            "policy_breach": sum(1 for f in result.findings if f.policy_breach)}
+    removed = {k: sum(1 for r in result.removed if r.kind == k) for k in KINDS}
+    return {k: {"made": kept[k] + removed[k], "removed": removed[k]} for k in KINDS}
+
+
+def verification_block(scores: list[dict]) -> list[str]:
+    """Markdown: how much of what the model claimed verification removed, overall and by kind."""
+    tot = {k: {"made": 0, "removed": 0} for k in KINDS}
+    for s in scores:
+        for k in KINDS:
+            for f in ("made", "removed"):
+                tot[k][f] += s.get("verification", {}).get(k, {}).get(f, 0)
+    made = sum(v["made"] for v in tot.values())
+    removed = sum(v["removed"] for v in tot.values())
+    rate = lambda m, r: f"{100 * r / m:.1f}%" if m else "n/a"  # noqa: E731
+    out = ["", "| verification | claims made | claims removed | removal rate |", "|---|---|---|---|",
+           f"| all claims | {made} | {removed} | {rate(made, removed)} |"]
+    out += [f"| {k} | {v['made']} | {v['removed']} | {rate(v['made'], v['removed'])} |" for k, v in tot.items()]
+    return out
+
+
 def score(expected: dict, result: ReviewResult) -> dict:
     flags = []
     for e in expected.get("must_flag", []):
@@ -69,6 +97,7 @@ def score(expected: dict, result: ReviewResult) -> dict:
         "language": result.language, "latency_ms": result.metrics.latency_ms,
         "cost_usd_est": result.metrics.cost_usd_est, "findings": len(result.findings),
         "dropped_unverified": result.metrics.dropped_unverified,
+        "verification": verification_counts(result),
     }
 
 
@@ -103,6 +132,7 @@ def table(scores: list[dict], errors: dict[str, str], model: str) -> str:
     out += [f"| {k} | {_pct(*v)} |" for k, v in sorted(by_ct.items())]
     out += ["", "| recall by risk | found |", "|---|---|"]
     out += [f"| {k} | {_pct(*by_risk[k])} |" for k in ("high", "medium", "low") if k in by_risk]
+    out += verification_block(scores)
     out += ["", "| summary | value |", "|---|---|",
             f"| must_flag recall | {_pct(*total)} |",
             f"| false highs (must_not_flag_high) | {sum(len(s['false_high']) for s in scores)} |",

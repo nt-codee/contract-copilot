@@ -33,4 +33,6 @@ APIS = [
     "cloudbuild.googleapis.com",
     "monitoring.googleapis.com",
     "logging.googleapis.com",
+    "identitytoolkit.googleapis.com",  # Google Cloud Identity Platform (Google sign-in)
+    "apikeys.googleapis.com",  # the restricted browser API key for the Identity Platform client
 ]

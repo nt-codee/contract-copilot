@@ -8,6 +8,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
+# Owner id of the public demo workspace (visitors who are not signed in).
+DEMO_OWNER = "demo"
+
 DISCLAIMER = "This is an automated review to help you prepare. It is not legal advice."
 
 # Embedding dimension is fixed: the Firestore vector index (infra stack) is created at 768,
@@ -65,10 +68,24 @@ class Settings:
     knowledge_dir: Path = field(
         default_factory=lambda: Path(_env("KNOWLEDGE_DIR", str(REPO_ROOT / "knowledge")))
     )
+    # bucket holding the ingested law/playbook markdown (kb/<version>/<id>.md); Pulumi names it <project>-knowledge
+    knowledge_bucket: str = field(default_factory=lambda: _env(
+        "KNOWLEDGE_BUCKET", f"{_env('GCP_PROJECT', 'contract-copilot-abc26')}-knowledge"))
+    # Law of this jurisdiction is the fallback for a contract governed by a foreign law (my | sg).
+    home_jurisdiction: str = field(
+        default_factory=lambda: _env("HOME_JURISDICTION", "my").lower() if _env("HOME_JURISDICTION", "my").lower() in ("my", "sg") else "my")
     web_dist: Path = field(default_factory=lambda: Path(_env("WEB_DIST", "/app/web/dist")))
     data_dir: Path = field(default_factory=lambda: Path(_env("DATA_DIR", "/tmp/cc-data")))
     dev_cors: bool = field(default_factory=lambda: _env("DEV_CORS", "") == "1")
     rate_limit_per_hour: int = field(default_factory=lambda: int(_env("RATE_LIMIT_PER_HOUR", "10")))
+
+    # Auth. ADMIN_EMAILS is comma-separated and comes from a secret Pulumi config, never a committed file.
+    admin_emails: frozenset[str] = field(default_factory=lambda: frozenset(
+        e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()))
+    # Identity Platform client config (JSON: apiKey, authDomain, projectId), served at GET /api/auth/config so the
+    # web reads it at runtime.
+    identity_web_config: str = field(default_factory=lambda: _env("IDENTITY_WEB_CONFIG", ""))
+    app_version: str = field(default_factory=lambda: _env("APP_VERSION", "dev"))
 
     max_bytes: int = 10 * 1024 * 1024
     max_pages: int = 40

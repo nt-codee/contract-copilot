@@ -4,6 +4,13 @@
       "text": "",
       "tool_calls": [
         {
+          "name": "set_jurisdiction",
+          "args": {
+            "governing_law": "the laws of Malaysia",
+            "jurisdiction": "my"
+          }
+        },
+        {
           "name": "search_law",
           "args": {
             "query": "limitation exclusion of liability cap",

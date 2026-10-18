@@ -1,9 +1,9 @@
-# knowledge/law — verified Malaysian and Singapore law for NDAs and service agreements
+# knowledge/law — verified Malaysian and Singapore law for the contract types the review covers
 
 General information, not legal advice.
 
 A small knowledge base the review agent can cite: a statute section or a case, with the operative
-words quoted exactly as found on a source fetched on 2026-10-18. It complements the playbook in
+words quoted exactly as found on a source fetched on 2026-10-18. It covers NDAs, service agreements, employment, tenancy and hire purchase. It complements the playbook in
 `knowledge/playbook/` (what balanced terms look like) with the law behind it (what a court or statute
 says). Validate with `python3 scripts/check_kb.py`.
 
@@ -19,10 +19,12 @@ says). Validate with `python3 scripts/check_kb.py`.
 
 ## What it covers
 
-| | Statutes | Cases |
+96 entries: Malaysia 42 (40 statutes, 2 cases) and Singapore 54 (38 statutes, 16 cases). `python3 scripts/check_kb.py` prints the same counts.
+
+| | Statutes and orders | Cases |
 |---|---|---|
-| Malaysia (16) | Contracts Act 1950 ss 24, 28, 29, 30, 40, 74, 75; PDPA 2010 ss 5, 9, 12A, 12B, 129; Limitation Act 1953 s 6(1); Evidence Act 1950 s 92 | Cubic Electronics v Mars Telecommunications (FC, liquidated damages); CIMB Bank v Bourke (FC, exclusion clause void under s 29) |
-| Singapore (16) | UCTA 1977 s 1(3) and First Schedule, ss 2, 3, 11; Misrepresentation Act 1967 s 3; PDPA 2012 ss 2(1)/4(2)-(3), 24, 25, 26C, 26D; Limitation Act 1959 s 6(1); Contracts (Rights of Third Parties) Act 2001 s 2 | Denka v Seraya (penalties); Man Financial v Wong (restraint of trade); Sembcorp Marine v PPL (implied terms); Lee Chee Wei v Tan (entire agreement) |
+| Malaysia (42) | Contracts Act 1950 ss 24, 28, 29, 30, 40, 74, 75; PDPA 2010 ss 5, 9, 12A, 12B, 129; Limitation Act 1953 s 6(1); Evidence Act 1950 s 92; Hire-Purchase Act 1967 (ss 15, 16, 16A, 17, 21, 22, 23, 26, 33, 34); Moneylenders Act 1951 ss 17, 17A; Employment Act 1955 (ss 12, 24, 37, 41A, 60A, 60E, 60F, 60FA, 101C and the First Schedule) with Act A1651; Industrial Relations Act 1967 s 20; Minimum Wages Order 2024; Stamp Act 1949; Distress Act 1951; National Land Code | Cubic Electronics v Mars Telecommunications (FC, liquidated damages); CIMB Bank v Bourke (FC, exclusion clause void under s 29) |
+| Singapore (54) | UCTA 1977 s 1(3), First Schedule, ss 2, 3, 11; Misrepresentation Act 1967 s 3; PDPA 2012 ss 2(1)/4(2)-(3), 24, 25, 26C, 26D; Limitation Act 1959 s 6(1); Contracts (Rights of Third Parties) Act 2001 s 2; Hire-Purchase Act 1969; Moneylenders Act 2008 ss 35-37; Employment Act 1968; Stamp Duties Act 1929; Conveyancing and Law of Property Act 1886 ss 18, 18A; Distress Act 1934 | 16 cases on penalties, restraint of trade, implied terms, entire-agreement clauses, training bonds, notice and pay in lieu, forfeited deposits and tenancy forfeiture, re-entry and distress (the list is in `index.json`) |
 
 ## What it does not cover
 
@@ -31,8 +33,10 @@ says). Validate with `python3 scripts/check_kb.py`.
 - No verified authority on: shortened contractual claim periods in Singapore; whether
   non-solicitation clauses fall under Malaysian s 28; implied terms or entire-agreement clauses in
   Malaysia.
-- No subsidiary legislation (PDPA regulations, PDPC/JPDP guidelines), sector rules, employment law,
-  or anything outside NDAs and service agreements.
+- Almost no subsidiary legislation (the Minimum Wages Order 2024 is the exception), no PDPA
+  regulations or PDPC/JPDP guidelines, no sector rules, and nothing outside the five contract types.
+- Entries added after the first batch cite sources beyond the three official sites below (for example an
+  IRAS page and informal consolidations); each file's `source_url` and `licence_note` name its source.
 - Statute text reflects the versions shown on the official sites on 2026-10-18. Malaysia's
   Contracts Act reform (including a reasonableness test for s 28) was proposed in June 2026 but was
   not enacted at that date. Re-check before relying on any entry.

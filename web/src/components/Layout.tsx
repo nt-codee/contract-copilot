@@ -64,9 +64,17 @@ export default function Layout() {
       </main>
       {!isReview && (
         <footer className="border-t border-desk-line">
-          <p className="mx-auto max-w-6xl px-5 py-6 text-[0.9rem] text-desk-text sm:px-8">
-            Contract Co-pilot · Uploaded files are deleted after 7 days.
-          </p>
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-1 px-5 py-4 text-[0.9rem] text-desk-text sm:px-8">
+            <p>Contract Co-pilot · Uploaded files are deleted after 7 days.</p>
+            <nav aria-label="Legal" className="flex gap-4">
+              <NavLink to="/privacy" className="inline-flex min-h-[44px] items-center text-white underline underline-offset-4 hover:text-desk-text">
+                Privacy
+              </NavLink>
+              <NavLink to="/terms" className="inline-flex min-h-[44px] items-center text-white underline underline-offset-4 hover:text-desk-text">
+                Terms
+              </NavLink>
+            </nav>
+          </div>
         </footer>
       )}
     </>

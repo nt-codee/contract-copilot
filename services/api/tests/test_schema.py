@@ -33,6 +33,7 @@ def test_enums_match_schema(alias, defname):
 
 def test_nested_enums_match_schema():
     defs = SCHEMA["$defs"]
+    assert list(get_args(models.AuditAction)) == defs["AuditEvent"]["properties"]["action"]["enum"]
     assert list(get_args(models.CitationKind)) == defs["Citation"]["properties"]["kind"]["enum"]
     assert list(get_args(models.TraceAction)) == defs["TraceStep"]["properties"]["action"]["enum"]
 
@@ -43,6 +44,7 @@ def test_nested_enums_match_schema():
     (models.ReviewSummary, "ReviewSummary"), (models.NegotiationDraft, "NegotiationDraft"),
     (models.SearchHit, "SearchHit"), (models.Sample, "Sample"),
     (models.Citation, "Citation"), (models.KeyDate, "KeyDate"), (models.KnowledgeEntry, "KnowledgeEntry"), (models.TraceStep, "TraceStep"), (models.CompanyDoc, "CompanyDoc"),
+    (models.User, "User"), (models.AuditEvent, "AuditEvent"), (models.Provenance, "Provenance"),
 ])
 def test_model_fields_match_schema(model, defname):
     spec = SCHEMA["$defs"][defname]

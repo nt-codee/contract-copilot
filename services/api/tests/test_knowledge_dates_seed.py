@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import socket
 import sys
 import threading
@@ -50,7 +51,10 @@ def test_knowledge_against_the_real_library():
     from app.knowledge import Knowledge
 
     kb = Knowledge.load(REPO_ROOT / "knowledge")
-    assert sum(e.kind in ("law", "case") for e in kb.entries()) == 32
+    law = json.loads((REPO_ROOT / "knowledge" / "law" / "index.json").read_text(encoding="utf-8"))
+    loaded = {e.id for e in kb.entries() if e.kind in ("law", "case")}
+    assert len(loaded) >= 32
+    assert {e["id"] for e in law} <= loaded  # every index entry loads
     assert sum(e.kind == "playbook" for e in kb.entries()) >= 22
 
 
@@ -153,12 +157,12 @@ def test_seed_demo_is_idempotent(live_server, services, capsys):
     assert "kopi-kita-contracting-policy.pdf: uploaded" in out
     row = next(line for line in out.splitlines() if line.startswith("demo-01"))
     assert row.split()[1] == "ok"
-    assert [d.filename for d in services.company.list()] == ["kopi-kita-contracting-policy.pdf"]
+    assert [d.filename for d in services.company.list(owner="demo")] == ["kopi-kita-contracting-policy.pdf"]
     n_calls = len(services.llm.calls)
 
     assert seed_demo.main(["--base-url", live_server, "--pause", "0"]) == 0  # again: nothing re-uploaded
     out2 = capsys.readouterr().out
-    assert "already there" in out2 and len(services.company.list()) == 1
+    assert "already there" in out2 and len(services.company.list(owner="demo")) == 1
     assert len(services.llm.calls) == n_calls  # cached sample review, no model call
 
     assert seed_demo.main(["--base-url", live_server, "--pause", "0", "--refresh"]) == 0
