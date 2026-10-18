@@ -68,7 +68,7 @@ request requires sign-in. There is no guest bypass for a cold instance or a miss
 
 New paid work requires sign-in and has a **USD 1 allowance per account per UTC day**, including model attempts,
 retries, fallback models, embeddings and policy processing. The service reserves a bounded amount before an attempt;
-known usage releases unused allowance, while uncertain failures keep the reservation. This is conservative token-price
+known usage releases unused allowance. A call that clearly returned nothing (timeout, overload) keeps only its input cost, at most 20 times per account per day; any other uncertain failure keeps the whole reservation. This is conservative token-price
 accounting, not an exact provider invoice. Cached reads do not start new AI calls.
 
 **Limits to keep in mind.** Finding the quoted text and checking that a source exists do not prove the legal interpretation
@@ -80,20 +80,24 @@ closing an active review does not have a durable background-resume guarantee; a 
 
 ```mermaid
 flowchart TD
-  A[Read the contract<br/>PyMuPDF text; Gemini transcribes scans] --> B[Set the contract type and lock the<br/>governing-law jurisdiction]
-  B --> C{Plan the lookups,<br/>run them in parallel}
-  C --> L[Law and cases<br/>Malaysia and Singapore]
-  C --> P[Playbook<br/>standard terms, or your company's own]
-  C --> R[Company rules<br/>your workspace's policy]
-  L --> D[Draft findings<br/>one structured Gemini call]
+  A["Read the contract<br/>text, or Gemini reads scans"] --> B["Fix type and<br/>governing law"]
+  B --> C{"Plan lookups<br/>run in parallel"}
+  C --> L["Law and cases<br/>MY and SG"]
+  C --> P["Usual terms<br/>or your positions"]
+  C --> R["Your company<br/>rules"]
+  L --> D["Draft findings<br/>Gemini"]
   P --> D
   R --> D
-  D --> V{Verify}
-  V -->|quote is on the stated page<br/>citation is in the library<br/>law is of the locked jurisdiction| K[Keep]
-  V -->|cannot be verified| X[Remove it, and record why]
-  K --> E[Locate the words on the PDF<br/>and draw the evidence boxes]
-  E --> M[Draft the reply to the other party]
+  D --> V{"Verify<br/>every claim"}
+  V -->|checks pass| K["Keep"]
+  V -->|fails a check| X["Remove<br/>and say why"]
+  K --> E["Box the words<br/>on the PDF"]
+  E --> M["Draft your reply"]
 ```
+
+The verify step keeps a claim only if its quote is on the stated page, its citation is in the library and supports
+the claim, its law is the locked jurisdiction, and any date or amount it states appears in the contract.
+If Gemini 3.8 Flash stalls, the same request is retried once on Gemini 3.5 Flash.
 
 The loop is bounded: two model turns and at most 16 lookups per review. The first turn plans every lookup at once, so they run
 side by side instead of one after another.
@@ -167,16 +171,14 @@ and the reply are shared, so adding a type is mostly content. See [`docs/public/
 
 ```mermaid
 flowchart LR
-  U[Browser] -->|Google sign-in| I[Identity Platform]
-  U -->|PDF + ID token| R[Cloud Run: FastAPI + React]
-  R --> X[Extract pages<br/>PyMuPDF; Gemini OCR for scans]
-  X --> A[Gemini 3.8 Flash review loop<br/>Vertex AI]
-  A -->|tools| L[(Law: MY + SG<br/>Firestore, vector + keyword)]
-  A -->|tools| P[(Playbook<br/>+ your overrides)]
-  A -->|tools| C[(Company rules<br/>Firestore vector search)]
-  A --> V[Verify quotes + citations<br/>locate boxes]
-  V --> F[(Firestore: reviews, chunks,<br/>workspaces, audit events)]
-  R --> S[(Cloud Storage: uploads,<br/>7-day lifecycle)]
+  U["Browser"] -->|"Google sign-in"| I["Identity<br/>Platform"]
+  U -->|"PDF + token"| R["Cloud Run<br/>FastAPI + React"]
+  R --> A["Gemini on<br/>Vertex AI"]
+  A -->|tools| L[("Law<br/>MY + SG")]
+  A -->|tools| P[("Usual<br/>terms")]
+  A -->|tools| C[("Company<br/>rules")]
+  R --> F[("Firestore<br/>reviews, audit")]
+  R --> S[("Cloud Storage<br/>uploads, 7 days")]
 ```
 
 Cloud services sit behind adapters selected by configuration. The review logic imports no cloud SDK, and local adapters

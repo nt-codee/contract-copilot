@@ -476,7 +476,7 @@ def local_stores(settings: Settings):
 class MemoryBudgetLedger:
     """Thread-safe account/day reservations. Local only; Firestore shares enforcement across instances."""
     def __init__(self):
-        self._totals, self._holds = {}, {}
+        self._totals, self._holds, self._releases, self._released = {}, {}, {}, set()
         self._lock = threading.Lock()
 
     def reserve(self, reservation, limit):
@@ -506,6 +506,24 @@ class MemoryBudgetLedger:
             key = (reservation.uid, reservation.day)
             self._totals[key] += actual_micros - reservation.micros
             self._holds[reservation.id] = (original, actual_micros)
+
+    def release(self, reservation, actual_micros, max_releases):
+        with self._lock:
+            original, actual = self._holds[reservation.id]
+            if original != reservation or not 0 <= actual_micros <= reservation.micros:
+                raise ValueError("invalid settlement")
+            if actual is not None:
+                if actual != actual_micros:
+                    raise ValueError("settlement mismatch")
+                return reservation.id in self._released
+            key = (reservation.uid, reservation.day)
+            if self._releases.get(key, 0) >= max_releases:
+                return False
+            self._releases[key] = self._releases.get(key, 0) + 1
+            self._totals[key] += actual_micros - reservation.micros
+            self._holds[reservation.id] = (original, actual_micros)
+            self._released.add(reservation.id)
+            return True
 
     def used(self, uid, day):
         with self._lock:

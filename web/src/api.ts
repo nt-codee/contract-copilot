@@ -91,6 +91,15 @@ export async function listSamples(): Promise<Sample[]> {
   return request<Sample[]>("/api/samples");
 }
 
+/** Mock only: report the six server stages in order over `ms`, as a fresh review's progress events would. */
+async function mockStages(ms: number, onProgress?: (stage: ReviewStage) => void): Promise<void> {
+  const stages: ReviewStage[] = ["reading", "planning", "researching", "drafting", "verifying", "locating"];
+  for (const st of stages) {
+    onProgress?.(st);
+    await wait(ms / stages.length);
+  }
+}
+
 async function mockSignedIn(): Promise<boolean> {
   const { getSession, readOnlyReason } = await import("./session");
   for (let i = 0; getSession().loading && i < 50; i++) await wait(100);
@@ -116,7 +125,7 @@ export async function uploadReview(file: File, opts: ReviewOptions = {}, onProgr
   if (MOCK) {
     if (!(await mockSignedIn())) throw new ApiError(SIGN_IN_CODE, "Sign in with Google to review your own contract.");
     const m = await import("./mocks");
-    await wait(2500 + Math.random() * 2000);
+    await mockStages(2500 + Math.random() * 2000, onProgress);
     if (/fail/i.test(file.name)) throw new ApiError("unreadable_pdf", "We could not read any text in this PDF. Try a clearer scan or the original file.");
     return { ...m.mockReview, filename: file.name, contract_type: (opts.contract_type as ReviewResult["contract_type"]) ?? m.mockReview.contract_type, jurisdiction: opts.jurisdiction ?? m.mockReview.jurisdiction };
   }
@@ -137,7 +146,8 @@ export async function reviewSample(sampleId: string, refresh = false, onProgress
   if (MOCK) {
     if (refresh && !(await mockSignedIn())) throw new ApiError(SIGN_IN_CODE, "Sign in with Google to run a fresh review.");
     const m = await import("./mocks");
-    await wait(refresh ? 6500 : 900);
+    if (refresh) await mockStages(6500, onProgress);
+    else await wait(900);
     return refresh
       ? { ...m.mockReview, created_at: new Date().toISOString(), sample_opening: "fresh" }
       : { ...m.mockReview, sample_opening: "cached" };

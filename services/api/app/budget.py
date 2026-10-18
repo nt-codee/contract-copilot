@@ -11,10 +11,17 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_CEILING
 import threading
+import logging
 import uuid
 
 from app.config import ACCOUNT_DAILY_LIMIT_MICROS, ENFORCEMENT_PRICES
 from app.ports import BudgetReservation
+
+log = logging.getLogger(__name__)
+
+# Abuse guard: a clearly failed attempt may be settled down to its input cost at most this many times per
+# account per UTC day; after that a failure keeps the full worst-case hold.
+MAX_RELEASES_PER_DAY = 20
 
 BUDGET_MESSAGE = "You have reached the $1.00 account review budget for this UTC day. It resets at 00:00 UTC."
 
@@ -97,6 +104,21 @@ class AccountBudget:
             self.fail(BudgetError(503, "budget_unavailable", "Account budget accounting is unavailable. Please try again later."))
         if actual > reservation.micros:
             self.fail(BudgetError(503, "budget_unavailable", "AI usage exceeded its reservation. Further AI work is blocked."))
+
+    def release_failed(self, reservation, model, inputs):
+        """Settle a definite no-output failure down to the input-token cost (output 0). Returns True if released.
+        Any doubt (cap reached, ledger error, no release support) keeps the full hold; never raises."""
+        try:
+            release = getattr(self.ledger, "release", None)
+            if release is None:
+                return False
+            actual = cost_micros(model, inputs, 0)
+            if actual > reservation.micros:
+                return False
+            return bool(release(reservation, actual, MAX_RELEASES_PER_DAY))
+        except Exception:
+            log.warning("budget hold release failed; full hold kept", exc_info=True)
+            return False
 
 
 class GuardedAdapter:

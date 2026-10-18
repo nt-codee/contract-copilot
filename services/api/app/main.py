@@ -718,7 +718,11 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     # ---- static web app with SPA fallback ------------------------------------------------
     dist = settings.web_dist.resolve()
 
-    @app.get("/{path:path}", include_in_schema=False)
+    # The HTML must be revalidated on every load so a deploy is picked up; Vite's hashed /assets/* never change.
+    html_cache = {"cache-control": "no-cache"}
+    asset_cache = {"cache-control": "public, max-age=31536000, immutable"}
+
+    @app.api_route("/{path:path}", methods=["GET", "HEAD"], include_in_schema=False)
     def spa(path: str):
         if path.startswith("api/") or path == "api":
             raise UserError(404, "not_found", "Not found.")
@@ -726,9 +730,13 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         if path:
             target = (dist / path).resolve()
             if target.is_relative_to(dist) and target.is_file():
+                if target == index.resolve():
+                    return FileResponse(target, headers=html_cache)
+                if target.is_relative_to(dist / "assets"):
+                    return FileResponse(target, headers=asset_cache)
                 return FileResponse(target)
         if index.is_file():
-            return FileResponse(index)
+            return FileResponse(index, headers=html_cache)
         return _err(404, "web_not_built", "The web app is not built in this image.")
 
     return app

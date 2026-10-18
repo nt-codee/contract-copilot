@@ -54,7 +54,8 @@ class FirestoreBudgetLedger:
         total = int((counter.to_dict() or {}).get("micros", 0)) if counter.exists else 0
         if reservation.micros < 0 or total + reservation.micros > limit:
             return False
-        tx.set(account, {"micros": total + reservation.micros, "day": reservation.day})
+        tx.set(account, {"micros": total + reservation.micros, "day": reservation.day,
+                         "releases": int((counter.to_dict() or {}).get("releases", 0)) if counter.exists else 0})
         tx.set(hold, {"reserved": reservation.micros, "actual": None})
         return True
 
@@ -74,8 +75,34 @@ class FirestoreBudgetLedger:
                 raise ValueError("settlement mismatch")
             return
         tx.set(account, {"micros": int(counter.to_dict()["micros"]) + actual_micros - reservation.micros,
-                         "day": reservation.day})
+                         "day": reservation.day, "releases": int(counter.to_dict().get("releases", 0))})
         tx.set(hold, {"reserved": reservation.micros, "actual": actual_micros})
+
+    def release(self, reservation, actual_micros, max_releases):
+        """Settle a clearly failed attempt down to `actual_micros` if the account/day still has release
+        allowance. Same transaction, lock stripe and idempotent hold as reserve/settle. False = full hold kept."""
+        return self._transaction(self._release, reservation, actual_micros, max_releases)
+
+    def _release(self, tx, reservation, actual_micros, max_releases):
+        account, hold = self._refs(reservation)
+        counter, previous = account.get(transaction=tx), hold.get(transaction=tx)
+        if not previous.exists or not counter.exists or not 0 <= actual_micros <= reservation.micros:
+            raise ValueError("invalid settlement")
+        data = previous.to_dict()
+        if data["reserved"] != reservation.micros:
+            raise ValueError("reservation mismatch")
+        if data["actual"] is not None:
+            if data["actual"] != actual_micros:
+                raise ValueError("settlement mismatch")
+            return bool(data.get("released"))
+        counts = counter.to_dict()
+        releases = int(counts.get("releases", 0))
+        if releases >= max_releases:
+            return False
+        tx.set(account, {"micros": int(counts["micros"]) + actual_micros - reservation.micros,
+                         "day": reservation.day, "releases": releases + 1})
+        tx.set(hold, {"reserved": reservation.micros, "actual": actual_micros, "released": True})
+        return True
 
     def used(self, uid, day):
         snap = self._col.document(self.key(uid, day)).get()

@@ -9,6 +9,8 @@ import { deriveRules, docTitle } from "../rules";
 import type { PolicyRule } from "../rules";
 import { breakable, formatDate } from "../format";
 import type { CompanyDoc, ReviewResult } from "../types";
+import { readOnlyReason } from "../session";
+import { useSession } from "../useSession";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const SAMPLE = "/samples/kopi-kita-contracting-policy.pdf";
@@ -25,6 +27,8 @@ export default function Company() {
   const [removing, setRemoving] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [reviews, setReviews] = useState<ReviewResult[] | null>(null);
+  // The read-only demo can browse the rules but not change them; the API would refuse with 403.
+  const readOnly = readOnlyReason(useSession());
 
   // Full reviews carry the citations and breaches the rules are derived from.
   useEffect(() => {
@@ -111,6 +115,9 @@ export default function Company() {
         Upload your contracting policy once. Every review after that flags the clauses that break it, and quotes the rule.
       </p>
 
+      {readOnly ? (
+        <p className="mt-7 rounded-[3px] border border-desk-line px-4 py-3 text-desk-text">{readOnly}</p>
+      ) : (
       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
         <button type="button" className="btn-go btn-flag !min-h-[52px] !px-6" onClick={() => inputRef.current?.click()} disabled={!!uploading} aria-describedby="rules-help">
           {uploading ? "Adding your document…" : "Upload a policy PDF"}
@@ -131,6 +138,7 @@ export default function Company() {
           }}
         />
       </div>
+      )}
 
       <div aria-live="polite" className="mt-5">
         {error && (
@@ -146,10 +154,10 @@ export default function Company() {
         className="mt-6"
         onDragOver={(e) => {
           e.preventDefault();
-          setDragging(true);
+          if (!readOnly) setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
+        onDrop={(e) => (readOnly ? e.preventDefault() : onDrop(e))}
       >
         <h2 id="docs-title" className="text-xl font-bold text-white">
           Rules your reviews check
@@ -213,7 +221,7 @@ export default function Company() {
                   </span>
                 </span>
                 </span>
-                {confirm === d.id ? (
+                {readOnly ? null : confirm === d.id ? (
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="text-sm text-ink-soft">Stop checking against it?</span>
                     <button type="button" className="btn !min-h-[44px] bg-high px-4 text-white hover:bg-[#8f1e18]" onClick={() => void remove(d)} disabled={removing === d.id}>

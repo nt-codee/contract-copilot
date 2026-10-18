@@ -141,13 +141,13 @@ def test_fallback_reserves_primary_failure_and_independent_fallback_success(monk
     _, usage = gen(model)
     assert [row["model"] for row in models.generations] == ["gemini-3.8-flash", "gemini-3.5-flash"]
     assert all(row["config"].http_options.retry_options.attempts == 1 for row in models.generations)
-    assert ledger.used("a", budget.today()) == cost_micros("gemini-3.8-flash", 200, 16384) + cost_micros("gemini-3.5-flash",100,30)
+    assert ledger.used("a", budget.today()) == cost_micros("gemini-3.8-flash", 200, 0) + cost_micros("gemini-3.5-flash",100,30)
     assert usage.fallback_model == "gemini-3.5-flash"
 
 
-def test_retry_failure_retains_every_hold_and_missing_usage_never_refunds(monkeypatch):
+def test_retry_failure_retains_ambiguous_holds_and_missing_usage_never_refunds(monkeypatch):
     monkeypatch.setattr("app.adapters.gcp.time.sleep", lambda _: None)
-    ledger, models = MemoryBudgetLedger(), Models([Failure(503), Failure(503)])
+    ledger, models = MemoryBudgetLedger(), Models([Failure(500), Failure(500)])
     with pytest.raises(UpstreamError):
         gen(llm(models, AccountBudget("a", ledger)))
     assert len(models.generations) == 2
@@ -251,3 +251,114 @@ def test_firestore_reservation_and_settlement_are_atomic_idempotent_and_day_boun
     ledger.settle(accepted, 1)
     assert ledger.used("a","2026-10-18") == 900_001 and ledger.used("a","2026-10-19") == 0
     assert all(tx is not None for key, tx in reads if "/reservations/" in key)
+
+
+# --- release of holds for definite no-output failures -------------------------------------------------
+
+FULL = cost_micros("gemini-3.8-flash", 200, 16384)
+INPUT = cost_micros("gemini-3.8-flash", 200, 0)
+
+
+class ReadTimeout(Exception):
+    """Stands in for httpx.ReadTimeout: our own client timeout, no response."""
+
+
+@pytest.mark.parametrize("code", [504, 499, 503, 429])
+def test_definite_no_output_attempt_settles_to_input_cost_only(monkeypatch, code):
+    monkeypatch.setattr("app.adapters.gcp.time.sleep", lambda _: None)
+    monkeypatch.setattr("app.adapters.gcp.QUOTA_BACKOFF_S", ())
+    ledger, models = MemoryBudgetLedger(), Models([Failure(code)] * 10)
+    with pytest.raises(UpstreamError):
+        gen(llm(models, AccountBudget("a", ledger)), "transcribe")
+    assert ledger.used("a", budget.today()) == len(models.generations) * cost_micros("gemini-3.8-flash", 200, 0)
+
+
+def test_client_timeout_before_response_releases_to_input_cost(monkeypatch):
+    monkeypatch.setattr("app.adapters.gcp.time.sleep", lambda _: None)
+    ledger, models = MemoryBudgetLedger(), Models([ReadTimeout("read timed out")])
+    gen(llm(models, AccountBudget("a", ledger)))
+    assert ledger.used("a", budget.today()) == INPUT + cost_micros("gemini-3.5-flash", 100, 30)
+
+
+@pytest.mark.parametrize("exc", [Failure(500), Failure(502), ConnectionResetError("reset mid-stream"),
+                                 RuntimeError("boom"), Exception("unknown")])
+def test_ambiguous_failure_keeps_the_full_hold(monkeypatch, exc):
+    monkeypatch.setattr("app.adapters.gcp.time.sleep", lambda _: None)
+    ledger, models = MemoryBudgetLedger(), Models([exc] * 10)
+    with pytest.raises(Exception):
+        gen(llm(models, AccountBudget("a", ledger)), "transcribe")
+    assert ledger.used("a", budget.today()) == len(models.generations) * cost_micros("gemini-3.8-flash", 200, 32768)
+
+
+def test_retry_and_fallback_attempts_are_each_settled_separately(monkeypatch):
+    monkeypatch.setattr("app.adapters.gcp.time.sleep", lambda _: None)
+    # attempt 1 (primary): 504 -> released; fallback attempt 2: 500 -> ambiguous, full hold; attempt 3: success
+    ledger, models = MemoryBudgetLedger(), Models([Failure(504), Failure(500), "ok"])
+    gen(llm(models, AccountBudget("a", ledger)), "agent")
+    assert [g["model"] for g in models.generations][:2] == ["gemini-3.8-flash", "gemini-3.5-flash"]
+    full_fb = cost_micros("gemini-3.5-flash", 200, 4096)
+    assert ledger.used("a", budget.today()) == INPUT + full_fb + cost_micros("gemini-3.5-flash", 100, 30)
+
+
+def test_success_path_unchanged():
+    ledger = MemoryBudgetLedger()
+    gen(llm(Models(), AccountBudget("a", ledger)))
+    assert ledger.used("a", budget.today()) == cost_micros("gemini-3.8-flash", 100, 30)
+    assert ledger._releases == {}
+
+
+def test_21st_release_in_a_day_keeps_the_full_hold():
+    ledger = MemoryBudgetLedger()
+    account = AccountBudget("a", ledger)
+    holds = [account.reserve("gemini-3.8-flash", 200, 1000) for _ in range(21)]
+    results = [account.release_failed(h, "gemini-3.8-flash", 200) for h in holds]
+    assert results == [True] * budget.MAX_RELEASES_PER_DAY + [False]
+    assert ledger.used("a", budget.today()) == 20 * INPUT + cost_micros("gemini-3.8-flash", 200, 1000)
+    assert account.release_failed(holds[0], "gemini-3.8-flash", 200) is True  # idempotent, not recounted
+    assert ledger._releases[("a", budget.today())] == 20
+    other = AccountBudget("b", ledger)  # per account
+    assert other.release_failed(other.reserve("gemini-3.8-flash", 200, 16384), "gemini-3.8-flash", 200)
+
+
+def test_release_failure_or_missing_support_keeps_hold():
+    class Broken(MemoryBudgetLedger):
+        def release(self, *a): raise RuntimeError("down")
+    for ledger in (Broken(), NS(reserve=lambda *a: True, used=lambda *a: 0)):
+        account = AccountBudget("a", ledger)
+        hold = BudgetReservation("a", "2026-10-18", "x", 1000)
+        assert account.release_failed(hold, "gemini-3.8-flash", 200) is False
+
+
+def test_firestore_release_is_atomic_idempotent_capped_and_preserves_counter(monkeypatch):
+    data, lock = {}, threading.RLock()
+    class Ref:
+        def __init__(self, key): self.key = key
+        def collection(self, name): return Collection(self.key + "/" + name)
+        def get(self, transaction=None):
+            return NS(exists=self.key in data, to_dict=lambda: data.get(self.key))
+    class Collection:
+        def __init__(self, key): self.key = key
+        def document(self, key): return Ref(self.key + "/" + key)
+    class Tx:
+        def set(self, ref, value): data[ref.key] = dict(value)
+    from google.cloud import firestore
+    def transactional(fn):
+        def run(tx, *args):
+            with lock: return fn(tx, *args)
+        return run
+    monkeypatch.setattr(firestore, "transactional", transactional)
+    ledger = FirestoreBudgetLedger.__new__(FirestoreBudgetLedger)
+    ledger._col, ledger._db = Collection("accounts"), NS(transaction=Tx)
+    holds = [BudgetReservation("a", "2026-10-18", str(i), 1000) for i in range(3)]
+    for h in holds:
+        assert ledger.reserve(h, 1_000_000)
+    assert ledger.release(holds[0], 10, 2) is True
+    assert ledger.release(holds[0], 10, 2) is True  # idempotent
+    assert ledger.release(holds[1], 10, 2) is True
+    assert ledger.release(holds[2], 10, 2) is False  # cap of 2 reached: full hold kept
+    assert ledger.used("a", "2026-10-18") == 10 + 10 + 1000
+    ledger.settle(holds[2], 5)  # a later normal settle keeps the release count
+    key = next(k for k in data if k.startswith("accounts/") and "/reservations/" not in k)
+    assert data[key]["releases"] == 2
+    with pytest.raises(ValueError):
+        ledger.release(holds[0], 11, 2)  # settlement mismatch

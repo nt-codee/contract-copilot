@@ -11,6 +11,7 @@ import { breakable, contractTypeLabel } from "../format";
 import type { CompanyDoc, ReviewResult } from "../types";
 import { docTitle } from "../rules";
 import { useSession } from "../useSession";
+import { readOnlyReason } from "../session";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const OK_TYPES = ["application/pdf", "image/jpeg", "image/png"];
@@ -75,6 +76,8 @@ function toApi(o: Opts, hasRules: boolean, docs: CompanyDoc[], picked: Set<strin
 /** The focused upload screen: several PDFs reviewed one after another. */
 export default function Upload() {
   const s = useSession();
+  // The read-only demo cannot start paid work; say so instead of offering a picker the API would refuse.
+  const readOnly = readOnlyReason(s);
   const inputRef = useRef<HTMLInputElement>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -163,10 +166,10 @@ export default function Upload() {
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          setDragging(true);
+          if (!readOnly) setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
+        onDrop={(e) => (readOnly ? e.preventDefault() : onDrop(e))}
         className={`sheet mt-7 flex flex-col items-center gap-4 border-2 border-dashed px-6 py-10 text-center ${dragging ? "border-desk bg-paper-soft" : "border-transparent"}`}
       >
         <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-desk">
@@ -177,10 +180,17 @@ export default function Upload() {
           <p className="text-lg font-semibold text-ink">Drop contracts here</p>
           <p className="mt-1 text-sm text-ink-soft">PDF, or a photo of each page (JPG or PNG). Each up to 10 MB and 40 pages, in English or Bahasa Malaysia.</p>
         </div>
+        {readOnly ? (
+          <div className="max-w-md text-ink">
+            <p className="font-semibold">{readOnly}</p>
+            <div className="mt-3 flex justify-center"><SignInButton /></div>
+          </div>
+        ) : (
         <button type="button" className="btn-ink" onClick={() => inputRef.current?.click()}>
           Choose files
         </button>
-        <input
+        )}
+        {!readOnly && <input
           ref={inputRef}
           type="file"
           accept="application/pdf,.pdf,image/jpeg,.jpg,.jpeg,image/png,.png"
@@ -192,7 +202,7 @@ export default function Upload() {
             add(e.target.files);
             e.target.value = "";
           }}
-        />
+        />}
       </div>
 
       {needSignIn && (

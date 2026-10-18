@@ -113,6 +113,19 @@ def stalled(e: Exception) -> bool:
     return "timeout" in name or "timed out" in str(e).lower()
 
 
+NO_OUTPUT_STATUSES = (429, 499, 503, 504)  # DEADLINE_EXCEEDED, CANCELLED, UNAVAILABLE, RESOURCE_EXHAUSTED
+
+
+def no_output_failure(e: Exception) -> bool:
+    """True only when the provider definitely produced no output: one of NO_OUTPUT_STATUSES, or our own client
+    timeout (a Timeout exception class: nothing was received). Anything else (500, resets, protocol errors,
+    unknown exceptions) is ambiguous and keeps its full hold."""
+    code = getattr(e, "code", None)
+    if type(code) is int:
+        return code in NO_OUTPUT_STATUSES
+    return any("timeout" in cls.__name__.lower() for cls in type(e).__mro__)
+
+
 def _foreign_turns(contents):
     """The same contents with every thought signature replaced by FOREIGN_SIGNATURE (for another model)."""
     out = []
@@ -254,7 +267,10 @@ class GeminiLLM:
             try:
                 resp = self._client.models.generate_content(model=model, contents=contents, config=single)
             except Exception as exc:
-                # A failed/timeout attempt can be billed: its entire reservation remains held.
+                # A failed attempt can be billed: its full reservation stays held, unless the provider clearly
+                # returned nothing, when only the input cost is kept (capped per account per day).
+                if no_output_failure(exc):
+                    account.release_failed(reservation, model, tokens)
                 remaining -= 1
                 if attempt == 0 and self.fallback_model and purpose in FALLBACK_PURPOSES and stalled(exc):
                     model, contents = self.fallback_model, _foreign_turns(contents)
