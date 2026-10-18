@@ -1,0 +1,132 @@
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource/tinos/400.css";
+@import "@fontsource/tinos/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-desk font-sans text-ink antialiased;
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  /* Two rings so focus shows on both the blue desk and white paper. */
+  :focus-visible {
+    outline: 2px solid #121a2b;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px #ffffff;
+  }
+  dialog::backdrop {
+    background: rgba(10, 22, 48, 0.72);
+  }
+}
+
+@layer components {
+  /* Display voice: Archivo stretched wide. Used only for headlines. */
+  .display {
+    font-stretch: 118%;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.04;
+  }
+  /* Tab voice: Archivo condensed caps for folios, flags and counts. */
+  .tab {
+    font-stretch: 75%;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.8125rem;
+    line-height: 1.2;
+  }
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[3px] px-5 py-2.5 font-semibold transition-colors;
+  }
+  .btn-go {
+    @apply btn relative bg-white text-ink hover:bg-paper-soft disabled:cursor-wait disabled:opacity-70;
+  }
+  /* The primary action carries the signature: a red flag tab on its right edge. */
+  .btn-flag { margin-right: 0.5rem; }
+  .btn-flag::after {
+    content: "";
+    position: absolute;
+    right: -8px;
+    top: 9px;
+    width: 8px;
+    height: 20px;
+    background: #d93a2b;
+    border-radius: 0 2px 2px 0;
+  }
+  .btn-ink {
+    @apply btn bg-ink text-white hover:bg-desk-deep;
+  }
+  .btn-line {
+    @apply btn border border-ink/40 bg-white text-ink hover:border-ink;
+  }
+  .btn-desk {
+    @apply btn border border-desk-text/60 text-white hover:border-white hover:bg-white/10;
+  }
+  .sheet {
+    @apply rounded-[3px] bg-paper shadow-page;
+  }
+}
+
+/* --- Motion. Each one is short and runs once. --- */
+
+@keyframes pulse-box {
+  0% { box-shadow: 0 0 0 0 var(--ring); }
+  40% { box-shadow: 0 0 0 7px var(--ring); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.pulse { animation: pulse-box 0.9s ease-out 2; }
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.38s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+
+@keyframes reading {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(900%); }
+}
+.reading { animation: reading 2.2s ease-in-out infinite; }
+
+/* Hero: highlight sweeps, bracket draws, flag drops, note slides in. */
+@keyframes sweep { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+@keyframes draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes drop { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@keyframes note { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+.hl {
+  background-image: linear-gradient(var(--hl), var(--hl));
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.hero-play .hl { animation: sweep 0.9s ease-in-out var(--d, 0s) both; }
+.hero-play .bracket { transform-origin: top; animation: draw 0.35s ease-out var(--d, 0s) both; }
+.hero-play .flag { animation: drop 0.3s ease-out var(--d, 0s) both; }
+.hero-play .note { animation: note 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) var(--d, 0s) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Check trail: steps arrive in order when the disclosure opens. */
+@keyframes step-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+details[open] .trace-step { animation: step-in 0.3s ease-out calc(var(--i) * 70ms) both; }
+@keyframes ping { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); } }
+.ping { animation: ping 1.4s ease-out infinite; }

@@ -1,0 +1,37 @@
+{
+  "id": "msa-03-liability",
+  "contract_type": "service_agreement",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "liability",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "in the one (1) month immediately preceding"
+    },
+    {
+      "clause_type": "liability",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "Nothing in this Agreement limits the Customer's liability"
+    },
+    {
+      "clause_type": "indemnity",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "whether or not caused by the negligence of the Vendor"
+    },
+    {
+      "clause_type": "ip_ownership",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "shall vest in and remain with the Vendor"
+    }
+  ],
+  "must_not_flag_high": [
+    "payment",
+    "confidentiality",
+    "governing_law"
+  ]
+}

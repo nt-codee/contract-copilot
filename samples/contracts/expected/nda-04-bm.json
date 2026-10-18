@@ -1,0 +1,35 @@
+{
+  "id": "nda-04-bm",
+  "contract_type": "nda",
+  "language": "ms",
+  "expected_overall_risk": "medium",
+  "must_flag": [
+    {
+      "clause_type": "term",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "suatu tempoh lima (5) tahun"
+    },
+    {
+      "clause_type": "confidentiality",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "dikenakan ke atas Penerima sahaja"
+    },
+    {
+      "clause_type": "non_solicit",
+      "risk": "medium",
+      "page": 3,
+      "quote_contains": "dua puluh empat (24) bulan"
+    }
+  ],
+  "must_not_flag_high": [
+    "confidentiality",
+    "term",
+    "non_solicit",
+    "governing_law",
+    "dispute_resolution",
+    "assignment",
+    "ip_ownership"
+  ]
+}

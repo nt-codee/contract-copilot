@@ -1,0 +1,33 @@
+{
+  "id": "msa-02-autorenew",
+  "contract_type": "service_agreement",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "auto_renewal",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "at least ninety (90) days before the expiry"
+    },
+    {
+      "clause_type": "payment",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "increase the Subscription Fees by twenty per cent (20%)"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "medium",
+      "page": 3,
+      "quote_contains": "all Subscription Fees that would have been payable for the remainder"
+    }
+  ],
+  "must_not_flag_high": [
+    "liability",
+    "data_protection",
+    "confidentiality",
+    "governing_law",
+    "ip_ownership"
+  ]
+}

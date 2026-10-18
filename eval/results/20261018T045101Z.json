@@ -1,0 +1,2644 @@
+{
+  "model": "gemini-3.8-flash",
+  "scores": [
+    {
+      "id": "nda-01-fair",
+      "must_flag": [],
+      "false_high": [],
+      "expected_overall_risk": "low",
+      "overall_risk": "low",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 9428,
+      "cost_usd_est": 0.011593,
+      "findings": 0,
+      "dropped_unverified": 0
+    },
+    {
+      "id": "nda-02-oneway",
+      "must_flag": [
+        {
+          "clause_type": "confidentiality",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "all information of any kind whatsoever",
+          "found": "f1"
+        },
+        {
+          "clause_type": "confidentiality",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "apply without exception",
+          "found": "f1"
+        },
+        {
+          "clause_type": "term",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "shall continue in perpetuity",
+          "found": "f3"
+        },
+        {
+          "clause_type": "confidentiality",
+          "risk": "medium",
+          "page": 2,
+          "quote_contains": "gives no undertaking of confidentiality",
+          "found": "f1"
+        }
+      ],
+      "false_high": [],
+      "expected_overall_risk": "high",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 18550,
+      "cost_usd_est": 0.017727,
+      "findings": 6,
+      "dropped_unverified": 0
+    },
+    {
+      "id": "nda-03-predatory",
+      "must_flag": [
+        {
+          "clause_type": "non_compete",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "any business that competes with any business of the Group anywhere in the Territory",
+          "found": "f1"
+        },
+        {
+          "clause_type": "liability",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "without any limit on the aggregate amount payable",
+          "found": "f3"
+        },
+        {
+          "clause_type": "governing_law",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "laws of the State of New York",
+          "found": "f4"
+        }
+      ],
+      "false_high": [],
+      "expected_overall_risk": "high",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 62557,
+      "cost_usd_est": 0.015414,
+      "findings": 5,
+      "dropped_unverified": 0
+    },
+    {
+      "id": "nda-04-bm",
+      "must_flag": [
+        {
+          "clause_type": "term",
+          "risk": "medium",
+          "page": 2,
+          "quote_contains": "suatu tempoh lima (5) tahun",
+          "found": "f3"
+        },
+        {
+          "clause_type": "confidentiality",
+          "risk": "medium",
+          "page": 2,
+          "quote_contains": "dikenakan ke atas Penerima sahaja",
+          "found": "f1"
+        },
+        {
+          "clause_type": "non_solicit",
+          "risk": "medium",
+          "page": 3,
+          "quote_contains": "dua puluh empat (24) bulan",
+          "found": "f4"
+        }
+      ],
+      "false_high": [
+        "f1"
+      ],
+      "expected_overall_risk": "medium",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "ms",
+      "latency_ms": 16317,
+      "cost_usd_est": 0.015959,
+      "findings": 5,
+      "dropped_unverified": 0
+    },
+    {
+      "id": "msa-01-fair",
+      "must_flag": [],
+      "false_high": [],
+      "expected_overall_risk": "low",
+      "overall_risk": "low",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 9655,
+      "cost_usd_est": 0.012274,
+      "findings": 0,
+      "dropped_unverified": 0
+    },
+    {
+      "id": "msa-02-autorenew",
+      "must_flag": [
+        {
+          "clause_type": "auto_renewal",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "at least ninety (90) days before the expiry",
+          "found": "f1"
+        },
+        {
+          "clause_type": "payment",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "increase the Subscription Fees by twenty per cent (20%)",
+          "found": "f2"
+        },
+        {
+          "clause_type": "termination",
+          "risk": "medium",
+          "page": 3,
+          "quote_contains": "all Subscription Fees that would have been payable for the remainder",
+          "found": "f3"
+        }
+      ],
+      "false_high": [],
+      "expected_overall_risk": "high",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 17235,
+      "cost_usd_est": 0.01993,
+      "findings": 4,
+      "dropped_unverified": 0
+    },
+    {
+      "id": "msa-03-liability",
+      "must_flag": [
+        {
+          "clause_type": "liability",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "in the one (1) month immediately preceding",
+          "found": "f2"
+        },
+        {
+          "clause_type": "liability",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "Nothing in this Agreement limits the Customer's liability",
+          "found": "f2"
+        },
+        {
+          "clause_type": "indemnity",
+          "risk": "high",
+          "page": 3,
+          "quote_contains": "whether or not caused by the negligence of the Vendor",
+          "found": "f3"
+        },
+        {
+          "clause_type": "ip_ownership",
+          "risk": "high",
+          "page": 2,
+          "quote_contains": "shall vest in and remain with the Vendor",
+          "found": "f1"
+        }
+      ],
+      "false_high": [],
+      "expected_overall_risk": "high",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 44715,
+      "cost_usd_est": 0.018396,
+      "findings": 4,
+      "dropped_unverified": 1
+    },
+    {
+      "id": "msa-04-scanned",
+      "must_flag": [
+        {
+          "clause_type": "payment",
+          "risk": "medium",
+          "page": 2,
+          "quote_contains": "two per cent (2%) per month",
+          "found": "f3"
+        },
+        {
+          "clause_type": "termination",
+          "risk": "medium",
+          "page": 3,
+          "quote_contains": "by giving the Client seven (7) days' written notice",
+          "found": "f2"
+        },
+        {
+          "clause_type": "liability",
+          "risk": "medium",
+          "page": 2,
+          "quote_contains": "three (3) months of the Monthly Fee",
+          "found": "f1"
+        }
+      ],
+      "false_high": [
+        "f1",
+        "f2"
+      ],
+      "expected_overall_risk": "medium",
+      "overall_risk": "high",
+      "contract_type_ok": true,
+      "language": "en",
+      "latency_ms": 47053,
+      "cost_usd_est": 0.029214,
+      "findings": 4,
+      "dropped_unverified": 0
+    }
+  ],
+  "errors": {},
+  "results": {
+    "nda-01-fair": {
+      "id": "1bbcf18a7a3c",
+      "created_at": "2026-10-18T04:47:25.392912Z",
+      "filename": "nda-01-fair.pdf",
+      "sample_id": "nda-01-fair",
+      "contract_type": "nda",
+      "language": "en",
+      "pages": 4,
+      "parties": [
+        "KENARI BIRU SYSTEMS SDN. BHD.",
+        "ORCHIDWAVE LABS PTE. LTD."
+      ],
+      "verdict": {
+        "overall_risk": "low",
+        "headline": "This mutual NDA is balanced and standard for Malaysia and Singapore cross-border software discussions.",
+        "summary": [
+          "The agreement applies standard mutual confidentiality terms with reasonable 2-year term and 3-year confidentiality durations.",
+          "Non-solicitation, liability exclusions, governing law, and dispute steps are balanced and align with commercial market practice."
+        ]
+      },
+      "findings": [],
+      "missing_clauses": [],
+      "metrics": {
+        "latency_ms": 9428,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 12683,
+        "output_tokens": 555,
+        "cost_usd_est": 0.011593,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "my",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (4 pages)",
+          "detail": null,
+          "ms": 10
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for confidentiality in an NDA",
+          "detail": "Confidentiality: what counts as secret, and the exceptions (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for how long the contract runs in an NDA",
+          "detail": "Term: how long the NDA and the secrecy duty last (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for non-solicitation clauses in an NDA",
+          "detail": "Non-solicitation of staff (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in an NDA",
+          "detail": "Liability and remedies, including fixed damages (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for governing law in an NDA",
+          "detail": "Governing law: which country's law applies (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for resolving disputes in an NDA",
+          "detail": "Dispute resolution: courts, mediation or arbitration (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for personal data protection in an NDA",
+          "detail": "no entry",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for transferring the contract in an NDA",
+          "detail": "Assignment: passing the contract to someone else (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on non-compete clauses",
+          "detail": "Contracts Act 1950, s 28: agreements in restraint of trade are void; Contracts Act 1950, s 29: agreements in restraint of legal proceedings are void; Personal Data Protection Act 2010, s 5: the seven principles, and what a data processor must follow; CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on liability caps",
+          "detail": "CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29; Contracts Act 1950, s 74: compensation for loss caused by breach of contract; Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75; Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach",
+          "ms": 0
+        },
+        {
+          "step": 12,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on governing law",
+          "detail": "CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29; Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75",
+          "ms": 0
+        },
+        {
+          "step": 13,
+          "action": "search_company",
+          "summary": "Checked your company's rules on non-solicitation clauses",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 14,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "0 candidate findings",
+          "ms": 5156
+        },
+        {
+          "step": 15,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 0 findings and 0 sources; dropped 0 unsupported findings and 0 unverified sources",
+          "ms": 0
+        }
+      ]
+    },
+    "nda-02-oneway": {
+      "id": "7160ef9e0cce",
+      "created_at": "2026-10-18T04:47:43.949020Z",
+      "filename": "nda-02-oneway.pdf",
+      "sample_id": "nda-02-oneway",
+      "contract_type": "nda",
+      "language": "en",
+      "pages": 4,
+      "parties": [
+        "QUILLSTONE FOOD PLATFORMS PTE. LTD.",
+        "CENDANA CRAFT BAKERY SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "This NDA is completely one-sided, imposes perpetual liability, and strips standard confidentiality carve-outs.",
+        "summary": [
+          "The agreement protects only the platform's information while explicitly allowing it to share your tender, recipes, and pricing with other suppliers.",
+          "It deletes standard exceptions for public knowledge or court orders, and binds you to secrecy forever.",
+          "It subjects you to uncapped indemnities with full legal costs while preventing you from consulting professional advisers without written consent."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "confidentiality",
+          "title": "Standard carve-outs removed and public information included as confidential",
+          "risk": "high",
+          "quote": "The Recipient's obligations under this Agreement apply without exception, irrespective of whether any Confidential Information is or becomes publicly available, was already known to the Recipient, or is required to be disclosed by any law, regulation or order of any court or authority.",
+          "page": 2,
+          "why_risky": "This eliminates all standard legal exceptions. You would be liable for breach even if information is widely known to the public, already known to you, or required to be disclosed by a court or regulator.",
+          "standard": "Standard NDAs always exclude information that is public through no fault of your own, already known, received lawfully from third parties, or compelled by law or court order.",
+          "suggested_ask": "Please restore the standard carve-outs for public information, prior knowledge, and disclosures required by applicable law or court order.",
+          "baseline_ref": "nda/confidentiality",
+          "boxes": [
+            [
+              0.1561,
+              0.7395,
+              0.8762,
+              0.7566
+            ],
+            [
+              0.1238,
+              0.7577,
+              0.8762,
+              0.7748
+            ],
+            [
+              0.1238,
+              0.7759,
+              0.8699,
+              0.793
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/confidentiality",
+              "title": "Confidentiality: what counts as secret, and the exceptions (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual** when both sides will share information. A one-way NDA is fine only when one side genuinely shares nothing. - **A clear definition.** Information counts as confidential if it is marked confidential, or if a sensible person would understand it to be confidential from its nature. - **Use limited to the purpose.** The receiver may use the information only to evaluate or carry out the s...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f2",
+          "clause_type": "confidentiality",
+          "title": "One-sided confidentiality permitting vendor to share your recipes and pricing",
+          "risk": "high",
+          "quote": "The Discloser gives no undertaking of confidentiality in respect of any information provided to it by the Recipient, including the Recipient's tender, pricing and product samples, and may use and share such information with its Affiliates and other suppliers as it sees fit.",
+          "page": 2,
+          "why_risky": "The vendor explicitly refuses to protect your confidential proposals, recipes, pricing, and product samples, giving itself permission to share your commercial trade secrets with competing suppliers.",
+          "standard": "Where both parties exchange commercial or technical information, the NDA must be mutual with equal protections for both sides.",
+          "suggested_ask": "Please make the confidentiality obligations mutual so that our tenders, pricing, recipes, and proprietary samples are equally protected.",
+          "baseline_ref": "nda/confidentiality",
+          "boxes": [
+            [
+              0.1545,
+              0.8008,
+              0.8762,
+              0.8179
+            ],
+            [
+              0.1238,
+              0.819,
+              0.8762,
+              0.8361
+            ],
+            [
+              0.1238,
+              0.8371,
+              0.7581,
+              0.8543
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/confidentiality",
+              "title": "Confidentiality: what counts as secret, and the exceptions (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual** when both sides will share information. A one-way NDA is fine only when one side genuinely shares nothing. - **A clear definition.** Information counts as confidential if it is marked confidential, or if a sensible person would understand it to be confidential from its nature. - **Use limited to the purpose.** The receiver may use the information only to evaluate or carry out the s...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f3",
+          "clause_type": "term",
+          "title": "Perpetual duration of confidentiality obligations",
+          "risk": "high",
+          "quote": "The Recipient's obligations under this Agreement shall continue in perpetuity and shall survive the completion or abandonment of the Proposed Arrangement and any termination of this Agreement.",
+          "page": 3,
+          "why_risky": "Perpetual confidentiality keeps you exposed to breach claims indefinitely for ordinary commercial discussions long after the tender is concluded.",
+          "standard": "Standard commercial confidentiality obligations last 2 to 3 years from disclosure or contract termination, with perpetual protection strictly limited to genuine trade secrets.",
+          "suggested_ask": "Please amend the confidentiality duration to expire 2 years following disclosure or termination of discussions.",
+          "baseline_ref": "nda/term",
+          "boxes": [
+            [
+              0.5737,
+              0.1072,
+              0.8762,
+              0.1243
+            ],
+            [
+              0.1238,
+              0.1254,
+              0.8762,
+              0.1425
+            ],
+            [
+              0.1238,
+              0.1435,
+              0.614,
+              0.1607
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/term",
+              "title": "Term: how long the NDA and the secrecy duty last (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- Agreement term of **1 to 2 years**, or until the deal is signed or abandoned. - Confidentiality period of **2 to 3 years** after disclosure or after the NDA ends. Two years is the most common fixed period in published market surveys. - **Up to 5 years** can be reasonable for very sensitive material, but it should be a deliberate choice, not a default. - **Trade secrets** (for example source c...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f4",
+          "clause_type": "indemnity",
+          "title": "Uncapped full indemnity including legal costs",
+          "risk": "high",
+          "quote": "The Recipient shall indemnify the Discloser and its Affiliates against all losses, costs (including legal costs on a full indemnity basis) and expenses arising from any breach of this Agreement by the Recipient or its Representatives.",
+          "page": 3,
+          "why_risky": "An uncapped indemnity for breach of contract exposes you to expansive liability and full solicitor-client legal fees without standard procedural limitations.",
+          "standard": "Standard NDAs do not include one-sided indemnities; parties rely on normal contract damages and injunctive relief where actual loss must be proven.",
+          "suggested_ask": "Please remove the indemnity clause and rely on ordinary contract damages and injunctive relief.",
+          "baseline_ref": "nda/liability",
+          "boxes": [
+            [
+              0.1584,
+              0.5759,
+              0.8762,
+              0.593
+            ],
+            [
+              0.1238,
+              0.594,
+              0.8762,
+              0.6112
+            ],
+            [
+              0.1238,
+              0.6122,
+              0.5218,
+              0.6294
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/liability",
+              "title": "Liability and remedies, including fixed damages (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Ordinary remedies**: the injured side can claim the loss it can actually prove. - **Injunction**: both sides accept that a court may order a stop to a breach quickly, because money may not fix leaked secrets. This is standard and fair. - **No fixed damages sum.** Most standard NDAs do not set a pre-agreed amount payable per breach. - **The same rules for both sides.** - Often no cap on liab...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f5",
+          "clause_type": "confidentiality",
+          "title": "Sharing with professional advisers prohibited without prior consent",
+          "risk": "medium",
+          "quote": "not disclose the Confidential Information to any person other than its Representatives, and not to its professional advisers, contractors or financiers, without the prior written consent of the Discloser;",
+          "page": 2,
+          "why_risky": "You cannot consult your legal, tax, or financial advisers to review tender specifications or commercial numbers without Quillstone's prior approval.",
+          "standard": "Standard NDAs allow sharing with professional advisers and consultants on a need-to-know basis, provided they are bound by professional or contractual secrecy duties.",
+          "suggested_ask": "Please permit disclosure on a need-to-know basis to our legal, accounting, and professional advisers.",
+          "baseline_ref": "nda/confidentiality",
+          "boxes": [
+            [
+              0.189,
+              0.592,
+              0.8762,
+              0.6092
+            ],
+            [
+              0.1619,
+              0.6102,
+              0.8762,
+              0.6273
+            ],
+            [
+              0.1619,
+              0.6284,
+              0.355,
+              0.6455
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/confidentiality",
+              "title": "Confidentiality: what counts as secret, and the exceptions (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual** when both sides will share information. A one-way NDA is fine only when one side genuinely shares nothing. - **A clear definition.** Information counts as confidential if it is marked confidential, or if a sensible person would understand it to be confidential from its nature. - **Use limited to the purpose.** The receiver may use the information only to evaluate or carry out the s...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f6",
+          "clause_type": "assignment",
+          "title": "One-sided assignment rights",
+          "risk": "medium",
+          "quote": "The Discloser may assign this Agreement or any of its rights under it to any of its Affiliates or to any purchaser of its business. The Recipient may not assign this Agreement.",
+          "page": 3,
+          "why_risky": "The vendor can assign the contract or transfer confidential arrangements to third-party purchasers or group entities, whereas you are prohibited from assigning even in a corporate restructuring.",
+          "standard": "Neither party should assign without written consent, except in connection with a merger, acquisition, or sale of substantially all assets.",
+          "suggested_ask": "Please make the assignment provision mutual, allowing either party to assign to an affiliate or successor in business.",
+          "baseline_ref": "nda/assignment",
+          "boxes": [
+            [
+              0.1534,
+              0.6708,
+              0.8762,
+              0.6879
+            ],
+            [
+              0.1238,
+              0.689,
+              0.7424,
+              0.7061
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/assignment",
+              "title": "Assignment: passing the contract to someone else (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Neither side** may assign without the other's written consent. - **Exception:** either side may assign to a company that takes over all or most of its business in a merger or sale, without needing consent. - Consent is not to be unreasonably withheld.",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        }
+      ],
+      "missing_clauses": [
+        {
+          "clause_type": "confidentiality",
+          "title": "Mutual confidentiality protection for recipient information",
+          "why_it_matters": "Cendana is submitting sensitive commercial pricing, product formulations, and operational data for tender evaluation without any contractual protection against disclosure or misuse.",
+          "suggested_ask": "Please update the agreement into a bilateral NDA protecting both parties' confidential disclosures equally."
+        }
+      ],
+      "metrics": {
+        "latency_ms": 18550,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 11621,
+        "output_tokens": 2403,
+        "cost_usd_est": 0.017727,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "sg",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (4 pages)",
+          "detail": null,
+          "ms": 12
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for confidentiality in an NDA",
+          "detail": "Confidentiality: what counts as secret, and the exceptions (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for how long the contract runs in an NDA",
+          "detail": "Term: how long the NDA and the secrecy duty last (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for indemnities in an NDA",
+          "detail": "no entry",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in an NDA",
+          "detail": "Liability and remedies, including fixed damages (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for transferring the contract in an NDA",
+          "detail": "Assignment: passing the contract to someone else (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for governing law in an NDA",
+          "detail": "Governing law: which country's law applies (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for resolving disputes in an NDA",
+          "detail": "Dispute resolution: courts, mediation or arbitration (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_company",
+          "summary": "Checked your company's rules on indemnities",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_law",
+          "summary": "Checked Singapore law on confidentiality",
+          "detail": "Man Financial (S) Pte Ltd v Wong Bark Chuan David: restraint of trade needs a legitimate interest and must go no further than necessary; Limitation Act 1959, s 6(1): six years to sue on a contract; Personal Data Protection Act 2012, s 26C(3): a data intermediary must report a breach without undue delay; Contracts (Rights of Third Parties) Act 2001, s 2: when a non-party can enforce a contract term",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Singapore law on indemnities",
+          "detail": "Denka Advantech Pte Ltd v Seraya Energy Pte Ltd: Singapore keeps the Dunlop penalty test; Personal Data Protection Act 2012, s 25: the retention limitation obligation; Unfair Contract Terms Act 1977, s 3: exclusions in the other side's written standard terms; Limitation Act 1959, s 6(1): six years to sue on a contract",
+          "ms": 0
+        },
+        {
+          "step": 12,
+          "action": "search_law",
+          "summary": "Checked Singapore law on governing law",
+          "detail": "Limitation Act 1959, s 6(1): six years to sue on a contract; Personal Data Protection Act 2012, s 26C(3): a data intermediary must report a breach without undue delay; Contracts (Rights of Third Parties) Act 2001, s 2: when a non-party can enforce a contract term; Man Financial (S) Pte Ltd v Wong Bark Chuan David: restraint of trade needs a legitimate interest and must go no further than necessary",
+          "ms": 0
+        },
+        {
+          "step": 13,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "6 candidate findings",
+          "ms": 14863
+        },
+        {
+          "step": 14,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 6 findings and 6 sources; dropped 0 unsupported findings and 0 unverified sources",
+          "ms": 35
+        }
+      ]
+    },
+    "nda-03-predatory": {
+      "id": "0f6ed4fbc4e5",
+      "created_at": "2026-10-18T04:48:46.508451Z",
+      "filename": "nda-03-predatory.pdf",
+      "sample_id": "nda-03-predatory",
+      "contract_type": "nda",
+      "language": "en",
+      "pages": 3,
+      "parties": [
+        "HALVEXA GLOBAL HOLDINGS INC.",
+        "LUMIO TANI AGRITECH SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "High-risk agreement containing severe non-compete clauses, US jurisdiction, and heavy liquidated damages inside an NDA.",
+        "summary": [
+          "The agreement includes an aggressive non-compete and customer non-solicitation clause that restrains your existing business across ASEAN.",
+          "It imposes an uncapped liquidated damages fee of USD 250,000 per violation plus mandatory legal fees under New York courts.",
+          "The confidentiality protections are entirely one-sided in favour of the vendor."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "non_compete",
+          "title": "Extensive 3-year non-compete restriction",
+          "risk": "high",
+          "quote": "Accordingly, during the term of this Agreement and for a period of three (3) years thereafter, the Counterparty shall not, and shall procure that its affiliates, directors and shareholders shall not, directly or indirectly, engage in, develop, market or invest in any business that competes with any business of the Group anywhere in the Territory, including the design or sale of irrigation controllers, soil sensors or farm analytics software.",
+          "page": 2,
+          "why_risky": "An NDA should only protect shared secrets, not restrict your right to operate in the market. This clause shuts down your ability to sell or develop your own core agritech products across all ASEAN countries for up to six years.",
+          "standard": "A standard NDA contains no non-compete restrictions, and expressly confirms that the recipient remains free to develop and sell competing solutions independently.",
+          "suggested_ask": "Please remove Section 6 entirely; non-compete restrictions do not belong in a preliminary confidentiality agreement.",
+          "baseline_ref": "nda/non_compete",
+          "boxes": [
+            [
+              0.1537,
+              0.5328,
+              0.8762,
+              0.5499
+            ],
+            [
+              0.1238,
+              0.5509,
+              0.8762,
+              0.5681
+            ],
+            [
+              0.1238,
+              0.5691,
+              0.8762,
+              0.5863
+            ],
+            [
+              0.1238,
+              0.5873,
+              0.8762,
+              0.6044
+            ],
+            [
+              0.1238,
+              0.6055,
+              0.5914,
+              0.6226
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/non_compete",
+              "title": "Non-compete inside an NDA",
+              "jurisdiction": null,
+              "excerpt": "- **A standard NDA has no non-compete at all.** It protects information, not market position. - Many standard forms say the opposite: the receiver remains free to build or buy similar products, as long as it does not misuse the confidential information. - Where a business restriction is genuinely needed (for example in an exclusive distribution deal), it belongs in the main commercial agreement...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f2",
+          "clause_type": "non_solicit",
+          "title": "Broad non-solicitation and customer non-deal restriction",
+          "risk": "high",
+          "quote": "During the same period, the Counterparty shall not solicit, or accept business from, any person that was a customer or distributor of the Group in the Territory at any time during the term of this Agreement.",
+          "page": 2,
+          "why_risky": "This stops you from even accepting unsolicited business from any past or present customer or distributor of Halvexa across Southeast Asia, which functions as an indirect trade restraint.",
+          "standard": "Non-solicitation clauses in NDAs are typically limited to key employees directly involved in discussions for 6 to 12 months, rather than broad bans on customers or business partners.",
+          "suggested_ask": "Please remove Section 6.3, or limit non-solicitation strictly to key personnel involved in our discussions.",
+          "baseline_ref": "nda/non_solicit",
+          "boxes": [
+            [
+              0.1563,
+              0.6304,
+              0.8762,
+              0.6475
+            ],
+            [
+              0.1238,
+              0.6486,
+              0.8762,
+              0.6657
+            ],
+            [
+              0.1238,
+              0.6668,
+              0.3071,
+              0.6839
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/non_solicit",
+              "title": "Non-solicitation of staff (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual**: both sides make the same promise. - **Short**: 6 to 12 months after the NDA ends. - **Narrow**: covers only employees the other side actually met or worked with during the discussions. - **Carve-out for general hiring**: job adverts and recruiters not aimed at the other side's staff do not count, and neither does hiring someone who applies on their own initiative.",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f3",
+          "clause_type": "liability",
+          "title": "Severe liquidated damages per breach",
+          "risk": "high",
+          "quote": "In addition to any other remedy, the Counterparty shall pay to Halvexa, as liquidated damages and not as a penalty, the sum of USD 250,000 for each breach of this Agreement, without any limit on the aggregate amount payable, together with all attorneys' fees and costs incurred by Halvexa in enforcing this Agreement.",
+          "page": 3,
+          "why_risky": "Setting a fixed pre-agreed sum of USD 250,000 for every single breach without an overall cap creates an immense financial exposure for minor or technical infractions.",
+          "standard": "Standard NDAs rely on ordinary legal damages proven in court and injunctions, without pre-set liquidated damages penalties.",
+          "suggested_ask": "Please delete Section 8.2 and Section 8.3 so that damages are based on actual, proven losses.",
+          "baseline_ref": "nda/liability",
+          "boxes": [
+            [
+              0.158,
+              0.0735,
+              0.8762,
+              0.0906
+            ],
+            [
+              0.1238,
+              0.0917,
+              0.8762,
+              0.1088
+            ],
+            [
+              0.1238,
+              0.1099,
+              0.8762,
+              0.127
+            ],
+            [
+              0.1238,
+              0.128,
+              0.5434,
+              0.1452
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/liability",
+              "title": "Liability and remedies, including fixed damages (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Ordinary remedies**: the injured side can claim the loss it can actually prove. - **Injunction**: both sides accept that a court may order a stop to a breach quickly, because money may not fix leaked secrets. This is standard and fair. - **No fixed damages sum.** Most standard NDAs do not set a pre-agreed amount payable per breach. - **The same rules for both sides.** - Often no cap on liab...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f4",
+          "clause_type": "governing_law",
+          "title": "Distant governing law and exclusive New York jurisdiction",
+          "risk": "high",
+          "quote": "Each party irrevocably submits to the exclusive jurisdiction of the state and federal courts located in New York County, New York, and waives any objection to venue in such courts, including any objection that such courts are an inconvenient forum.",
+          "page": 3,
+          "why_risky": "Defending against any claim in New York courts would involve prohibitive legal expenses, hiring US attorneys, and high travel costs for a Malaysian company.",
+          "standard": "For contracts involving Southeast Asian business discussions, dispute resolution should take place locally in Malaysia or neutral Singapore.",
+          "suggested_ask": "Please change the governing law to Malaysian or Singapore law, with dispute resolution or arbitration locally in Kuala Lumpur or Singapore.",
+          "baseline_ref": "nda/governing_law",
+          "boxes": [
+            [
+              0.1645,
+              0.386,
+              0.8762,
+              0.4031
+            ],
+            [
+              0.1238,
+              0.4041,
+              0.8762,
+              0.4213
+            ],
+            [
+              0.1238,
+              0.4223,
+              0.6454,
+              0.4395
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/governing_law",
+              "title": "Governing law: which country's law applies (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- For two Malaysian companies: **Malaysian law**, courts in Malaysia (often Kuala Lumpur). - For a Malaysian and a Singaporean company: **Malaysian or Singapore law**, with the matching courts. Both are common, familiar and close to home. - Either side may still seek an urgent injunction in any court where the other side is. - Non-exclusive jurisdiction is friendlier than exclusive jurisdiction...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f5",
+          "clause_type": "assignment",
+          "title": "One-sided assignment rights",
+          "risk": "medium",
+          "quote": "Halvexa may assign this Agreement to any member of the Group without the Counterparty's consent. The Counterparty shall not assign this Agreement without Halvexa's prior written consent.",
+          "page": 3,
+          "why_risky": "The vendor can transfer this agreement to any affiliate without your consent, while you are barred from transferring your rights even during a corporate restructuring.",
+          "standard": "Assignment rules should be mutual, requiring mutual consent except in routine mergers or acquisitions.",
+          "suggested_ask": "Please make the assignment provision mutual so neither party may assign without the other's prior written consent.",
+          "baseline_ref": "nda/assignment",
+          "boxes": [
+            [
+              0.1537,
+              0.2479,
+              0.8762,
+              0.265
+            ],
+            [
+              0.1238,
+              0.2661,
+              0.8762,
+              0.2832
+            ],
+            [
+              0.1238,
+              0.2843,
+              0.1905,
+              0.3014
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/assignment",
+              "title": "Assignment: passing the contract to someone else (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Neither side** may assign without the other's written consent. - **Exception:** either side may assign to a company that takes over all or most of its business in a merger or sale, without needing consent. - Consent is not to be unreasonably withheld.",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        }
+      ],
+      "missing_clauses": [
+        {
+          "clause_type": "confidentiality",
+          "title": "Mutual confidentiality protection",
+          "why_it_matters": "The NDA only protects information disclosed by Halvexa. If you disclose any confidential business plans, customer data, or product details during distributor talks, Halvexa has no confidentiality obligations toward you.",
+          "suggested_ask": "Please make the confidentiality obligations mutual so that any information Lumio Tani discloses is equally protected."
+        }
+      ],
+      "metrics": {
+        "latency_ms": 62557,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 9932,
+        "output_tokens": 2124,
+        "cost_usd_est": 0.015414,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "other",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (3 pages)",
+          "detail": null,
+          "ms": 8
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for confidentiality in an NDA",
+          "detail": "Confidentiality: what counts as secret, and the exceptions (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for non-compete clauses in an NDA",
+          "detail": "Non-compete inside an NDA",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for non-solicitation clauses in an NDA",
+          "detail": "Non-solicitation of staff (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in an NDA",
+          "detail": "Liability and remedies, including fixed damages (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for governing law in an NDA",
+          "detail": "Governing law: which country's law applies (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for resolving disputes in an NDA",
+          "detail": "Dispute resolution: courts, mediation or arbitration (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for transferring the contract in an NDA",
+          "detail": "Assignment: passing the contract to someone else (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for how long the contract runs in an NDA",
+          "detail": "Term: how long the NDA and the secrecy duty last (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_company",
+          "summary": "Checked your company's rules on penalty clauses",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_company",
+          "summary": "Checked your company's rules on confidentiality",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 12,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "5 candidate findings",
+          "ms": 11507
+        },
+        {
+          "step": 13,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 5 findings and 5 sources; dropped 0 unsupported findings and 0 unverified sources",
+          "ms": 31
+        }
+      ]
+    },
+    "nda-04-bm": {
+      "id": "d2ef67cd9c46",
+      "created_at": "2026-10-18T04:49:02.828867Z",
+      "filename": "nda-04-bm.pdf",
+      "sample_id": "nda-04-bm",
+      "contract_type": "nda",
+      "language": "ms",
+      "pages": 4,
+      "parties": [
+        "MERBOK DATA SERVICES SDN. BHD.",
+        "TAUFAN FREIGHT SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "One-sided NDA: vendor protects its own data while leaving the customer's fleet data unprotected, with unfair termination rights.",
+        "summary": [
+          "The agreement explicitly frees the vendor from any duty of confidentiality regarding your operational and fleet data.",
+          "The vendor can terminate at any time, but you cannot terminate without their consent, and confidentiality duties last up to 10 years total.",
+          "A broad, one-sided 24-month non-solicitation clause restricts you from hiring any vendor staff."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "confidentiality",
+          "title": "One-sided confidentiality disclaiming protection for your fleet data",
+          "risk": "high",
+          "quote": "Obligasi kerahsiaan di bawah Perjanjian ini dikenakan ke atas Penerima sahaja. Pihak Pendedah tidak mempunyai sebarang obligasi kerahsiaan terhadap maklumat yang diberikan oleh Penerima kepadanya, termasuk data operasi armada Penerima yang dikongsi semasa projek rintis.",
+          "page": 2,
+          "why_risky": "You are sharing sensitive commercial and fleet operational data during the pilot project, but the vendor has explicitly excluded any obligation to keep your information confidential.",
+          "standard": "In exploratory discussions or pilot projects where both sides share data, confidentiality obligations should be strictly mutual.",
+          "suggested_ask": "Please make the confidentiality obligations mutual so that our operational and fleet data is protected under the exact same terms as your data.",
+          "baseline_ref": "nda/confidentiality",
+          "boxes": [
+            [
+              0.1573,
+              0.3227,
+              0.8762,
+              0.3398
+            ],
+            [
+              0.1238,
+              0.3408,
+              0.8762,
+              0.358
+            ],
+            [
+              0.1238,
+              0.359,
+              0.8762,
+              0.3762
+            ],
+            [
+              0.1238,
+              0.3772,
+              0.2189,
+              0.3943
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/confidentiality",
+              "title": "Confidentiality: what counts as secret, and the exceptions (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual** when both sides will share information. A one-way NDA is fine only when one side genuinely shares nothing. - **A clear definition.** Information counts as confidential if it is marked confidential, or if a sensible person would understand it to be confidential from its nature. - **Use limited to the purpose.** The receiver may use the information only to evaluate or carry out the s...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f2",
+          "clause_type": "termination",
+          "title": "One-sided right to terminate early",
+          "risk": "high",
+          "quote": "Pihak Pendedah boleh menamatkan Perjanjian ini pada bila-bila masa dengan memberikan notis bertulis kepada Penerima. Penerima tidak boleh menamatkan Perjanjian ini sebelum tamat tempoh tersebut tanpa persetujuan bertulis Pihak Pendedah.",
+          "page": 2,
+          "why_risky": "The vendor can exit the agreement at will, but you are locked into the contract for 5 years unless the vendor gives written permission to terminate.",
+          "standard": "Either party should have the right to terminate exploratory discussions and the NDA at any time with prior written notice.",
+          "suggested_ask": "Please update Clause 4.2 so that either party may terminate the agreement at any time by giving written notice.",
+          "baseline_ref": "nda/termination",
+          "boxes": [
+            [
+              0.1541,
+              0.8142,
+              0.8762,
+              0.8314
+            ],
+            [
+              0.1238,
+              0.8324,
+              0.8762,
+              0.8496
+            ],
+            [
+              0.1238,
+              0.8506,
+              0.5984,
+              0.8677
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/termination",
+              "title": "Termination, and return or destruction of information (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Either side may end** the NDA by written notice at any time. Ending it stops new disclosures; the secrecy duty for information already shared continues for the agreed period. - **On request or on termination**, the receiver returns or destroys the information and, if asked, confirms this in writing. - **Practical exception:** copies kept in automatic backups, or kept because a law requires...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f3",
+          "clause_type": "term",
+          "title": "Excessive 5-year initial term and 5-year post-termination survival",
+          "risk": "medium",
+          "quote": "Perjanjian ini berkuat kuasa pada Tarikh Berkuat Kuasa dan akan kekal berkuat kuasa bagi suatu tempoh lima (5) tahun, dan obligasi Penerima di bawah Fasal 2 akan terus terpakai selama lima (5) tahun selepas tamat atau penamatan Perjanjian ini.",
+          "page": 2,
+          "why_risky": "An initial agreement term of 5 years combined with a 5-year survival period keeps you bound to secrecy for up to 10 years for ordinary business evaluation discussions.",
+          "standard": "An agreement term of 1 to 2 years with a confidentiality survival period of 2 to 3 years after termination is standard practice.",
+          "suggested_ask": "Please shorten the agreement term to 1 or 2 years, with confidentiality obligations surviving for 2 years after termination.",
+          "baseline_ref": "nda/term",
+          "boxes": [
+            [
+              0.154,
+              0.753,
+              0.8762,
+              0.7701
+            ],
+            [
+              0.1238,
+              0.7711,
+              0.8762,
+              0.7883
+            ],
+            [
+              0.1238,
+              0.7893,
+              0.6512,
+              0.8065
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/term",
+              "title": "Term: how long the NDA and the secrecy duty last (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- Agreement term of **1 to 2 years**, or until the deal is signed or abandoned. - Confidentiality period of **2 to 3 years** after disclosure or after the NDA ends. Two years is the most common fixed period in published market surveys. - **Up to 5 years** can be reasonable for very sensitive material, but it should be a deliberate choice, not a default. - **Trade secrets** (for example source c...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f4",
+          "clause_type": "non_solicit",
+          "title": "One-sided, 24-month non-solicitation restriction on employees",
+          "risk": "medium",
+          "quote": "Penerima tidak boleh, dalam tempoh Perjanjian ini dan bagi tempoh dua puluh empat (24) bulan selepas itu, secara langsung atau tidak langsung memujuk atau menggaji mana-mana pekerja Pihak Pendedah.",
+          "page": 3,
+          "why_risky": "A 24-month restriction prohibiting you from hiring any vendor employee is overly broad, one-sided, and contains no exceptions for general recruitment advertising or unsolicited applicants.",
+          "standard": "Non-solicit covenants should be mutual, limited to 6 to 12 months, restricted only to personnel directly involved in the project, and exclude ordinary public job postings.",
+          "suggested_ask": "Please make the non-solicit mutual, reduce the period to 12 months, limit it to employees directly involved in our project, and clarify that general job advertisements are excluded.",
+          "baseline_ref": "nda/non_solicit",
+          "boxes": [
+            [
+              0.1547,
+              0.3334,
+              0.8762,
+              0.3506
+            ],
+            [
+              0.1238,
+              0.3516,
+              0.8762,
+              0.3688
+            ],
+            [
+              0.1238,
+              0.3698,
+              0.3209,
+              0.3869
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/non_solicit",
+              "title": "Non-solicitation of staff (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual**: both sides make the same promise. - **Short**: 6 to 12 months after the NDA ends. - **Narrow**: covers only employees the other side actually met or worked with during the discussions. - **Carve-out for general hiring**: job adverts and recruiters not aimed at the other side's staff do not count, and neither does hiring someone who applies on their own initiative.",
+              "url": null,
+              "page": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-ca1950-s28",
+              "title": "Contracts Act 1950, s 28: agreements in restraint of trade are void",
+              "jurisdiction": "my",
+              "excerpt": "\"28. Every agreement by which anyone is restrained from exercising a lawful profession, trade, or business of any kind, is to that extent void.\" \"Exception 1\u2014One who sells the goodwill of a business may agree with the buyer to refrain carrying on a similar business, within specified local limits, so long as the buyer, or any person deriving title to the goodwill from him, carries on a like busi...",
+              "url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20136.pdf",
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f5",
+          "clause_type": "assignment",
+          "title": "One-sided assignment restriction",
+          "risk": "low",
+          "quote": "Penerima tidak boleh menyerahhakkan atau memindahkan hak atau obligasinya di bawah Perjanjian ini tanpa persetujuan bertulis Pihak Pendedah terlebih dahulu.",
+          "page": 3,
+          "why_risky": "Only the recipient is prohibited from assigning the agreement without consent, while the vendor is technically unconstrained by this clause.",
+          "standard": "Assignment restrictions should apply equally to both parties, with standard carve-outs for corporate reorganisations or sales of business.",
+          "suggested_ask": "Please make the assignment clause mutual so that neither party may assign without prior consent, except in connection with a corporate reorganisation or merger.",
+          "baseline_ref": "nda/assignment",
+          "boxes": [
+            [
+              0.1551,
+              0.5233,
+              0.8762,
+              0.5405
+            ],
+            [
+              0.1238,
+              0.5415,
+              0.6925,
+              0.5586
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "nda/assignment",
+              "title": "Assignment: passing the contract to someone else (NDA)",
+              "jurisdiction": null,
+              "excerpt": "- **Neither side** may assign without the other's written consent. - **Exception:** either side may assign to a company that takes over all or most of its business in a merger or sale, without needing consent. - Consent is not to be unreasonably withheld.",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        }
+      ],
+      "missing_clauses": [],
+      "metrics": {
+        "latency_ms": 16317,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 10219,
+        "output_tokens": 2212,
+        "cost_usd_est": 0.015959,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "my",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (4 pages)",
+          "detail": null,
+          "ms": 9
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for confidentiality in an NDA",
+          "detail": "Confidentiality: what counts as secret, and the exceptions (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for how long the contract runs in an NDA",
+          "detail": "Term: how long the NDA and the secrecy duty last (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending the contract in an NDA",
+          "detail": "Termination, and return or destruction of information (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for non-solicitation clauses in an NDA",
+          "detail": "Non-solicitation of staff (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for transferring the contract in an NDA",
+          "detail": "Assignment: passing the contract to someone else (NDA)",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on non-compete clauses",
+          "detail": "Contracts Act 1950, s 28: agreements in restraint of trade are void; Contracts Act 1950, s 29: agreements in restraint of legal proceedings are void; CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29; Personal Data Protection Act 2010, s 5: the seven principles, and what a data processor must follow",
+          "ms": 1
+        },
+        {
+          "step": 8,
+          "action": "search_company",
+          "summary": "Checked your company's rules on non-solicitation clauses",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "5 candidate findings",
+          "ms": 12474
+        },
+        {
+          "step": 10,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 5 findings and 6 sources; dropped 0 unsupported findings and 0 unverified sources",
+          "ms": 28
+        }
+      ]
+    },
+    "msa-01-fair": {
+      "id": "b21e0bd5a43a",
+      "created_at": "2026-10-18T04:49:12.483942Z",
+      "filename": "msa-01-fair.pdf",
+      "sample_id": "msa-01-fair",
+      "contract_type": "service_agreement",
+      "language": "en",
+      "pages": 5,
+      "parties": [
+        "AWANBIRU SOFTWARE SDN. BHD.",
+        "PANTAI TIMUR HOME LIVING SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "low",
+        "headline": "Balanced and standard SaaS contract with fair protections for the customer.",
+        "summary": [
+          "The contract matches market standards across liability, auto-renewal, IP ownership, and data privacy.",
+          "The customer retains ownership of custom deliverables and its data, with clear exit assistance terms.",
+          "Liability caps and renewal terms are mutual and reasonable under Malaysian commercial practice."
+        ]
+      },
+      "findings": [],
+      "missing_clauses": [],
+      "metrics": {
+        "latency_ms": 9655,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 13725,
+        "output_tokens": 528,
+        "cost_usd_est": 0.012274,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "my",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (5 pages)",
+          "detail": null,
+          "ms": 12
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in a service agreement",
+          "detail": "Limitation of liability: the most either side can be made to pay (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending the contract in a service agreement",
+          "detail": "Termination: how either side can end the agreement (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for automatic renewal in a service agreement",
+          "detail": "Auto-renewal and price increases on renewal (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ownership of work and IP in a service agreement",
+          "detail": "Ownership of work product and IP (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for indemnities in a service agreement",
+          "detail": "Indemnity: promising to cover the other side's losses (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for personal data protection in a service agreement",
+          "detail": "Personal data protection (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for payment terms in a service agreement",
+          "detail": "Payment, late interest and price increases (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for warranties in a service agreement",
+          "detail": "Warranties: what the vendor promises about the service (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on liability caps",
+          "detail": "CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29; Limitation Act 1953, s 6(1): six years to sue on a contract; Contracts Act 1950, s 29: agreements in restraint of legal proceedings are void; Contracts Act 1950, s 74: compensation for loss caused by breach of contract",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on personal data protection",
+          "detail": "Personal Data Protection Act 2010, s 129: transferring personal data outside Malaysia; Personal Data Protection Act 2010, s 9: the Security Principle for controllers and processors; Personal Data Protection Act 2010, s 12A: appointing a data protection officer; Personal Data Protection Act 2010, s 5: the seven principles, and what a data processor must follow",
+          "ms": 0
+        },
+        {
+          "step": 12,
+          "action": "search_company",
+          "summary": "Checked your company's rules on liability caps",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 13,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "0 candidate findings",
+          "ms": 3036
+        },
+        {
+          "step": 14,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 0 findings and 0 sources; dropped 0 unsupported findings and 0 unverified sources",
+          "ms": 0
+        }
+      ]
+    },
+    "msa-02-autorenew": {
+      "id": "7f2dab8eb534",
+      "created_at": "2026-10-18T04:49:29.724479Z",
+      "filename": "msa-02-autorenew.pdf",
+      "sample_id": "msa-02-autorenew",
+      "contract_type": "service_agreement",
+      "language": "en",
+      "pages": 4,
+      "parties": [
+        "KIRIVANE TELEMATICS PTE. LTD.",
+        "BAYU SELATAN LOGISTICS SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "Aggressive auto-renewal, automatic 20% yearly price hikes, and harsh early termination exit penalties create substantial financial exposure.",
+        "summary": [
+          "The contract locks you into 24-month automatic renewals requiring 90 days' registered post notice to prevent.",
+          "Subscription fees automatically increase by 20% every year without notice or any right to terminate.",
+          "Cancelling early for convenience requires paying 100% of the remaining fees for the rest of the multi-year term."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "auto_renewal",
+          "title": "Long renewal period with 90-day registered post notice",
+          "risk": "high",
+          "quote": "Upon the expiry of the Initial Term, this Agreement shall automatically renew for successive periods of twenty-four (24) months each (each a \"Renewal Term\") unless either party gives written notice of non-renewal to the other party at least ninety (90) days before the expiry of the Initial Term or the then-current Renewal Term.",
+          "page": 2,
+          "why_risky": "The contract automatically extends for 24 months (twice the initial 12-month period), and requires 90 days' prior notice strictly by registered post. Missing this restrictive window locks your business in for two full additional years.",
+          "standard": "Balanced agreements renew for the same or shorter duration (typically 12 months or month-to-month) with 30 days' advance notice permitted via email.",
+          "suggested_ask": "Can we agree that renewal is for 12 months with 30 days' advance notice deliverable by email?",
+          "baseline_ref": "service_agreement/auto_renewal",
+          "boxes": [
+            [
+              0.154,
+              0.3994,
+              0.8762,
+              0.4166
+            ],
+            [
+              0.1238,
+              0.4176,
+              0.8762,
+              0.4347
+            ],
+            [
+              0.1238,
+              0.4358,
+              0.8762,
+              0.4529
+            ],
+            [
+              0.1238,
+              0.454,
+              0.4855,
+              0.4711
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/auto_renewal",
+              "title": "Auto-renewal and price increases on renewal (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- Renewal for **the same or a shorter period**, usually 12 months or month-to-month. - **Notice to stop renewal of 30 days** before the end date (60 days at most). - The vendor **sends a reminder** 30-60 days before the notice deadline. - After renewal, the customer may still leave on reasonable notice, or renewal is month-to-month. - Any price change on renewal is announced at least 60 days ah...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f2",
+          "clause_type": "payment",
+          "title": "Compulsory 20% annual price increase without termination rights",
+          "risk": "high",
+          "quote": "With effect from each anniversary of the Effective Date, the Provider shall be entitled to increase the Subscription Fees by twenty per cent (20%) of the Subscription Fees then in effect, without further notice to the Customer. Such increase shall apply automatically and shall not give the Customer any right to terminate this Agreement.",
+          "page": 2,
+          "why_risky": "A 20% compound yearly price hike significantly exceeds normal commercial inflation and occurs automatically without notice, while explicitly prohibiting you from cancelling in response.",
+          "standard": "Fee increases should occur no more than annually, require at least 60 days' prior written notice, be capped at 3% to 5% (or CPI), and permit customer termination if rejected.",
+          "suggested_ask": "Can annual fee increases be capped at 5% with 60 days' advance notice and an option to exit if we do not accept the increase?",
+          "baseline_ref": "service_agreement/payment",
+          "boxes": [
+            [
+              0.1562,
+              0.6782,
+              0.8762,
+              0.6954
+            ],
+            [
+              0.1238,
+              0.6964,
+              0.8762,
+              0.7135
+            ],
+            [
+              0.1238,
+              0.7146,
+              0.8762,
+              0.7317
+            ],
+            [
+              0.1238,
+              0.7328,
+              0.5659,
+              0.7499
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/payment",
+              "title": "Payment, late interest and price increases (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **Payment within 30 days** of a correct invoice (30-60 days is common in Malaysia and Singapore). - Prices stated **excluding tax**, with Malaysian service tax (SST) or Singapore GST added where it applies. - **Disputed invoices:** the customer may hold back the disputed part in good faith while paying the rest, and both sides try to resolve it quickly. - **Late interest** at a modest rate, r...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f3",
+          "clause_type": "termination",
+          "title": "Early termination fee accelerates 100% of remaining term fees",
+          "risk": "high",
+          "quote": "The Customer may terminate this Agreement before the end of the Subscription Term for convenience by giving thirty (30) days' written notice, provided that it pays to the Provider, as an early termination charge, all Subscription Fees that would have been payable for the remainder of the then-current Subscription Term.",
+          "page": 3,
+          "why_risky": "Requiring full payment of all remaining fees across a 12-month or 24-month period makes the right to terminate for convenience purely illusory and acts as a steep penalty.",
+          "standard": "Standard convenience termination allows exit on 30 to 90 days' notice with payment only for services rendered and direct non-recoverable out-of-pocket costs incurred by the vendor.",
+          "suggested_ask": "Can the early termination charge be limited to 30 days' notice fees and any unrecovered device installation expenses?",
+          "baseline_ref": "service_agreement/termination",
+          "boxes": [
+            [
+              0.1554,
+              0.0735,
+              0.8762,
+              0.0906
+            ],
+            [
+              0.1238,
+              0.0917,
+              0.8762,
+              0.1088
+            ],
+            [
+              0.1238,
+              0.1099,
+              0.8762,
+              0.127
+            ],
+            [
+              0.1238,
+              0.128,
+              0.4208,
+              0.1452
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/termination",
+              "title": "Termination: how either side can end the agreement (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **For cause, both sides:** either side may end it if the other commits a serious breach and does not fix it within **30 days** of written notice, or becomes insolvent. - **For convenience:** the customer (and often both sides) may end it without a reason on **30 to 90 days'** notice, paying for work done and committed costs up to that date. - **The same notice periods for both sides**, or a l...",
+              "url": null,
+              "page": null
+            },
+            {
+              "kind": "case",
+              "ref": "sg-case-denka",
+              "title": "Denka Advantech Pte Ltd v Seraya Energy Pte Ltd: Singapore keeps the Dunlop penalty test",
+              "jurisdiction": "sg",
+              "excerpt": "Summary: Seraya claimed liquidated damages (LD) under electricity retailer agreements (ERAs) with Denka, in a dispute that also turned on whether Denka had breached them. The Court of Appeal declined to follow the UK Supreme Court's restatement in Cavendish v Makdessi and the Australian approach in Andrews. At [185]: \"(a) First, the Penalty Rule applies only in the context of a breach of contra...",
+              "url": "https://www.elitigation.sg/gd/s/2020_SGCA_119",
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f4",
+          "clause_type": "auto_renewal",
+          "title": "Restrictive notice method by registered post only",
+          "risk": "medium",
+          "quote": "Notice of non-renewal is effective only if sent by registered post to the Provider's registered office marked for the attention of the Contracts Department. Notice by email or through the Portal shall not be effective for the purposes of Clause 4.2.",
+          "page": 2,
+          "why_risky": "Disallowing electronic notices creates a procedural trap where an otherwise timely notice sent via email or the management portal is legally invalid.",
+          "standard": "Standard contracts permit formal written notice by email between designated account managers or contact addresses.",
+          "suggested_ask": "Can we update Clause 4.3 to allow written notice by email to a nominated representative?",
+          "baseline_ref": "service_agreement/auto_renewal",
+          "boxes": [
+            [
+              0.1541,
+              0.4789,
+              0.8762,
+              0.496
+            ],
+            [
+              0.1238,
+              0.4971,
+              0.8762,
+              0.5142
+            ],
+            [
+              0.1238,
+              0.5152,
+              0.5817,
+              0.5324
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/auto_renewal",
+              "title": "Auto-renewal and price increases on renewal (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- Renewal for **the same or a shorter period**, usually 12 months or month-to-month. - **Notice to stop renewal of 30 days** before the end date (60 days at most). - The vendor **sends a reminder** 30-60 days before the notice deadline. - After renewal, the customer may still leave on reasonable notice, or renewal is month-to-month. - Any price change on renewal is announced at least 60 days ah...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        }
+      ],
+      "missing_clauses": [
+        {
+          "clause_type": "warranty",
+          "title": "Service level agreement remedies and service credits",
+          "why_it_matters": "Clause 2.2 states an uptime target of 99% but does not provide any service credits or remedy if Kirivane fails to achieve that availability level.",
+          "suggested_ask": "Could we add a service credit mechanism to Schedule 2 providing fee deductions if monthly portal availability falls below 99%?"
+        },
+        {
+          "clause_type": "payment",
+          "title": "Invoice dispute right",
+          "why_it_matters": "The agreement gives the provider the right to charge interest and suspend services for unpaid amounts, but lacks an express clause permitting the customer to withhold disputed amounts in good faith pending prompt review.",
+          "suggested_ask": "Can we insert a standard clause clarifying that undisputed amounts will be paid on time while disputed invoice amounts may be withheld without penalty until resolved?"
+        }
+      ],
+      "metrics": {
+        "latency_ms": 17235,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 12958,
+        "output_tokens": 2723,
+        "cost_usd_est": 0.01993,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "sg",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (4 pages)",
+          "detail": null,
+          "ms": 10
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for automatic renewal in a service agreement",
+          "detail": "Auto-renewal and price increases on renewal (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for how long the contract runs in a service agreement",
+          "detail": "Term: how long the agreement runs (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for payment terms in a service agreement",
+          "detail": "Payment, late interest and price increases (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending the contract in a service agreement",
+          "detail": "Termination: how either side can end the agreement (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in a service agreement",
+          "detail": "Limitation of liability: the most either side can be made to pay (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for warranties in a service agreement",
+          "detail": "Warranties: what the vendor promises about the service (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_law",
+          "summary": "Checked Singapore law on penalty clauses",
+          "detail": "Denka Advantech Pte Ltd v Seraya Energy Pte Ltd: Singapore keeps the Dunlop penalty test; Limitation Act 1959, s 6(1): six years to sue on a contract; Personal Data Protection Act 2012, s 25: the retention limitation obligation",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_law",
+          "summary": "Checked Singapore law on penalty clauses",
+          "detail": "Denka Advantech Pte Ltd v Seraya Energy Pte Ltd: Singapore keeps the Dunlop penalty test; Misrepresentation Act 1967, s 3: excluding liability for pre-contract misrepresentation; Limitation Act 1959, s 6(1): six years to sue on a contract; Unfair Contract Terms Act 1977, s 2: excluding liability for negligence",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_law",
+          "summary": "Checked Singapore law on liability caps",
+          "detail": "Unfair Contract Terms Act 1977, s 11: the reasonableness test, caps and burden of proof; Unfair Contract Terms Act 1977, s 2: excluding liability for negligence; Unfair Contract Terms Act 1977, s 3: exclusions in the other side's written standard terms; Misrepresentation Act 1967, s 3: excluding liability for pre-contract misrepresentation",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Singapore law on automatic renewal",
+          "detail": "Unfair Contract Terms Act 1977, s 2: excluding liability for negligence; Unfair Contract Terms Act 1977, s 11: the reasonableness test, caps and burden of proof",
+          "ms": 0
+        },
+        {
+          "step": 12,
+          "action": "search_company",
+          "summary": "Checked your company's rules on automatic renewal",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 13,
+          "action": "search_company",
+          "summary": "Checked your company's rules on payment terms",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 14,
+          "action": "search_company",
+          "summary": "Checked your company's rules on penalty clauses",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 15,
+          "action": "search_company",
+          "summary": "Checked your company's rules on governing law",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 16,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "4 candidate findings",
+          "ms": 10734
+        },
+        {
+          "step": 17,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 4 findings and 5 sources; dropped 0 unsupported findings and 0 unverified sources",
+          "ms": 26
+        }
+      ]
+    },
+    "msa-03-liability": {
+      "id": "3af6ae3198fa",
+      "created_at": "2026-10-18T04:50:14.445028Z",
+      "filename": "msa-03-liability.pdf",
+      "sample_id": "msa-03-liability",
+      "contract_type": "service_agreement",
+      "language": "en",
+      "pages": 4,
+      "parties": [
+        "STRATAKIN DIGITAL PTE. LTD.",
+        "RIMBUN PAGI CAFE GROUP SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "High-risk contract: the vendor owns your custom app, caps its liability to one month of fees, and takes an unrestricted indemnity.",
+        "summary": [
+          "The vendor retains all intellectual property in your custom app, refuses to hand over source code, and can remove the app upon termination.",
+          "Liability terms are severely unbalanced: the vendor's liability is capped at just one month of fees while your liability is completely uncapped.",
+          "You are required to indemnify the vendor for any losses even if caused by the vendor's own negligence, with zero reverse indemnity for IP infringement."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "ip_ownership",
+          "title": "Vendor retains ownership and source code of custom software",
+          "risk": "high",
+          "quote": "All Intellectual Property Rights in the Deliverables, including any software developed specifically for the Customer, shall vest in and remain with the Vendor.",
+          "page": 2,
+          "why_risky": "You are paying for custom software development, but you will only receive a temporary licence that ends upon contract termination. You cannot take your app to another developer or keep operating it if you leave this vendor.",
+          "standard": "Custom deliverables developed specifically for the customer should transfer to the customer upon full payment of development fees, alongside source code delivery or escrow.",
+          "suggested_ask": "Can we amend Clause 5.2 so that all intellectual property rights in custom deliverables and the bespoke source code transfer to us upon payment of the development fees?",
+          "baseline_ref": "service_agreement/ip_ownership",
+          "boxes": [
+            [
+              0.1593,
+              0.5375,
+              0.8762,
+              0.5546
+            ],
+            [
+              0.1238,
+              0.5557,
+              0.6765,
+              0.5728
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/ip_ownership",
+              "title": "Ownership of work product and IP (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **Custom deliverables belong to the customer** once paid for: work made specifically for the customer (a custom app, a design, a report) transfers to the customer on payment. - **The vendor keeps its existing tools and platform** (\"background IP\") and general know-how, and gives the customer a **licence** (permission) to use whatever is built into the deliverables, for as long as the customer...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f2",
+          "clause_type": "liability",
+          "title": "Unilateral limitation of liability favoring vendor only",
+          "risk": "high",
+          "quote": "Nothing in this Agreement limits the Customer's liability to the Vendor, and the limitations in Clauses 7.1 and 7.2 apply to the Vendor only.",
+          "page": 3,
+          "why_risky": "Your company faces unlimited liability for any breach or indirect loss, whereas the vendor enjoys strong exclusions and an extremely low cap.",
+          "standard": "Limitations of liability and exclusions of consequential loss should be mutual, protecting both parties equally.",
+          "suggested_ask": "Can Clauses 7.1 and 7.2 be made mutual so that our liability is subject to the same cap and exclusions as the vendor's?",
+          "baseline_ref": "service_agreement/liability",
+          "boxes": [
+            [
+              0.1541,
+              0.1166,
+              0.8762,
+              0.1337
+            ],
+            [
+              0.1238,
+              0.1348,
+              0.4807,
+              0.1519
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/liability",
+              "title": "Limitation of liability: the most either side can be made to pay (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual cap**: the same cap for both sides, usually **the fees paid or payable in the 12 months** before the claim. - **Mutual exclusion** of indirect losses (lost profits, lost business, loss of reputation) for both sides. - **Carve-outs from the cap** (amounts that stay uncapped or have a higher cap) apply to both sides equally: fraud, death or personal injury caused by negligence, breach...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f3",
+          "clause_type": "indemnity",
+          "title": "Broad indemnity covering vendor negligence with no IP indemnity",
+          "risk": "high",
+          "quote": "The Customer shall indemnify, defend and hold harmless the Vendor, its affiliates and their officers and employees from and against any and all losses, liabilities, damages, costs and expenses (including legal fees) arising out of or in connection with this Agreement, the Application or the Customer's business, whether or not caused by the negligence of the Vendor.",
+          "page": 3,
+          "why_risky": "You are forced to cover all losses and legal expenses arising from the app even when they are caused by the vendor's own negligence, exposing your business to open-ended financial risk.",
+          "standard": "Customer indemnities should be limited to third-party claims arising from customer-provided materials, and must explicitly exclude losses resulting from the vendor's negligence or breach.",
+          "suggested_ask": "Can we remove the customer indemnity for vendor negligence and restrict our indemnity strictly to third-party claims arising from Customer Materials?",
+          "baseline_ref": "service_agreement/indemnity",
+          "boxes": [
+            [
+              0.1543,
+              0.1934,
+              0.8762,
+              0.2105
+            ],
+            [
+              0.1238,
+              0.2116,
+              0.8762,
+              0.2287
+            ],
+            [
+              0.1238,
+              0.2297,
+              0.8762,
+              0.2469
+            ],
+            [
+              0.1238,
+              0.2479,
+              0.8713,
+              0.265
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/indemnity",
+              "title": "Indemnity: promising to cover the other side's losses (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **Vendor indemnifies the customer** if a third party claims the vendor's service or deliverables infringe their IP (copyright, patent, trade mark). This is the most common indemnity. - **Customer indemnifies the vendor** only if a third party claims that content or data the customer supplied infringes their rights or breaks the law. - Indemnities cover **third-party claims**, not every loss b...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f4",
+          "clause_type": "warranty",
+          "title": "Short 60-day defect warranty period",
+          "risk": "medium",
+          "quote": "The Vendor warrants that the Application will materially conform to the SOW for sixty (60) days after acceptance of the final phase, and will correct any material non-conformity reported in that period.",
+          "page": 2,
+          "why_risky": "Sixty days is a brief window to uncover hidden software defects, bugs, or workflow failures across 18 cafe locations and mobile operating systems.",
+          "standard": "A balanced software development agreement provides at least a 90-day defect warranty period post-acceptance.",
+          "suggested_ask": "Can we extend the defect warranty period from 60 days to 90 days following final acceptance?",
+          "baseline_ref": "service_agreement/warranty",
+          "boxes": [
+            [
+              0.155,
+              0.7119,
+              0.8762,
+              0.729
+            ],
+            [
+              0.1238,
+              0.7301,
+              0.8762,
+              0.7472
+            ],
+            [
+              0.1238,
+              0.7482,
+              0.2121,
+              0.7654
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/warranty",
+              "title": "Warranties: what the vendor promises about the service (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- Services performed **with reasonable skill and care**, by suitably qualified people, in line with good industry practice. - Deliverables and software **match the agreed specification** or documentation. - **A defects period** of about **90 days** after acceptance in which the vendor fixes defects free. - **Service levels** for hosted services (for example 99.5% monthly availability) with serv...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        }
+      ],
+      "missing_clauses": [
+        {
+          "clause_type": "indemnity",
+          "title": "Vendor intellectual property infringement indemnity",
+          "why_it_matters": "Clause 8.2 explicitly disclaims any vendor indemnity for intellectual property infringement. If the vendor infringes a third party's software patent or copyright, you could be sued without any recourse or reimbursement.",
+          "suggested_ask": "Please add a standard indemnity where the vendor defends and indemnifies us if the Deliverables infringe any third party's intellectual property rights."
+        },
+        {
+          "clause_type": "data_protection",
+          "title": "Data return, deletion, and explicit breach notification timeframe",
+          "why_it_matters": "The contract does not define an exact reporting deadline for security breaches or mandate the prompt return and deletion of End User Data upon contract termination.",
+          "suggested_ask": "Please specify that the vendor must notify us within 24 to 48 hours of discovering a data breach and return or delete all personal data upon termination."
+        }
+      ],
+      "metrics": {
+        "latency_ms": 44715,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 12108,
+        "output_tokens": 2484,
+        "cost_usd_est": 0.018396,
+        "dropped_unverified": 1,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "sg",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (4 pages)",
+          "detail": null,
+          "ms": 9
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ownership of work and IP in a service agreement",
+          "detail": "Ownership of work product and IP (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in a service agreement",
+          "detail": "Limitation of liability: the most either side can be made to pay (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for indemnities in a service agreement",
+          "detail": "Indemnity: promising to cover the other side's losses (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for warranties in a service agreement",
+          "detail": "Warranties: what the vendor promises about the service (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending the contract in a service agreement",
+          "detail": "Termination: how either side can end the agreement (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for personal data protection in a service agreement",
+          "detail": "Personal data protection (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for governing law in a service agreement",
+          "detail": "Governing law: which country's law applies (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_law",
+          "summary": "Checked Singapore law on liability caps",
+          "detail": "Unfair Contract Terms Act 1977, s 2: excluding liability for negligence; Unfair Contract Terms Act 1977, s 11: the reasonableness test, caps and burden of proof; Unfair Contract Terms Act 1977, s 1(3) and First Schedule para 1(c): business liability only, and IP terms excluded; Unfair Contract Terms Act 1977, s 3: exclusions in the other side's written standard terms",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_law",
+          "summary": "Checked Singapore law on indemnities",
+          "detail": "Contracts (Rights of Third Parties) Act 2001, s 2: when a non-party can enforce a contract term; Unfair Contract Terms Act 1977, s 2: excluding liability for negligence; Unfair Contract Terms Act 1977, s 11: the reasonableness test, caps and burden of proof; Misrepresentation Act 1967, s 3: excluding liability for pre-contract misrepresentation",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Singapore law on personal data protection",
+          "detail": "Personal Data Protection Act 2012, s 26C(3): a data intermediary must report a breach without undue delay; Personal Data Protection Act 2012, s 2(1) and s 4(2)-(3): data intermediaries and who stays responsible; Personal Data Protection Act 2012, s 24: the protection obligation; Personal Data Protection Act 2012, s 25: the retention limitation obligation",
+          "ms": 0
+        },
+        {
+          "step": 12,
+          "action": "search_company",
+          "summary": "Checked your company's rules on ownership of work and IP",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 13,
+          "action": "search_company",
+          "summary": "Checked your company's rules on indemnities",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 14,
+          "action": "search_company",
+          "summary": "Checked your company's rules on governing law",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 15,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "5 candidate findings",
+          "ms": 38263
+        },
+        {
+          "step": 16,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 4 findings and 4 sources; dropped 1 unsupported findings and 0 unverified sources",
+          "ms": 11
+        }
+      ]
+    },
+    "msa-04-scanned": {
+      "id": "5b434df06f66",
+      "created_at": "2026-10-18T04:51:01.496847Z",
+      "filename": "msa-04-scanned.pdf",
+      "sample_id": "msa-04-scanned",
+      "contract_type": "service_agreement",
+      "language": "en",
+      "pages": 4,
+      "parties": [
+        "SERIKAYA FACILITY CARE SDN. BHD.",
+        "ORKID SENYUM DENTAL GROUP SDN. BHD."
+      ],
+      "verdict": {
+        "overall_risk": "high",
+        "headline": "One-sided termination notice and an unusually low liability cap heavily favor the cleaning contractor.",
+        "summary": [
+          "The contractor can walk away with only 7 days' notice, while you must give 90 days to terminate.",
+          "The contractor's liability is capped at only 3 months of fees, which is inadequate given sensitive dental clinic equipment.",
+          "Payment terms are tight at 14 days, backed by a punitive 2% monthly late interest charge."
+        ]
+      },
+      "findings": [
+        {
+          "id": "f1",
+          "clause_type": "liability",
+          "title": "Extremely Low Liability Cap for Contractor",
+          "risk": "high",
+          "quote": "Subject to Clause 7.1, the Contractor's total liability for all claims under or in connection with this Agreement shall not exceed an amount equal to three (3) months of the Monthly Fee, and the Contractor shall not be liable for any indirect loss, loss of profit or loss of business.",
+          "page": 2,
+          "why_risky": "A cap of 3 months' fees is very small. If the contractor damages high-value dental chairs or medical equipment, or breaches patient data confidentiality, the compensation you can recover is severely restricted.",
+          "standard": "Standard market liability caps are mutual and usually set at 12 months of fees paid or payable, with carve-outs for property damage, confidentiality, and data protection.",
+          "suggested_ask": "Can we increase the liability cap to 12 months of fees, and exclude physical property damage and data protection breaches from this cap?",
+          "baseline_ref": "service_agreement/liability",
+          "boxes": [
+            [
+              0.154,
+              0.79,
+              0.876,
+              0.842
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/liability",
+              "title": "Limitation of liability: the most either side can be made to pay (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **Mutual cap**: the same cap for both sides, usually **the fees paid or payable in the 12 months** before the claim. - **Mutual exclusion** of indirect losses (lost profits, lost business, loss of reputation) for both sides. - **Carve-outs from the cap** (amounts that stay uncapped or have a higher cap) apply to both sides equally: fraud, death or personal injury caused by negligence, breach...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f2",
+          "clause_type": "termination",
+          "title": "Unfair and Asymmetric Notice for Termination",
+          "risk": "high",
+          "quote": "The Contractor may terminate this Agreement at any time by giving the Client seven (7) days' written notice.",
+          "page": 3,
+          "why_risky": "The contractor can end services on just 7 days' notice without reason, which could leave 5 dental clinics without sanitation services on very short notice. In contrast, clause 10.2 requires you to give 90 days' notice.",
+          "standard": "Both parties should have equivalent notice periods to terminate for convenience, typically between 30 and 90 days.",
+          "suggested_ask": "Can we make termination for convenience mutual with 30 or 60 days' written notice for both parties?",
+          "baseline_ref": "service_agreement/termination",
+          "boxes": [
+            [
+              0.123,
+              0.362,
+              0.875,
+              0.393
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/termination",
+              "title": "Termination: how either side can end the agreement (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **For cause, both sides:** either side may end it if the other commits a serious breach and does not fix it within **30 days** of written notice, or becomes insolvent. - **For convenience:** the customer (and often both sides) may end it without a reason on **30 to 90 days'** notice, paying for work done and committed costs up to that date. - **The same notice periods for both sides**, or a l...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f3",
+          "clause_type": "payment",
+          "title": "Short Payment Window and High Late Interest",
+          "risk": "medium",
+          "quote": "Late payments shall bear interest at the rate of two per cent (2%) per month from the due date until the date of payment, and the Client shall also reimburse the Contractor's collection costs.",
+          "page": 2,
+          "why_risky": "An interest rate of 2% per month amounts to 24% per year, which is excessively high and punitive, especially when combined with a tight 14-day payment window.",
+          "standard": "Standard payment terms in Malaysia are 30 days, with late payment interest around 0.5% to 1% per month (or 5% to 8% per annum). Under Malaysian law (s. 75 Contracts Act 1950), courts only enforce reasonable compensation rather than penalty rates.",
+          "suggested_ask": "Can we adjust payment terms to 30 days from invoice date and reduce late interest to 8% per annum?",
+          "baseline_ref": "service_agreement/payment",
+          "boxes": [
+            [
+              0.154,
+              0.333,
+              0.876,
+              0.385
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/payment",
+              "title": "Payment, late interest and price increases (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- **Payment within 30 days** of a correct invoice (30-60 days is common in Malaysia and Singapore). - Prices stated **excluding tax**, with Malaysian service tax (SST) or Singapore GST added where it applies. - **Disputed invoices:** the customer may hold back the disputed part in good faith while paying the rest, and both sides try to resolve it quickly. - **Late interest** at a modest rate, r...",
+              "url": null,
+              "page": null
+            },
+            {
+              "kind": "law",
+              "ref": "my-ca1950-s75",
+              "title": "Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach",
+              "jurisdiction": "my",
+              "excerpt": "\"75. When a contract has been broken, if a sum is named in the contract as the amount to be paid in case of such breach, or if the contract contains any other stipulation by way of penalty, the party complaining of the breach is entitled, whether or not actual damage or loss is proved to have been caused thereby, to receive from the party who has broken the contract reasonable compensation not...",
+              "url": "https://lom.agc.gov.my/ilims/upload/portal/akta/LOM/EN/Act%20136.pdf",
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        },
+        {
+          "id": "f4",
+          "clause_type": "auto_renewal",
+          "title": "Automatic 12-Month Renewal",
+          "risk": "medium",
+          "quote": "Thereafter this Agreement renews automatically for further periods of twelve (12) months unless either party gives written notice of non-renewal at least sixty (60) days before the end of the current period.",
+          "page": 2,
+          "why_risky": "If you miss the 60-day deadline before the initial 12-month period expires, you are locked into another full year without an automatic reminder from the vendor.",
+          "standard": "Renewal clauses should require the vendor to give advance written reminder notice 30 days prior to the non-renewal deadline, or transition to a month-to-month basis after the initial term.",
+          "suggested_ask": "Could the contractor agree to send a reminder notice 30 days before the 60-day non-renewal deadline, or convert the contract to month-to-month after year one?",
+          "baseline_ref": "service_agreement/auto_renewal",
+          "boxes": [
+            [
+              0.154,
+              0.152,
+              0.876,
+              0.203
+            ]
+          ],
+          "citations": [
+            {
+              "kind": "playbook",
+              "ref": "service_agreement/auto_renewal",
+              "title": "Auto-renewal and price increases on renewal (service agreement)",
+              "jurisdiction": null,
+              "excerpt": "- Renewal for **the same or a shorter period**, usually 12 months or month-to-month. - **Notice to stop renewal of 30 days** before the end date (60 days at most). - The vendor **sends a reminder** 30-60 days before the notice deadline. - After renewal, the customer may still leave on reasonable notice, or renewal is month-to-month. - Any price change on renewal is announced at least 60 days ah...",
+              "url": null,
+              "page": null
+            }
+          ],
+          "policy_breach": null
+        }
+      ],
+      "missing_clauses": [
+        {
+          "clause_type": "data_protection",
+          "title": "Data Breach Notification and Processor Obligations",
+          "why_it_matters": "The contractor's staff will clean clinical and reception areas where patient data is present. Although PDPA compliance is mentioned, there is no explicit obligation to notify you promptly (e.g. within 24 to 72 hours) if a data security incident occurs.",
+          "suggested_ask": "Can we add an express obligation for the contractor to notify us within 48 hours of discovering any unauthorized access or loss of patient personal data?"
+        }
+      ],
+      "metrics": {
+        "latency_ms": 47053,
+        "model": "gemini-3.8-flash",
+        "input_tokens": 18147,
+        "output_tokens": 4161,
+        "cost_usd_est": 0.029214,
+        "dropped_unverified": 0,
+        "dropped_unverified_citations": 0
+      },
+      "disclaimer": "This is an automated review to help you prepare. It is not legal advice.",
+      "jurisdiction": "my",
+      "trace": [
+        {
+          "step": 1,
+          "action": "read_contract",
+          "summary": "Read the contract (4 pages)",
+          "detail": "scanned copy: read with AI text recognition",
+          "ms": 11591
+        },
+        {
+          "step": 2,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for ending the contract in a service agreement",
+          "detail": "Termination: how either side can end the agreement (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 3,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for liability caps in a service agreement",
+          "detail": "Limitation of liability: the most either side can be made to pay (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 4,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for payment terms in a service agreement",
+          "detail": "Payment, late interest and price increases (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 5,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for automatic renewal in a service agreement",
+          "detail": "Auto-renewal and price increases on renewal (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 6,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for personal data protection in a service agreement",
+          "detail": "Personal data protection (service agreement)",
+          "ms": 0
+        },
+        {
+          "step": 7,
+          "action": "search_playbook",
+          "summary": "Looked up the standard terms for non-solicitation clauses in a service agreement",
+          "detail": "no entry",
+          "ms": 0
+        },
+        {
+          "step": 8,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on ending the contract",
+          "detail": "Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach; Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75; Personal Data Protection Act 2010, s 5: the seven principles, and what a data processor must follow; Contracts Act 1950, s 40: ending a contract when the other side refuses to perform",
+          "ms": 0
+        },
+        {
+          "step": 9,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on penalty clauses",
+          "detail": "Contracts Act 1950, s 75: compensation where a sum or penalty is named for breach; Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75; CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29; Limitation Act 1953, s 6(1): six years to sue on a contract",
+          "ms": 0
+        },
+        {
+          "step": 10,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on liability caps",
+          "detail": "CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29; Limitation Act 1953, s 6(1): six years to sue on a contract; Evidence Act 1950, s 92: oral statements cannot vary a written contract (with exceptions); Contracts Act 1950, s 74: compensation for loss caused by breach of contract",
+          "ms": 0
+        },
+        {
+          "step": 11,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on non-compete clauses",
+          "detail": "Contracts Act 1950, s 28: agreements in restraint of trade are void; Contracts Act 1950, s 29: agreements in restraint of legal proceedings are void; CIMB Bank Bhd v Anthony Lawrence Bourke & Anor: an exclusion clause that leaves no remedy is void under s 29; Cubic Electronics Sdn Bhd (in liquidation) v Mars Telecommunications Sdn Bhd: liquidated damages under s 75",
+          "ms": 0
+        },
+        {
+          "step": 12,
+          "action": "search_law",
+          "summary": "Checked Malaysian law on personal data protection",
+          "detail": "Personal Data Protection Act 2010, s 12A: appointing a data protection officer; Personal Data Protection Act 2010, s 5: the seven principles, and what a data processor must follow; Personal Data Protection Act 2010, s 9: the Security Principle for controllers and processors; Personal Data Protection Act 2010, s 129: transferring personal data outside Malaysia",
+          "ms": 0
+        },
+        {
+          "step": 13,
+          "action": "search_company",
+          "summary": "Checked your company's rules on liability caps",
+          "detail": "no company documents",
+          "ms": 0
+        },
+        {
+          "step": 14,
+          "action": "draft_findings",
+          "summary": "Wrote the findings and the plain-English summary",
+          "detail": "4 candidate findings",
+          "ms": 27831
+        },
+        {
+          "step": 15,
+          "action": "verify",
+          "summary": "Checked every quote against the contract and every source against the library",
+          "detail": "kept 4 findings and 5 sources; dropped 0 unsupported findings and 0 unverified sources",
+          "ms": 4277
+        }
+      ]
+    }
+  }
+}

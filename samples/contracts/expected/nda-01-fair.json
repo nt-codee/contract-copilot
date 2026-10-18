@@ -1,0 +1,19 @@
+{
+  "id": "nda-01-fair",
+  "contract_type": "nda",
+  "language": "en",
+  "expected_overall_risk": "low",
+  "must_flag": [],
+  "must_not_flag_high": [
+    "confidentiality",
+    "term",
+    "termination",
+    "non_solicit",
+    "liability",
+    "ip_ownership",
+    "data_protection",
+    "assignment",
+    "governing_law",
+    "dispute_resolution"
+  ]
+}

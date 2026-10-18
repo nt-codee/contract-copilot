@@ -1,0 +1,40 @@
+{
+  "turns": [
+    {
+      "text": "",
+      "tool_calls": [
+        {
+          "name": "search_law",
+          "args": {
+            "query": "limitation exclusion of liability cap",
+            "jurisdiction": "my",
+            "clause_type": "liability"
+          }
+        },
+        {
+          "name": "search_playbook",
+          "args": {
+            "contract_type": "service_agreement",
+            "clause_type": "liability"
+          }
+        },
+        {
+          "name": "search_company",
+          "args": {
+            "query": "liability cap"
+          }
+        },
+        {
+          "name": "read_page",
+          "args": {
+            "n": 2
+          }
+        }
+      ]
+    },
+    {
+      "text": "DONE",
+      "tool_calls": []
+    }
+  ]
+}

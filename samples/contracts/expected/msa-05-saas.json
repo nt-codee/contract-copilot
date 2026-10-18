@@ -1,0 +1,38 @@
+{
+  "id": "msa-05-saas",
+  "contract_type": "service_agreement",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "payment",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "fourteen (14) days' notice by email"
+    },
+    {
+      "clause_type": "data_protection",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "Export is available only in the Vendor's proprietary file format"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "suspend the Customer's access to the Service immediately and without notice"
+    },
+    {
+      "clause_type": "liability",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "in the three (3) months immediately preceding the event"
+    }
+  ],
+  "must_not_flag_high": [
+    "confidentiality",
+    "governing_law",
+    "dispute_resolution",
+    "ip_ownership"
+  ]
+}

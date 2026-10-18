@@ -1,0 +1,22 @@
+{
+  "id": "msa-10-long-fair",
+  "contract_type": "service_agreement",
+  "language": "en",
+  "expected_overall_risk": "low",
+  "must_flag": [],
+  "must_not_flag_high": [
+    "term",
+    "auto_renewal",
+    "termination",
+    "payment",
+    "liability",
+    "indemnity",
+    "ip_ownership",
+    "warranty",
+    "confidentiality",
+    "data_protection",
+    "governing_law",
+    "dispute_resolution",
+    "assignment"
+  ]
+}

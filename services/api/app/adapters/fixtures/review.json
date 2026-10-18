@@ -1,0 +1,147 @@
+{
+  "contract_type": "service_agreement",
+  "language": "en",
+  "parties": [
+    "Kedai Contoh Sdn Bhd",
+    "Awan Biru Pte Ltd"
+  ],
+  "verdict": {
+    "overall_risk": "high",
+    "headline": "You carry unlimited liability while the vendor's is capped at one month of fees.",
+    "summary": [
+      "Liability is one-sided: yours is unlimited, the vendor's is tiny.",
+      "The contract renews itself unless you give 90 days' notice.",
+      "Disputes fall under Delaware law, far from home."
+    ]
+  },
+  "findings": [
+    {
+      "clause_type": "governing_law",
+      "title": "Foreign governing law",
+      "risk": "medium",
+      "quote": "this agreement is governed by the laws of the state of delaware.",
+      "page": 3,
+      "why_risky": "Any dispute would be argued under United States law, which is costly for a Malaysian business.",
+      "standard": "The law of the customer's country, or a neutral nearby one such as Singapore.",
+      "suggested_ask": "Please change the governing law to the laws of Malaysia.",
+      "baseline_ref": "service_agreement/governing_law.md",
+      "citations": [],
+      "policy_breach": ""
+    },
+    {
+      "clause_type": "liability",
+      "title": "Unlimited liability for you only",
+      "risk": "high",
+      "quote": "The Customer shall be liable without limit for any loss suffered by the Vendor.",
+      "page": 2,
+      "why_risky": "One mistake could cost you any amount, with no ceiling.",
+      "standard": "Both sides' liability is capped at the fees paid over 12 months.",
+      "suggested_ask": "Please make the liability cap mutual, at 12 months of fees.",
+      "baseline_ref": "service_agreement/liability.md",
+      "citations": [
+        {
+          "kind": "law",
+          "ref": "my-contracts-act-s75",
+          "excerpt": "MODEL-WRITTEN TEXT THAT MUST BE REPLACED"
+        },
+        {
+          "kind": "playbook",
+          "ref": "service_agreement/liability",
+          "excerpt": "balanced"
+        },
+        {
+          "kind": "law",
+          "ref": "my-fake-act-s999",
+          "excerpt": "an invented section"
+        }
+      ],
+      "policy_breach": ""
+    },
+    {
+      "clause_type": "liability",
+      "title": "Vendor's liability capped at one month of fees",
+      "risk": "high",
+      "quote": "The Vendors total liability is limited to the fees paid in the one month before a claim",
+      "page": 2,
+      "why_risky": "If the vendor loses your data, you could recover only one month of fees.",
+      "standard": "A cap of 12 months of fees, with exceptions for data breaches.",
+      "suggested_ask": "Please raise the vendor's cap to 12 months of fees.",
+      "baseline_ref": "service_agreement/liability.md",
+      "citations": [
+        {
+          "kind": "playbook",
+          "ref": "service_agreement/liability",
+          "excerpt": "balanced"
+        }
+      ],
+      "policy_breach": "Your policy requires vendor liability of at least 12 months of fees."
+    },
+    {
+      "clause_type": "auto_renewal",
+      "title": "Auto-renewal with a 90-day notice window",
+      "risk": "medium",
+      "quote": "renews automatically for successive 12 month terms unless the Customer gives 90 days written notice",
+      "page": 3,
+      "why_risky": "Miss the 90-day window and you are locked in for another year.",
+      "standard": "Renewal with 30 days' notice, or a reminder from the vendor.",
+      "suggested_ask": "Please shorten the notice period to 30 days.",
+      "baseline_ref": "service_agreement/auto_renewal.md",
+      "citations": [],
+      "policy_breach": ""
+    },
+    {
+      "clause_type": "indemnity",
+      "title": "Broad indemnity",
+      "risk": "high",
+      "quote": "The Customer shall indemnify the Vendor against all claims whatsoever arising in any way.",
+      "page": 2,
+      "why_risky": "This quote does not exist in the contract; the verifier must drop it.",
+      "standard": "Each side indemnifies for its own breach.",
+      "suggested_ask": "Please make the indemnity mutual.",
+      "baseline_ref": "",
+      "citations": [],
+      "policy_breach": ""
+    }
+  ],
+  "missing_clauses": [
+    {
+      "clause_type": "data_protection",
+      "title": "No data protection clause",
+      "why_it_matters": "The vendor handles your financial records but promises nothing about keeping them safe.",
+      "suggested_ask": "Please add a clause committing to PDPA-compliant handling and breach notification."
+    }
+  ],
+  "jurisdiction": "my",
+  "key_dates": [
+    {
+      "label": "Last day to cancel before the agreement renews for another 12 months",
+      "kind": "notice_deadline",
+      "page": 2,
+      "base_date": "2026-01-01",
+      "months": 12,
+      "days": -91,
+      "rule": "90 days before the end of the first 12-month term",
+      "finding_title": "Auto-renewal with a 90-day notice window"
+    },
+    {
+      "label": "Agreement starts",
+      "kind": "start",
+      "page": 1,
+      "base_date": "",
+      "months": 0,
+      "days": 0,
+      "rule": "The contract names no effective date",
+      "finding_title": ""
+    },
+    {
+      "label": "Impossible page",
+      "kind": "other",
+      "page": 99,
+      "base_date": "2026-01-01",
+      "months": 0,
+      "days": 0,
+      "rule": "x",
+      "finding_title": ""
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "id": "msa-09-bm-cleaning",
+  "contract_type": "service_agreement",
+  "language": "ms",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "auto_renewal",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "diperbaharui secara automatik untuk suatu tempoh dua (2) tahun"
+    },
+    {
+      "clause_type": "indemnity",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "sama ada atau tidak disebabkan oleh kecuaian Pembekal"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "Pelanggan hanya boleh menamatkan Perjanjian ini jika Pembekal melakukan pelanggaran material"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "atas apa-apa sebab dengan memberi notis bertulis tujuh (7) hari"
+    },
+    {
+      "clause_type": "liability",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "tidak melebihi jumlah Yuran Bulanan bagi satu (1) bulan"
+    }
+  ],
+  "must_not_flag_high": [
+    "payment",
+    "confidentiality",
+    "data_protection",
+    "governing_law",
+    "dispute_resolution",
+    "ip_ownership"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "nda-03-predatory",
+  "contract_type": "nda",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "non_compete",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "any business that competes with any business of the Group anywhere in the Territory"
+    },
+    {
+      "clause_type": "liability",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "without any limit on the aggregate amount payable"
+    },
+    {
+      "clause_type": "governing_law",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "laws of the State of New York"
+    }
+  ],
+  "must_not_flag_high": [
+    "confidentiality",
+    "term"
+  ]
+}

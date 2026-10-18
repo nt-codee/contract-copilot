@@ -1,0 +1,145 @@
+{
+  "id": "f7c3955b1e9c",
+  "created_at": "2026-10-18T01:32:46.579081Z",
+  "filename": "services.pdf",
+  "sample_id": null,
+  "contract_type": "service_agreement",
+  "language": "en",
+  "pages": 3,
+  "parties": [
+    "Kedai Contoh Sdn Bhd",
+    "Awan Biru Pte Ltd"
+  ],
+  "verdict": {
+    "overall_risk": "high",
+    "headline": "This agreement exposes you to unlimited liability and imposes high-risk renewal, foreign law, and missing data protection terms.",
+    "summary": [
+      "Your liability is completely uncapped while the vendor caps its liability to just one month of fees.",
+      "The agreement applies US Delaware law even though both parties are based in Malaysia and Singapore.",
+      "It requires a long 90-day cancellation notice to avoid automatic renewal, and key protections like data protection are absent."
+    ]
+  },
+  "findings": [
+    {
+      "id": "f1",
+      "clause_type": "liability",
+      "title": "Uncapped customer liability",
+      "risk": "high",
+      "quote": "The Customer shall be liable without limit for any loss suffered by the Vendor.",
+      "page": 2,
+      "why_risky": "You are exposed to unlimited financial risk for any loss the vendor claims, while the vendor enjoys a tight liability limit.",
+      "standard": "Liability caps should be mutual and generally capped at the fees paid or payable in the prior 12 months.",
+      "suggested_ask": "Please make the limitation of liability mutual, set the cap at the fees paid in the previous 12 months for both parties, and apply the same exclusions and carve-outs to both.",
+      "baseline_ref": "service_agreement/liability.md",
+      "boxes": [
+        [
+          0.125,
+          0.0858,
+          0.7579,
+          0.1038
+        ]
+      ]
+    },
+    {
+      "id": "f2",
+      "clause_type": "liability",
+      "title": "Vendor liability cap is too low",
+      "risk": "high",
+      "quote": "The Vendor's total liability is limited to the fees paid in the one month before the claim.",
+      "page": 2,
+      "why_risky": "A cap of only one month of fees means you cannot recover meaningful losses if the vendor fails or causes damage.",
+      "standard": "The market standard is a mutual cap equal to 12 months of fees.",
+      "suggested_ask": "Please make the limitation of liability mutual, set the cap at the fees paid in the previous 12 months for both parties, and apply the same exclusions and carve-outs to both.",
+      "baseline_ref": "service_agreement/liability.md",
+      "boxes": [
+        [
+          0.125,
+          0.1051,
+          0.6865,
+          0.1231
+        ],
+        [
+          0.0941,
+          0.1244,
+          0.2308,
+          0.1423
+        ]
+      ]
+    },
+    {
+      "id": "f3",
+      "clause_type": "auto_renewal",
+      "title": "Long notice window for automatic renewal",
+      "risk": "high",
+      "quote": "This Agreement renews automatically for successive 12 month terms unless the Customer gives 90 days written notice.",
+      "page": 2,
+      "why_risky": "A 90-day notice window makes it easy to miss the cancellation deadline and get locked in for another full year.",
+      "standard": "Notice to prevent automatic renewal should be 30 days (or at most 60 days) with a reminder from the vendor.",
+      "suggested_ask": "Please change renewal to 12-month periods with 30 days' notice to stop renewal, and have the vendor send a written reminder 60 days before the renewal date.",
+      "baseline_ref": "service_agreement/auto_renewal.md",
+      "boxes": [
+        [
+          0.125,
+          0.1823,
+          0.7784,
+          0.2002
+        ],
+        [
+          0.0941,
+          0.2016,
+          0.4116,
+          0.2195
+        ]
+      ]
+    },
+    {
+      "id": "f4",
+      "clause_type": "governing_law",
+      "title": "Distant foreign governing law",
+      "risk": "high",
+      "quote": "This Agreement is governed by the laws of the State of Delaware.",
+      "page": 3,
+      "why_risky": "Resolving disputes under Delaware law would require expensive US lawyers and procedures even though both businesses operate in Southeast Asia.",
+      "standard": "Contracts between Malaysian and Singaporean businesses should use Malaysian or Singapore law and local courts.",
+      "suggested_ask": "Please make the agreement subject to Malaysian law (or Singapore law) and the courts of Kuala Lumpur (or Singapore), where both parties operate.",
+      "baseline_ref": "service_agreement/governing_law.md",
+      "boxes": [
+        [
+          0.125,
+          0.0858,
+          0.6624,
+          0.1038
+        ]
+      ]
+    }
+  ],
+  "missing_clauses": [
+    {
+      "clause_type": "data_protection",
+      "title": "Personal Data Protection Clause",
+      "why_it_matters": "The vendor provides cloud bookkeeping and handles your financial and personal data, but there are no terms requiring data security, breach notifications, or PDPA compliance.",
+      "suggested_ask": "Please add a data protection clause: processing only on our instructions, reasonable security, breach notice within 48 hours, approved subcontractors, and return or deletion of data at the end."
+    },
+    {
+      "clause_type": "confidentiality",
+      "title": "Confidentiality Clause",
+      "why_it_matters": "There is no obligation for the vendor to keep your business records, financial figures, or accounting details confidential.",
+      "suggested_ask": "Please make the confidentiality obligations mutual, with the standard exceptions, lasting at least three years after the agreement ends, and require our consent before naming us publicly."
+    },
+    {
+      "clause_type": "termination",
+      "title": "Termination and Data Return",
+      "why_it_matters": "The contract lacks clear termination rights for breach and provides no procedure for retrieving or exporting your bookkeeping data upon exit.",
+      "suggested_ask": "Please give both parties the same notice period, allow 30 days to fix a breach, and add a 30-day window to export our data on termination."
+    }
+  ],
+  "metrics": {
+    "latency_ms": 15094,
+    "model": "gemini-3.8-flash",
+    "input_tokens": 10402,
+    "output_tokens": 1283,
+    "cost_usd_est": 0.012668,
+    "dropped_unverified": 0
+  },
+  "disclaimer": "This is an automated review to help you prepare. It is not legal advice."
+}

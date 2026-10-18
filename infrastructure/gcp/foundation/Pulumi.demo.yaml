@@ -1,0 +1,6 @@
+encryptionsalt: v1:kdqlEA1JO4A=:v1:/nHami8ikLlh9lLi:UB5xn58IBwoB/iDANUoaDJCx6QnyqQ==
+config:
+  gcp:project: contract-copilot-abc26
+  gcp:region: asia-southeast1
+  cc-foundation:alertEmail:
+    secure: v1:u/7MaAd0FH5tvJNn:vNr1dJXkhES90WU4b9e5TutiVsvF+AP+45/T+RcpwR4SIiRXub56

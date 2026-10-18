@@ -1,0 +1,7 @@
+name: cc-foundation
+description: contract-copilot GCP foundation - APIs, registry, service account and IAM, budget, alerts
+runtime:
+  name: python
+  options:
+    toolchain: uv
+    virtualenv: .venv

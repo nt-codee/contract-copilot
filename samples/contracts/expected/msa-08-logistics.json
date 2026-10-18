@@ -1,0 +1,38 @@
+{
+  "id": "msa-08-logistics",
+  "contract_type": "service_agreement",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "liability",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "limited to RM 50 per Parcel, regardless of the Declared Value"
+    },
+    {
+      "clause_type": "payment",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "set by the Carrier from time to time at its sole discretion"
+    },
+    {
+      "clause_type": "governing_law",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "governed by the laws of the Hong Kong Special Administrative Region"
+    },
+    {
+      "clause_type": "dispute_resolution",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "exclusive jurisdiction of the courts of Hong Kong"
+    }
+  ],
+  "must_not_flag_high": [
+    "confidentiality",
+    "data_protection",
+    "termination",
+    "ip_ownership"
+  ]
+}

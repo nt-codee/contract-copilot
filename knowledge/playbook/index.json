@@ -1,0 +1,28 @@
+{
+  "nda": [
+    "nda/confidentiality.md",
+    "nda/term.md",
+    "nda/termination.md",
+    "nda/non_compete.md",
+    "nda/non_solicit.md",
+    "nda/liability.md",
+    "nda/ip_ownership.md",
+    "nda/governing_law.md",
+    "nda/dispute_resolution.md",
+    "nda/assignment.md"
+  ],
+  "service_agreement": [
+    "service_agreement/term.md",
+    "service_agreement/auto_renewal.md",
+    "service_agreement/termination.md",
+    "service_agreement/payment.md",
+    "service_agreement/liability.md",
+    "service_agreement/indemnity.md",
+    "service_agreement/ip_ownership.md",
+    "service_agreement/warranty.md",
+    "service_agreement/confidentiality.md",
+    "service_agreement/data_protection.md",
+    "service_agreement/governing_law.md",
+    "service_agreement/dispute_resolution.md"
+  ]
+}

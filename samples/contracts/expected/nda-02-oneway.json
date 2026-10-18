@@ -1,0 +1,35 @@
+{
+  "id": "nda-02-oneway",
+  "contract_type": "nda",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "confidentiality",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "all information of any kind whatsoever"
+    },
+    {
+      "clause_type": "confidentiality",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "apply without exception"
+    },
+    {
+      "clause_type": "term",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "shall continue in perpetuity"
+    },
+    {
+      "clause_type": "confidentiality",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "gives no undertaking of confidentiality"
+    }
+  ],
+  "must_not_flag_high": [
+    "governing_law"
+  ]
+}

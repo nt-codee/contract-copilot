@@ -1,0 +1,7 @@
+name: cc-app
+description: contract-copilot GCP app - uploads bucket, Firestore, Cloud Run, uptime check
+runtime:
+  name: python
+  options:
+    toolchain: uv
+    virtualenv: .venv

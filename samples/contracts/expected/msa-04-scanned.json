@@ -1,0 +1,37 @@
+{
+  "id": "msa-04-scanned",
+  "contract_type": "service_agreement",
+  "language": "en",
+  "expected_overall_risk": "medium",
+  "must_flag": [
+    {
+      "clause_type": "payment",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "two per cent (2%) per month"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "medium",
+      "page": 3,
+      "quote_contains": "by giving the Client seven (7) days' written notice"
+    },
+    {
+      "clause_type": "liability",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "three (3) months of the Monthly Fee"
+    }
+  ],
+  "must_not_flag_high": [
+    "payment",
+    "termination",
+    "liability",
+    "auto_renewal",
+    "indemnity",
+    "confidentiality",
+    "data_protection",
+    "governing_law",
+    "warranty"
+  ]
+}

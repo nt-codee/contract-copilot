@@ -1,0 +1,1154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "contract-copilot/review.schema.json",
+  "title": "contract-copilot API contract",
+  "$defs": {
+    "ContractType": {
+      "enum": [
+        "nda",
+        "service_agreement",
+        "employment",
+        "tenancy",
+        "hire_purchase",
+        "other"
+      ]
+    },
+    "Risk": {
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "ClauseType": {
+      "enum": [
+        "confidentiality",
+        "term",
+        "termination",
+        "auto_renewal",
+        "liability",
+        "indemnity",
+        "ip_ownership",
+        "payment",
+        "governing_law",
+        "dispute_resolution",
+        "non_solicit",
+        "non_compete",
+        "data_protection",
+        "assignment",
+        "warranty",
+        "probation",
+        "working_hours",
+        "leave",
+        "notice_period",
+        "salary_deductions",
+        "deposit",
+        "rent_review",
+        "repairs",
+        "early_termination",
+        "interest_rate",
+        "repossession",
+        "guarantor",
+        "insurance",
+        "fees_charges",
+        "other"
+      ]
+    },
+    "Finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "clause_type",
+        "title",
+        "risk",
+        "quote",
+        "page",
+        "why_risky",
+        "standard",
+        "suggested_ask"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "f1, f2, ... stable within a review"
+        },
+        "clause_type": {
+          "$ref": "#/$defs/ClauseType"
+        },
+        "title": {
+          "type": "string",
+          "description": "short plain label, e.g. 'Unlimited liability for you only'"
+        },
+        "risk": {
+          "$ref": "#/$defs/Risk"
+        },
+        "quote": {
+          "type": "string",
+          "description": "exact text from the contract, verified against the page"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "why_risky": {
+          "type": "string",
+          "description": "1-3 sentences, plain English, no legalese"
+        },
+        "standard": {
+          "type": "string",
+          "description": "what a balanced version usually says"
+        },
+        "suggested_ask": {
+          "type": "string",
+          "description": "the change to ask the vendor for, in one sentence"
+        },
+        "baseline_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "knowledge/playbook file the comparison used"
+        },
+        "boxes": {
+          "type": "array",
+          "default": [],
+          "description": "where the quote sits on `page`, one rect per line fragment, normalised 0-1 to the page (x0,y0 top-left; x1,y1 bottom-right). Empty when it could not be located",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minItems": 4,
+            "maxItems": 4
+          }
+        },
+        "citations": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Citation"
+          }
+        },
+        "policy_breach": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "one sentence when it conflicts with the user's own company rules"
+        },
+        "verification": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Verification"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "MissingClause": {
+      "type": "object",
+      "required": [
+        "clause_type",
+        "title",
+        "why_it_matters",
+        "suggested_ask"
+      ],
+      "properties": {
+        "clause_type": {
+          "$ref": "#/$defs/ClauseType"
+        },
+        "title": {
+          "type": "string"
+        },
+        "why_it_matters": {
+          "type": "string"
+        },
+        "suggested_ask": {
+          "type": "string"
+        }
+      }
+    },
+    "Verdict": {
+      "type": "object",
+      "required": [
+        "overall_risk",
+        "headline",
+        "summary"
+      ],
+      "properties": {
+        "overall_risk": {
+          "$ref": "#/$defs/Risk"
+        },
+        "headline": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "summary": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "maxItems": 3
+        }
+      }
+    },
+    "Metrics": {
+      "type": "object",
+      "required": [
+        "latency_ms",
+        "model"
+      ],
+      "properties": {
+        "latency_ms": {
+          "type": "integer"
+        },
+        "model": {
+          "type": "string"
+        },
+        "input_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "output_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "cost_usd_est": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "dropped_unverified": {
+          "type": "integer",
+          "default": 0
+        },
+        "dropped_unverified_citations": {
+          "type": "integer",
+          "default": 0
+        }
+      }
+    },
+    "ReviewResult": {
+      "type": "object",
+      "required": [
+        "id",
+        "created_at",
+        "filename",
+        "contract_type",
+        "language",
+        "pages",
+        "parties",
+        "verdict",
+        "findings",
+        "missing_clauses",
+        "metrics",
+        "disclaimer"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "sample_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contract_type": {
+          "$ref": "#/$defs/ContractType"
+        },
+        "language": {
+          "type": "string",
+          "description": "ISO 639-1 of the contract text, e.g. en, ms"
+        },
+        "pages": {
+          "type": "integer"
+        },
+        "parties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "verdict": {
+          "$ref": "#/$defs/Verdict"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Finding"
+          },
+          "description": "sorted high, medium, low"
+        },
+        "missing_clauses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MissingClause"
+          }
+        },
+        "metrics": {
+          "$ref": "#/$defs/Metrics"
+        },
+        "disclaimer": {
+          "type": "string"
+        },
+        "jurisdiction": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "my | sg | other, from the governing-law clause"
+        },
+        "trace": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TraceStep"
+          }
+        },
+        "key_dates": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/KeyDate"
+          }
+        },
+        "owner": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "workspace_id of the owning workspace; 'demo' for the public sample workspace"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Provenance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "previous_review_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "earlier run of the same document (same content hash), for side-by-side history"
+        },
+        "content_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "uid of the member who ran it"
+        },
+        "removed": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/RemovedClaim"
+          },
+          "description": "claims the model made that verification removed; shown to the user"
+        }
+      }
+    },
+    "ReviewSummary": {
+      "type": "object",
+      "required": [
+        "id",
+        "created_at",
+        "filename",
+        "contract_type",
+        "overall_risk",
+        "headline",
+        "finding_counts"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "contract_type": {
+          "$ref": "#/$defs/ContractType"
+        },
+        "overall_risk": {
+          "$ref": "#/$defs/Risk"
+        },
+        "headline": {
+          "type": "string"
+        },
+        "finding_counts": {
+          "type": "object",
+          "properties": {
+            "high": {
+              "type": "integer"
+            },
+            "medium": {
+              "type": "integer"
+            },
+            "low": {
+              "type": "integer"
+            }
+          }
+        },
+        "next_deadline": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/KeyDate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "earliest upcoming notice_deadline or renewal"
+        }
+      }
+    },
+    "NegotiationDraft": {
+      "type": "object",
+      "required": [
+        "review_id",
+        "subject",
+        "body",
+        "asks"
+      ],
+      "properties": {
+        "review_id": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string",
+          "description": "polite, firm, ready to send; plain text"
+        },
+        "asks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "finding_id",
+              "ask"
+            ],
+            "properties": {
+              "finding_id": {
+                "type": "string"
+              },
+              "ask": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "SearchHit": {
+      "type": "object",
+      "required": [
+        "review_id",
+        "filename",
+        "page",
+        "text",
+        "score"
+      ],
+      "properties": {
+        "review_id": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "text": {
+          "type": "string",
+          "description": "the matching passage, <= 400 chars"
+        },
+        "clause_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "finding_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "score": {
+          "type": "number"
+        }
+      }
+    },
+    "Sample": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "contract_type",
+        "language"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "contract_type": {
+          "$ref": "#/$defs/ContractType"
+        },
+        "language": {
+          "type": "string"
+        }
+      }
+    },
+    "Citation": {
+      "type": "object",
+      "required": [
+        "kind",
+        "ref",
+        "title",
+        "excerpt"
+      ],
+      "description": "a source the agent relied on; must exist in the knowledge base, never invented",
+      "properties": {
+        "kind": {
+          "enum": [
+            "law",
+            "case",
+            "playbook",
+            "company"
+          ]
+        },
+        "ref": {
+          "type": "string",
+          "description": "KB id, e.g. my-contracts-act-s75, sg-ucta-s2, sa/liability, company:<doc_id>"
+        },
+        "title": {
+          "type": "string",
+          "description": "human label, e.g. 'Contracts Act 1950, s.75'"
+        },
+        "jurisdiction": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "my | sg | null"
+        },
+        "excerpt": {
+          "type": "string",
+          "description": "verbatim text from the KB entry, <= 400 chars"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "for company documents"
+        },
+        "source_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "deep link to the exact provision at the official source (SSO section anchor, or LOM PDF #page=N)"
+        },
+        "boxes": {
+          "type": "array",
+          "default": [],
+          "description": "for company citations: where the excerpt sits on `page` of the policy PDF, same format as Finding.boxes",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "minItems": 4,
+            "maxItems": 4
+          }
+        },
+        "doc_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "company document id, so the UI can open GET /api/company/docs/{doc_id}/pdf"
+        }
+      }
+    },
+    "TraceStep": {
+      "type": "object",
+      "required": [
+        "step",
+        "action",
+        "summary"
+      ],
+      "properties": {
+        "step": {
+          "type": "integer"
+        },
+        "action": {
+          "enum": [
+            "read_contract",
+            "search_law",
+            "search_playbook",
+            "search_company",
+            "read_page",
+            "draft_findings",
+            "verify"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "description": "plain words, e.g. 'Checked Malaysian law on penalty clauses'"
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ms": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "CompanyDoc": {
+      "type": "object",
+      "required": [
+        "id",
+        "filename",
+        "created_at",
+        "pages"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "pages": {
+          "type": "integer"
+        }
+      }
+    },
+    "KeyDate": {
+      "type": "object",
+      "required": [
+        "label",
+        "kind",
+        "page"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "plain words, e.g. 'Last day to cancel before it renews for 24 months'"
+        },
+        "kind": {
+          "enum": [
+            "start",
+            "end",
+            "renewal",
+            "notice_deadline",
+            "payment",
+            "price_change",
+            "other"
+          ]
+        },
+        "date": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "description": "ISO date when it can be computed from the contract, else null"
+        },
+        "rule": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "how it is derived, e.g. '90 days before the end of the initial 12-month term'"
+        },
+        "page": {
+          "type": "integer"
+        },
+        "finding_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "KnowledgeEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "title"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "law",
+            "case",
+            "playbook"
+          ]
+        },
+        "jurisdiction": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contract_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": "string"
+        },
+        "citation": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "clause_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "plain": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "full entry body, markdown; only on the detail endpoint"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "deep link to the provision"
+        }
+      }
+    },
+    "User": {
+      "type": "object",
+      "required": [
+        "uid",
+        "email"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "photo_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "last_seen_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "workspaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "workspace": {
+                "$ref": "#/$defs/Workspace"
+              },
+              "role": {
+                "enum": [
+                  "owner",
+                  "admin",
+                  "member"
+                ]
+              }
+            }
+          }
+        },
+        "platform_admin": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "AuditEvent": {
+      "type": "object",
+      "required": [
+        "id",
+        "at",
+        "actor",
+        "action"
+      ],
+      "description": "append-only; never edited or deleted except by 'delete my data'",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "actor": {
+          "type": "string",
+          "description": "uid, or 'demo' for the public demo workspace"
+        },
+        "action": {
+          "enum": [
+            "signed_in",
+            "uploaded_contract",
+            "reviewed",
+            "re_reviewed",
+            "drafted_reply",
+            "viewed_review",
+            "deleted_review",
+            "uploaded_policy",
+            "deleted_policy",
+            "exported",
+            "deleted_my_data"
+          ]
+        },
+        "target_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target_label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "detail": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "e.g. model, kb_version, prompt_version, findings count, latency"
+        },
+        "workspace_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Provenance": {
+      "type": "object",
+      "required": [
+        "model",
+        "kb_version",
+        "prompt_version"
+      ],
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "kb_version": {
+          "type": "string",
+          "description": "content hash of knowledge/ at review time"
+        },
+        "prompt_version": {
+          "type": "string"
+        },
+        "app_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Workspace": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "kind"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "company",
+            "personal",
+            "demo"
+          ]
+        },
+        "domain": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Google Workspace domain for auto-join, e.g. example.com"
+        },
+        "created_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "member_count": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "Member": {
+      "type": "object",
+      "required": [
+        "uid",
+        "email",
+        "role"
+      ],
+      "properties": {
+        "uid": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "role": {
+          "enum": [
+            "owner",
+            "admin",
+            "member"
+          ]
+        },
+        "joined_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "Invite": {
+      "type": "object",
+      "required": [
+        "code",
+        "workspace_id",
+        "role"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "workspace_id": {
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "admin",
+            "member"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "Verification": {
+      "type": "object",
+      "required": [
+        "quote_match"
+      ],
+      "properties": {
+        "quote_match": {
+          "enum": [
+            "exact",
+            "normalised",
+            "fuzzy"
+          ]
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "fuzzy match score 0-100"
+        },
+        "page_corrected_from": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "set when the model gave a neighbouring page"
+        },
+        "citations_checked": {
+          "type": "integer",
+          "default": 0
+        },
+        "kb_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "RemovedClaim": {
+      "type": "object",
+      "required": [
+        "kind",
+        "reason",
+        "text"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "finding",
+            "citation",
+            "policy_breach"
+          ]
+        },
+        "reason": {
+          "enum": [
+            "quote_not_found",
+            "source_not_retrieved",
+            "no_company_citation"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "description": "what the model claimed: title + quote, or the cited ref"
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "finding_title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

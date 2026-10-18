@@ -1,0 +1,114 @@
+[
+  {
+    "id": "nda-01-fair",
+    "title": "Mutual NDA: software integration talks (KL / Singapore)",
+    "contract_type": "nda",
+    "language": "en",
+    "file": "nda-01-fair.pdf"
+  },
+  {
+    "id": "nda-02-oneway",
+    "title": "One-way NDA: supplier talks with a food platform",
+    "contract_type": "nda",
+    "language": "en",
+    "file": "nda-02-oneway.pdf"
+  },
+  {
+    "id": "nda-03-predatory",
+    "title": "NDA: distribution talks with an overseas group",
+    "contract_type": "nda",
+    "language": "en",
+    "file": "nda-03-predatory.pdf"
+  },
+  {
+    "id": "nda-04-bm",
+    "title": "Perjanjian Kerahsiaan (NDA in Bahasa Malaysia)",
+    "contract_type": "nda",
+    "language": "ms",
+    "file": "nda-04-bm.pdf"
+  },
+  {
+    "id": "msa-01-fair",
+    "title": "Software services agreement: inventory platform",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-01-fair.pdf"
+  },
+  {
+    "id": "msa-02-autorenew",
+    "title": "Fleet tracking subscription agreement",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-02-autorenew.pdf"
+  },
+  {
+    "id": "msa-03-liability",
+    "title": "App development and support agreement",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-03-liability.pdf"
+  },
+  {
+    "id": "msa-04-scanned",
+    "title": "Facilities services agreement (scanned copy)",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-04-scanned.pdf"
+  },
+  {
+    "id": "msa-05-saas",
+    "title": "POS software subscription agreement",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-05-saas.pdf"
+  },
+  {
+    "id": "msa-06-cloud-hosting",
+    "title": "Hosting and managed services agreement",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-06-cloud-hosting.pdf"
+  },
+  {
+    "id": "msa-07-marketing-agency",
+    "title": "Digital marketing services agreement",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-07-marketing-agency.pdf"
+  },
+  {
+    "id": "msa-08-logistics",
+    "title": "Last-mile delivery services agreement",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-08-logistics.pdf"
+  },
+  {
+    "id": "msa-09-bm-cleaning",
+    "title": "Perjanjian Perkhidmatan Pembersihan Pejabat (cleaning, in Bahasa Malaysia)",
+    "contract_type": "service_agreement",
+    "language": "ms",
+    "file": "msa-09-bm-cleaning.pdf"
+  },
+  {
+    "id": "msa-10-long-fair",
+    "title": "IT services agreement with schedules (long, balanced)",
+    "contract_type": "service_agreement",
+    "language": "en",
+    "file": "msa-10-long-fair.pdf"
+  },
+  {
+    "id": "nda-05-investor",
+    "title": "Confidentiality agreement: investor discussions",
+    "contract_type": "nda",
+    "language": "en",
+    "file": "nda-05-investor.pdf"
+  },
+  {
+    "id": "nda-06-employee-style",
+    "title": "Confidentiality, non-compete and invention assignment agreement",
+    "contract_type": "nda",
+    "language": "en",
+    "file": "nda-06-employee-style.pdf"
+  }
+]

@@ -1,0 +1,26 @@
+# --- Real contracts and personal data: NEVER committed ---------------------------
+eval/private/
+uploads/
+
+# --- Credentials ------------------------------------------------------------------
+aws_cred.py
+aws_creds.py
+*.aws-creds.env
+.env
+.env.*
+*service-account*.json
+application_default_credentials.json
+Pulumi.*.yaml.secret
+
+# --- Build output -----------------------------------------------------------------
+node_modules/
+dist/
+cdk.out/
+__pycache__/
+.pytest_cache/
+.venv/
+.playwright-mcp/
+.firecrawl/
+
+.DS_Store
+infrastructure/gcp/.passphrase

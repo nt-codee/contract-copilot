@@ -1,0 +1,39 @@
+{
+  "id": "msa-06-cloud-hosting",
+  "contract_type": "service_agreement",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "liability",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "sole and exclusive remedy"
+    },
+    {
+      "clause_type": "warranty",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "available for at least 99.0% of the time"
+    },
+    {
+      "clause_type": "data_protection",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "in any country, including outside Malaysia"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "high",
+      "page": 3,
+      "quote_contains": "may terminate this Agreement for convenience by giving the Customer at least seven (7) days"
+    }
+  ],
+  "must_not_flag_high": [
+    "payment",
+    "confidentiality",
+    "governing_law",
+    "dispute_resolution",
+    "ip_ownership"
+  ]
+}

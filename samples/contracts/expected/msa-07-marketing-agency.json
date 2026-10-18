@@ -1,0 +1,40 @@
+{
+  "id": "msa-07-marketing-agency",
+  "contract_type": "service_agreement",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "ip_ownership",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "shall vest in and remain with the Agency"
+    },
+    {
+      "clause_type": "ip_ownership",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "owns and controls the Ad Accounts"
+    },
+    {
+      "clause_type": "termination",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "an amount equal to all Retainers that would have been payable"
+    },
+    {
+      "clause_type": "non_solicit",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "for twenty-four (24) months afterwards"
+    }
+  ],
+  "must_not_flag_high": [
+    "payment",
+    "liability",
+    "confidentiality",
+    "governing_law",
+    "dispute_resolution",
+    "data_protection"
+  ]
+}

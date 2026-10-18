@@ -1,0 +1,38 @@
+{
+  "id": "nda-06-employee-style",
+  "contract_type": "nda",
+  "language": "en",
+  "expected_overall_risk": "high",
+  "must_flag": [
+    {
+      "clause_type": "non_compete",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "for two (2) years after it ends"
+    },
+    {
+      "clause_type": "ip_ownership",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "whether or not related to the Project"
+    },
+    {
+      "clause_type": "liability",
+      "risk": "high",
+      "page": 2,
+      "quote_contains": "liquidated damages of SGD 100,000"
+    },
+    {
+      "clause_type": "term",
+      "risk": "medium",
+      "page": 2,
+      "quote_contains": "continue indefinitely"
+    }
+  ],
+  "must_not_flag_high": [
+    "governing_law",
+    "dispute_resolution",
+    "assignment",
+    "non_solicit"
+  ]
+}

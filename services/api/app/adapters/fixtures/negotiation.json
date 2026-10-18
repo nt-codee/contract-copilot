@@ -1,0 +1,26 @@
+{
+  "subject": "Changes we need before signing the Services Agreement",
+  "body": "Dear Awan Biru Pte Ltd,\n\nWe have read the draft and can go ahead once a few points are settled:\n\n- Clause 5.1 (page 2): make the liability cap mutual, at 12 months of fees.\n- Clause 5.2 (page 2): raise your own cap from one month to 12 months of fees.\n- Clause 6.1 (page 2): shorten the renewal notice period to 30 days.\n- Clause 9.1 (page 3): change the governing law to the laws of Malaysia.\n- A new clause on personal data handling and breach notification.\n\nCould you send a revised draft?\n\nKind regards,\nKedai Contoh Sdn Bhd",
+  "asks": [
+    {
+      "finding_id": "f1",
+      "ask": "Make the liability cap mutual, at 12 months of fees."
+    },
+    {
+      "finding_id": "f2",
+      "ask": "Raise the vendor's cap to 12 months of fees."
+    },
+    {
+      "finding_id": "f3",
+      "ask": "Shorten the renewal notice period to 30 days."
+    },
+    {
+      "finding_id": "m1",
+      "ask": "Add a PDPA-compliant data protection clause."
+    },
+    {
+      "finding_id": "f99",
+      "ask": "This id does not exist and must be filtered out."
+    }
+  ]
+}

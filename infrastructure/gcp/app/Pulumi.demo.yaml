@@ -1,0 +1,5 @@
+encryptionsalt: v1:+uX5HsGGjRo=:v1:I3uyTRtXsD8qLmKT:/wQrShWDmw4wS0lMpYwArIwXfcUlrw==
+config:
+  gcp:project: contract-copilot-abc26
+  gcp:region: asia-southeast1
+  cc-app:image: asia-southeast1-docker.pkg.dev/contract-copilot-abc26/contract-copilot/contract-copilot:dirty-20261018-123742
