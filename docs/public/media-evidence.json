@@ -1,94 +1,229 @@
 {
-  "capture": {
-    "commit": "c05f822",
-    "revision": "contract-copilot-00033-j2p",
-    "captured_at": "2026-10-18T16:51:31.963Z",
-    "mode": "live",
-    "data_scope": "synthetic-public",
-    "recipe": "Explicit read-only demo entry; cached review GET; select finding; expand recorded trace; read rules/workspace. Optional guest cached-sample opening only, never refresh or draft.",
-    "base_url": "https://contract-copilot-ordg3tjh7a-as.a.run.app",
-    "viewport": {
-      "width": 1440,
-      "height": 900
-    },
-    "timing": "Screens held for readability; interaction media is not a review-duration benchmark."
-  },
-  "assets": [
+  "captures": [
     {
-      "file": "screens/reader.png",
-      "width": 1280,
-      "height": 800,
-      "bytes": 498511,
-      "sha256": "8d34f75be5ab0b1c32021274ceb8b1694974959c5e880e902ab320d7751848df",
-      "source_frame": "reader.png",
-      "source_sha256": "d6c3b68f22857cbf5b25369eb968391c5ac8c8504ae0f6dcd325b6afacf7a66c",
-      "crop": null,
-      "palette_colors": null,
-      "caption": "Actual captured interface."
-    },
-    {
-      "file": "screens/trace.png",
-      "width": 1280,
-      "height": 800,
-      "bytes": 172100,
-      "sha256": "ea5c066b3c36835d8ab5bb5be2f660d55aabcc7217f70f6cae7118458612db48",
-      "source_frame": "trace.png",
-      "source_sha256": "e8cf9c3f752e9259e138c10e590b78d17a9bfec1d23f4a376a2f9b7e6cd7e1e3",
-      "crop": null,
-      "palette_colors": null,
-      "caption": "Actual captured interface."
-    },
-    {
-      "file": "screens/rules.png",
-      "width": 1280,
-      "height": 800,
-      "bytes": 982428,
-      "sha256": "6fc8760a78dad70abc113b3dfef9ff778537af75a91c7ee8b578f1929af597d3",
-      "source_frame": "rules.png",
-      "source_sha256": "d17e2e0c8c48a4da06b136acff0aa950d8ac6d12dbe5a239b8e64d51ccd52bc4",
-      "crop": null,
-      "palette_colors": null,
-      "caption": "Actual captured interface."
-    },
-    {
-      "file": "screens/workspace.png",
-      "width": 1280,
-      "height": 800,
-      "bytes": 727115,
-      "sha256": "4585d25f68cf5b65bb92a61d0ef5e65905117869cf4de2b6cfde749f23f25816",
-      "source_frame": "workspace.png",
-      "source_sha256": "6871653b0a08a8f7583af5eb8719e9f4a30b28e9c8e9842e363d7ab1da186dc5",
-      "crop": null,
-      "palette_colors": null,
-      "caption": "Actual captured interface."
-    },
-    {
-      "file": "demo-review.gif",
-      "width": 1080,
-      "height": 675,
-      "frames": 3,
-      "duration_ms": 6000,
-      "bytes": 294752,
-      "sha256": "f288d4557edee2079a4916553af00a6a05e506260c8f089d4ad62452528188af",
-      "palette_colors": 128,
-      "source_frames": [
+      "capture": {
+        "commit": "c05f822",
+        "revision": "contract-copilot-00033-j2p",
+        "captured_at": "2026-10-18T17:08:45.363Z",
+        "mode": "live",
+        "data_scope": "synthetic-public",
+        "recipe": "Explicit read-only demo entry; cached review GET; select finding; expand recorded trace; read rules/workspace. Optional guest cached-sample opening only, never refresh or draft.",
+        "base_url": "https://contract-copilot-ordg3tjh7a-as.a.run.app",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "timing": "Screens held for readability; interaction media is not a review-duration benchmark."
+      },
+      "assets": [
         {
-          "file": "reader.png",
-          "sha256": "d6c3b68f22857cbf5b25369eb968391c5ac8c8504ae0f6dcd325b6afacf7a66c",
-          "hold_ms": 2000
+          "file": "screens/reader.png",
+          "width": 1280,
+          "height": 800,
+          "bytes": 500747,
+          "sha256": "14cef37bc01e271a6faf5a785eb1d1c01606ee1b960ec706b54798339591cc31",
+          "source_frame": "reader.png",
+          "source_sha256": "cd282937d9621c00dd19c7ddfc43f220cdb76bccf4314df5841d8e3268dfa2bb",
+          "crop": null,
+          "palette_colors": null,
+          "caption": "Actual captured interface."
         },
         {
-          "file": "finding.png",
-          "sha256": "5d7aa203f2150f0b4a566886a6fe1900213f4074b8dbb0ca82d87d2da5c1e251",
-          "hold_ms": 2000
+          "file": "screens/trace.png",
+          "width": 1280,
+          "height": 800,
+          "bytes": 171864,
+          "sha256": "31544d85f82762d09b1cc0970cd47f2b7ff9da25a2c5631135d380a222687e6b",
+          "source_frame": "trace.png",
+          "source_sha256": "4cb7f6941ed806adffafe4530f9eabc4ba86a5a4da4c10a39d28dd04f0d77243",
+          "crop": null,
+          "palette_colors": null,
+          "caption": "Actual captured interface."
         },
         {
-          "file": "trace.png",
-          "sha256": "e8cf9c3f752e9259e138c10e590b78d17a9bfec1d23f4a376a2f9b7e6cd7e1e3",
-          "hold_ms": 2000
+          "file": "screens/rules.png",
+          "width": 1280,
+          "height": 800,
+          "bytes": 976229,
+          "sha256": "aef631316799271c809d9cb378bb1f145765824e8a71b99b49f89de6e8d8128f",
+          "source_frame": "rules.png",
+          "source_sha256": "8768045c27985f72afab6211f1a9fb34a167cee35bdc00508dea12261dc7e710",
+          "crop": null,
+          "palette_colors": null,
+          "caption": "Actual captured interface."
+        },
+        {
+          "file": "screens/finding.png",
+          "width": 1280,
+          "height": 800,
+          "bytes": 449074,
+          "sha256": "cd418b7f89542f5da412f352c59dbd0135aca4c4ef9abc159a6d45aa9a9fc81e",
+          "source_frame": "finding.png",
+          "source_sha256": "0ee22b9f6fd88cf39a88502572b933aa28591bc4c1041c0fd76bf21025f199d1",
+          "crop": null,
+          "palette_colors": null,
+          "caption": "Actual captured interface."
+        },
+        {
+          "file": "screens/cached-opening.png",
+          "width": 1280,
+          "height": 800,
+          "bytes": 899737,
+          "sha256": "c5085fcbbf4f2c7cd9ee8aa375f40c52e73fe301de98872714dcc973534b056f",
+          "source_frame": "cached-opening.png",
+          "source_sha256": "068c2b4bd4c435ab413903407789c08d3446d43d889588db51bd4d07b46d6790",
+          "crop": null,
+          "palette_colors": null,
+          "caption": "Actual captured interface."
+        },
+        {
+          "file": "screens/workspace.png",
+          "width": 584,
+          "height": 572,
+          "bytes": 110670,
+          "sha256": "b136d7e2392160b348e129a846c68bb830e60e1f9a394dc3dc64b73320ccf190",
+          "source_frame": "workspace.png",
+          "source_sha256": "aece61ede8bb2e059593014428e68787f374fbca1f85b776cf7a479b469d25ad",
+          "crop": [
+            840,
+            320,
+            1424,
+            892
+          ],
+          "palette_colors": null,
+          "caption": "Actual captured interface, cropped to the dashboard's time, cost and chart panels."
+        },
+        {
+          "file": "demo-review.gif",
+          "width": 1080,
+          "height": 675,
+          "frames": 3,
+          "duration_ms": 7400,
+          "bytes": 268697,
+          "sha256": "9584409f5c2916b46debf78f2aee3ecfd500601968f267687b72107917e834a0",
+          "palette_colors": 256,
+          "source_frames": [
+            {
+              "file": "reader.png",
+              "sha256": "cd282937d9621c00dd19c7ddfc43f220cdb76bccf4314df5841d8e3268dfa2bb",
+              "hold_ms": 2200
+            },
+            {
+              "file": "finding.png",
+              "sha256": "0ee22b9f6fd88cf39a88502572b933aa28591bc4c1041c0fd76bf21025f199d1",
+              "hold_ms": 2800
+            },
+            {
+              "file": "trace.png",
+              "sha256": "4cb7f6941ed806adffafe4530f9eabc4ba86a5a4da4c10a39d28dd04f0d77243",
+              "hold_ms": 2400
+            }
+          ],
+          "caption": "Saved synthetic review; actual page and recorded trace interactions, held for readability."
+        },
+        {
+          "file": "demo-cached-opening.gif",
+          "width": 1080,
+          "height": 675,
+          "frames": 3,
+          "duration_ms": 6000,
+          "bytes": 388580,
+          "sha256": "102bce1857091e46930a815a7de8f762cfe608111bad58bb042ac36070708169",
+          "palette_colors": 256,
+          "source_frames": [
+            {
+              "file": "sample.png",
+              "sha256": "b261596e5d39a9d7bd7361bf3e21f51715e9d2aad28dc480baba67c6c31e2447",
+              "hold_ms": 2000
+            },
+            {
+              "file": "cached-opening.png",
+              "sha256": "068c2b4bd4c435ab413903407789c08d3446d43d889588db51bd4d07b46d6790",
+              "hold_ms": 1800
+            },
+            {
+              "file": "reader.png",
+              "sha256": "cd282937d9621c00dd19c7ddfc43f220cdb76bccf4314df5841d8e3268dfa2bb",
+              "hold_ms": 2200
+            }
+          ],
+          "caption": "Synthetic sample preview and opening an earlier result; no fresh review or replayed stages."
         }
-      ],
-      "caption": "Saved synthetic review; actual page and recorded trace interactions, held for readability."
+      ]
+    },
+    {
+      "capture": {
+        "commit": "c05f822",
+        "revision": "contract-copilot-00033-j2p",
+        "captured_at": "2026-10-18T17:10:17.687Z",
+        "mode": "live",
+        "data_scope": "synthetic-public",
+        "recipe": "Explicit read-only demo entry; home key dates; library keyword search for \"cancel early\"; knowledge entry sg-ucta1977-s11. GET/HEAD only.",
+        "base_url": "https://contract-copilot-ordg3tjh7a-as.a.run.app",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "timing": "Screens held for readability; not a review-duration benchmark."
+      },
+      "assets": [
+        {
+          "file": "screens/dates.png",
+          "width": 1160,
+          "height": 334,
+          "bytes": 234653,
+          "sha256": "0fc172785d54da5179a358023b22c3e16c06cad2cbe9dfce53bbd5b339faf95d",
+          "source_frame": "home.png",
+          "source_sha256": "07ec064c0e1fe0908a8949d7aed2dcb322f51984874bee038f03c00b97a35b9c",
+          "crop": [
+            264,
+            150,
+            1424,
+            484
+          ],
+          "palette_colors": null,
+          "caption": "Actual captured interface, cropped to contract counts, coming dates and recent reviews."
+        },
+        {
+          "file": "screens/library.png",
+          "width": 1008,
+          "height": 744,
+          "bytes": 568498,
+          "sha256": "22d106c11626a137b1924a797eda0a78c6853e8f336f3f601c5d7ff5dcd28b6b",
+          "source_frame": "library.png",
+          "source_sha256": "6f5a3a19b3a487c0495f48cbcf53f6bc0961ac4bfd3587c230d417fdd957ebd2",
+          "crop": [
+            340,
+            56,
+            1348,
+            800
+          ],
+          "palette_colors": null,
+          "caption": "Actual captured interface: guest keyword search, cropped."
+        },
+        {
+          "file": "screens/citation.png",
+          "width": 832,
+          "height": 850,
+          "bytes": 271152,
+          "sha256": "087df31e99169c4fead082d00fd9803f6670411867aaf9096594d74ff7e9dd79",
+          "source_frame": "citation.png",
+          "source_sha256": "fc3904128792c3bf6489c64d4ffc268eee06a4acae617f443059efe981696149",
+          "crop": [
+            430,
+            50,
+            1262,
+            900
+          ],
+          "palette_colors": null,
+          "caption": "Actual captured interface: a law-library entry, cropped."
+        }
+      ]
     }
-  ]
+  ],
+  "chart": {
+    "file": "eval-latency.svg",
+    "source": "eval/results/20261018T124253Z.json",
+    "generator": "make_assets.py --chart-only"
+  }
 }

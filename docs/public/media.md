@@ -25,6 +25,13 @@ not fresh processing: do not replay phases, fabricate progress percentages or us
 Do not use a private upload to demonstrate fresh phases. The server-reported phase feature and the source
 of each public image must be described separately when they differ.
 
+`shoot_live_pages.mjs` takes the same `OUT BASE --commit --revision --synthetic-public` arguments and captures the
+home page's coming dates, a guest keyword search (`--query`, keyword-only for guests, so no model or embedding call)
+and one law-library entry (`--entry`). It blocks every request that is not GET or HEAD.
+
+`make_assets.py --banner FRAME.png --banner-crop X0 Y0 X1 Y1` frames one verified live capture beside the product
+name; every interface pixel in `banner.png` comes from that capture.
+
 The optional `shoot_app.mjs` tool requires `--mock --dist DIR --commit SOURCE_COMMIT` and only captures a
 local offline synthetic build. Its manifest says `mock`; those images must never silently replace live captures.
 Both tools use an already installed browser and dependencies; they do not install software.
