@@ -56,7 +56,7 @@ keyword search and the law library need no sign-in.
 | **Search every contract.** Describe the situation in your own words and get the clause and its page. | <img src="docs/public/screens/library.png" alt="Library search for cancel early, with matching clauses from two tenancy agreements" width="520"> |
 | **A team workspace.** Owners, admins and members share contracts, rules and standard positions, with time, cost and risk at a glance. | <img src="docs/public/screens/workspace.png" alt="Workspace dashboard: time and cost per review, overall risk of each contract and contracts by type" width="520"> |
 | **The X-ray of each review.** Every recorded lookup in the law, usual-terms and company-rules lanes, with its duration. | <img src="docs/public/screens/trace.png" alt="The review X-ray: recorded lookups in the law, usual-terms and company-rules lanes" width="520"> |
-| **A reply you control.** Draft an editable response to the other party, with one ask per finding, tied to its clause and page. | <!-- TODO: current-UI capture of a saved synthetic reply; none was reachable read-only on 2026-10-19 --> |
+| **A reply you control.** Draft an editable response to the other party, with one ask per finding, tied to its clause and page. | <img src="docs/public/screens/finding.png" alt="A selected finding with what to ask the other party for, which the reply draft collects" width="520"> |
 
 PDFs and scans, English or Bahasa Malaysia, up to 10 MB and 40 pages. New paid work needs Google sign-in and has a
 USD 1 allowance per account per UTC day ([details](docs/public/details.md#the-daily-allowance)).
